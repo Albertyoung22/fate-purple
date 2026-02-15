@@ -22,7 +22,7 @@ def load_config():
     defaults = {
         "server": {"host": "0.0.0.0", "port": 5000, "debug": False},
         "ollama": {"api_url": "http://localhost:11434/api/generate", "default_model": "gemma2:2b"},
-        "gemini": {"api_key": "", "model": "gemini-2.5-flash"},
+        "gemini": {"api_key": "", "model": "gemini-1.5-flash"},
         "app": {"title": "紫微八字 · 天機命譜系統", "geometry": "1000x750", "icon_path": "icon.png"}
     }
     if os.path.exists(config_path):
@@ -96,7 +96,9 @@ CORS(app)
 OLLAMA_API_URL = CONFIG['ollama']['api_url']
 DEFAULT_MODEL = CONFIG['ollama']['default_model']
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or CONFIG['gemini'].get('api_key', "")
-GEMINI_MODEL = CONFIG['gemini'].get('model', "gemini-2.5-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL") or CONFIG['gemini'].get('model', "gemini-1.5-flash")
+
+print(f"Server Config: Model={GEMINI_MODEL}, Key={'Set' if GEMINI_API_KEY else 'Missing'}")
 
 STEMS = CONSTANTS['STEMS']
 BRANCHES = CONSTANTS['BRANCHES']
