@@ -12,7 +12,7 @@
     },
     "gemini": {
         "api_key": "AIzaSyDHKuL1Sgj-04yNrlOookpfBaeveSZeO4E",
-        "model": "gemini-2.5-flash",
+        "model": "gemini-1.5-flash",
         "max_output_tokens": 1024,
         "temperature": 0.7
     },
