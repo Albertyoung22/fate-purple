@@ -124,7 +124,7 @@ def call_gemini_api(prompt, system_prompt="", stream=True):
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=30)
+            response = requests.post(url, headers=headers, json=payload, timeout=180)
             if response.status_code == 429:
                 raise requests.exceptions.HTTPError("429 Too Many Requests", response=response)
             
