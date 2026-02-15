@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紫微斗數 AI 命理系統 - 探索命運的奧秘</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at bottom, #1e1b4b 0%, #0f172a 100%);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .text-gradient {
+            background: linear-gradient(to right, #c084fc, #e879f9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .delay-100 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-200 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-300 {
+            animation-delay: 0.3s;
+        }
+
+        .delay-500 {
+            animation-delay: 0.5s;
+        }
+
+        .delay-700 {
+            animation-delay: 0.7s;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn-glow:hover {
+            box-shadow: 0 0 20px rgba(192, 132, 252, 0.5);
+        }
+
+        .feature-icon {
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover .feature-icon {
+            transform: scale(1.1) rotate(5deg);
+            color: #d8b4fe;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+
+    <div id="canvas-container"></div>
+
+    <nav class="w-full p-6 flex justify-between items-center z-10 fade-in-up">
+        <div class="flex items-center gap-3">
+            <img src="icon.png" alt="Logo" class="w-10 h-10 rounded-full border border-purple-500/30">
+            <span class="text-xl font-bold tracking-wider serif">天機命譜</span>
+        </div>
+        <div>
+            <!-- Optional Nav Links -->
+        </div>
+    </nav>
+
+    <main class="flex-grow flex flex-col items-center justify-center p-6 relative z-10">
+
+        <div class="text-center max-w-4xl mx-auto space-y-8">
+            <div class="mb-8 relative inline-block animate-float">
+                <div class="absolute -inset-1 rounded-full bg-purple-600 blur-xl opacity-30"></div>
+                <!-- Assuming logo exists, otherwise use a placeholder icon -->
+                <img src="logo_v2.png" alt="Main Logo"
+                    class="relative w-32 h-32 md:w-48 md:h-48 object-contain mx-auto drop-shadow-2xl fade-in-up"
+                    onerror="this.src='icon.png'">
+            </div>
+
+            <h1 class="text-5xl md:text-7xl font-bold serif tracking-tight mb-4 fade-in-up delay-200">
+                <span class="text-white">紫微斗數</span>
+                <span class="block text-2xl md:text-3xl mt-2 text-purple-200 font-light sans-serif tracking-widest">AI
+                    智慧命理系統</span>
+            </h1>
+
+            <p class="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed fade-in-up delay-300">
+                融合古老東方智慧與現代人工智慧技術。<br>
+                從繁星中解讀您的人生密碼，掌握命運的軌跡。
+            </p>
+
+            <div class="pt-8 fade-in-up delay-500">
+                <a href="fate.html"
+                    class="btn-glow inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-4 px-10 rounded-full text-lg transition-all transform hover:scale-105">
+                    <span>立即體驗</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20 w-full max-w-6xl px-4">
+            <div
+                class="glass-card p-8 rounded-2xl fade-in-up delay-700 hover:bg-white/10 transition-colors cursor-default">
+                <div
+                    class="w-12 h-12 bg-purple-900/50 rounded-xl flex items-center justify-center mb-4 feature-icon text-purple-300">
+                    <i data-lucide="compass" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2 serif text-purple-100">精準排盤</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">
+                    採用天文曆法計算，精確定位紫微星系。支援多種排盤方式，呈現最完整的命盤資訊。
+                </p>
+            </div>
+
+            <div class="glass-card p-8 rounded-2xl fade-in-up delay-700 hover:bg-white/10 transition-colors cursor-default"
+                style="animation-delay: 0.8s;">
+                <div
+                    class="w-12 h-12 bg-indigo-900/50 rounded-xl flex items-center justify-center mb-4 feature-icon text-indigo-300">
+                    <i data-lucide="bot" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2 serif text-indigo-100">AI 智能詳批</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">
+                    結合大型語言模型，深入分析宮位關係與星曜組合，提供具體且個性化的運勢建議。
+                </p>
+            </div>
+
+            <div class="glass-card p-8 rounded-2xl fade-in-up delay-700 hover:bg-white/10 transition-colors cursor-default"
+                style="animation-delay: 0.9s;">
+                <div
+                    class="w-12 h-12 bg-pink-900/50 rounded-xl flex items-center justify-center mb-4 feature-icon text-pink-300">
+                    <i data-lucide="sparkles" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2 serif text-pink-100">流年運勢</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">
+                    洞察十年大限與流年變化，包括四化飛星軌跡，助您趨吉避凶，掌握最佳時機。
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-6 text-center text-slate-500 text-sm relative z-10 fade-in-up" style="animation-delay: 1.2s;">
+        <p>&copy; 2024 紫微天機命譜. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Init Icons
+        lucide.createIcons();
+
+        // Canvas Starfield Effect
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        document.getElementById('canvas-container').appendChild(canvas);
+
+        let width, height;
+        let stars = [];
+        const STAR_COUNT = 200;
+        const SPEED = 0.05;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        class Star {
+            constructor() {
+                this.reset();
+                // Start at random positions
+                this.y = Math.random() * height;
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = -10;
+                this.z = Math.random() * 2 + 0.5; // Depth/Size
+                this.opacity = Math.random() * 0.5 + 0.1;
+                this.speed = (Math.random() * 0.5 + 0.2) * this.z;
+            }
+
+            update() {
+                this.y += this.speed;
+                if (this.y > height) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.z * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Twinkle effect
+                if (Math.random() > 0.98) {
+                    this.opacity = Math.random() * 0.8 + 0.2;
+                }
+            }
+        }
+
+        function initStars() {
+            stars = [];
+            for (let i = 0; i < STAR_COUNT; i++) {
+                stars.push(new Star());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw connections (Constellation effect) - optional, keeps it simple for now
+            // Draw Stars
+            stars.forEach(star => {
+                star.update();
+                star.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            resize();
+            initStars();
+        });
+
+        resize();
+        initStars();
+        animate();
+    </script>
+</body>
+
+</html>

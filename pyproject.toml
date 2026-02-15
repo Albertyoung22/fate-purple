@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fatepurple"
+version = "2.0.0"
+description = "紫微天機命譜系統 - 伺服器後端 (無介面版)"
+requires-python = ">=3.9"
+
+[tool.setuptools]
+packages = []
