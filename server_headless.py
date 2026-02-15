@@ -127,20 +127,31 @@ def call_gemini_api(prompt, system_prompt="", stream=True):
         ]
     }
     
-    max_retries = 3
+    max_retries = 8
     for attempt in range(max_retries):
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=180)
+            # Generate request with 120s timeout
+            response = requests.post(url, headers=headers, json=payload, timeout=120)
+            
             if response.status_code == 429:
+                # Force raise to trigger retry logic
                 raise requests.exceptions.HTTPError("429 Too Many Requests", response=response)
             
             response.raise_for_status()
             data = response.json()
+            
+            # Safety Check: If candidates missing, print raw response
+            if 'candidates' not in data:
+                 print(f"Gemini API - No Candidates (Safety?): {data}")
+                 return None
+                 
             return data['candidates'][0]['content']['parts'][0]['text']
+
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 429:
-                wait_time = (attempt + 1) * 3
-                print(f"Gemini API 429 (Attempt {attempt+1}). Retry in {wait_time}s...")
+            if e.response and e.response.status_code == 429:
+                # Aggressive Backoff Strategy: 5s, 10s, 15s...
+                wait_time = (attempt + 1) * 5 
+                print(f"Gemini API 429 (Attempt {attempt+1}/{max_retries}). Resource exhausted. Sleeping {wait_time}s...")
                 time.sleep(wait_time)
                 continue
             else:
