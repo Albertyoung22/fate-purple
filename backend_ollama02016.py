@@ -363,6 +363,23 @@ class BackendApp(tk.Tk):
 @app.route('/')
 def index(): return send_file('fate.html')
 
+@app.route('/admin')
+def admin_page(): return send_file('admin.html')
+
+@app.route('/api/admin/data')
+def get_admin_data():
+    records = load_json_file(RECORD_FILE)
+    chats = load_json_file(CHAT_LOG_FILE)
+    # Simple formatting for dashboard
+    return jsonify({
+        "records_count": len(records),
+        "chats_count": len(chats),
+        "records": list(reversed(records[-50:])), # Last 50 records
+        "chats": list(reversed(chats[-50:])),    # Last 50 chats
+        "status": "Online",
+        "uptime": "Running" 
+    })
+
 @app.route('/<path:filename>')
 def serve_static(filename):
     if filename.lower().endswith(('.png', '.ico', '.jpg', '.jpeg', '.html', '.css', '.js', '.json')):
@@ -499,5 +516,16 @@ def chat():
     return Response(stream_with_context(generate()), content_type='text/plain; charset=utf-8', headers={"Access-Control-Allow-Origin": "*"})
 
 if __name__ == '__main__':
-    ui = BackendApp(app)
-    ui.mainloop()
+    # Check for Headless mode (e.g. Render, Docker, or GitHub Codespaces)
+    if os.environ.get('HEADLESS') or os.environ.get('RENDER'):
+        print("Starting in HEADLESS mode (Web Server Only)...")
+        app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
+    else:
+        # Local Desktop Mode with Tkinter Dashboard
+        try:
+            ui = BackendApp(app)
+            ui.mainloop()
+        except tk.TclError:
+            # Fallback if no display found (linux server etc)
+            print("No display found, falling back to HEADLESS mode...")
+            app.run(host="0.0.0.0", port=5000, debug=False)
