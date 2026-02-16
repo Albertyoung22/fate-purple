@@ -127,7 +127,8 @@
                                 <span class="text-[10px] font-mono text-slate-500"
                                     x-text="formatDate(c.timestamp)">TIME</span>
                             </div>
-                            <p class="text-sm text-indigo-200 font-bold mb-1">Q: <span x-text="c.prompt"></span></p>
+                            <p class="text-sm text-indigo-200 font-bold mb-1">Q: <span
+                                    x-text="formatPrompt(c.prompt)"></span></p>
                             <div class="mt-2 text-xs text-slate-400 border-l-2 border-slate-700 pl-2 line-clamp-3 hover:line-clamp-none transition-all cursor-pointer"
                                 title="點擊展開">
                                 A: <span x-text="c.response"></span>
@@ -170,6 +171,20 @@
                 formatDate(iso) {
                     if (!iso) return '-';
                     return iso.replace('T', ' ').substring(0, 16);
+                },
+
+                formatPrompt(p) {
+                    if (!p) return '-';
+                    if (p.includes("命譜詳評") || p.includes("格局批註")) return "【功能】全盤詳解 (命譜詳評)";
+                    if (p.includes("流日") && p.includes("錦囊妙計")) return "【功能】今日錦囊";
+                    if (p.includes("前世因果")) return "【功能】前世今生";
+                    if (p.includes("轉運儀式")) return "【功能】轉運儀式";
+                    if (p.includes("桃花攻略")) return "【功能】姻緣桃花";
+                    if (p.includes("投資理財")) return "【功能】財運分析";
+                    if (p.includes("測字")) return "【功能】測字占卜";
+                    if (p.includes("夢境")) return "【功能】夢境解析";
+                    if (p.includes("八字")) return "【功能】八字論命";
+                    return p; // Default: User chat
                 },
 
                 async fetchData() {
