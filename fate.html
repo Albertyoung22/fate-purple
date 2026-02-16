@@ -1745,7 +1745,8 @@ ${chartContext}
                 const nameToSave = userName.trim() || "未知緣主";
 
                 try {
-                    const BACKEND_URL = "http://localhost:5000";
+                    // Fix: Use relative path for production (Render)
+                    const BACKEND_URL = "";
                     const apiUrl = `${BACKEND_URL}/api/save_record`;
                     const res = await fetch(apiUrl, {
                         method: 'POST',
