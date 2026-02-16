@@ -1651,7 +1651,10 @@ ${FLYING_STAR_DATA}
                             system_prompt: systemPrompt,
                             model: "gemma2:2b",
                             chart_data: cleanChartData,
-                            gender: gender === "male" ? "M" : "F"
+                            gender: gender === "male" ? "M" : "F",
+                            name: userName || "未知緣主",
+                            birth_date: birthDate,
+                            birth_hour: BRANCHES[birthHour] + "時"
                         })
                     });
 

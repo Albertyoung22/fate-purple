@@ -127,6 +127,12 @@
                                 <span class="text-[10px] font-mono text-slate-500"
                                     x-text="formatDate(c.timestamp)">TIME</span>
                             </div>
+                            <div
+                                class="flex items-center gap-2 mb-2 text-xs text-indigo-300 font-bold bg-indigo-900/30 p-2 rounded">
+                                <span x-text="c.user_name || '未知緣主'"></span>
+                                <span class="text-slate-500 mx-1">|</span>
+                                <span x-text="(c.birth_date || '') + ' ' + (c.birth_hour || '')"></span>
+                            </div>
                             <p class="text-sm text-indigo-200 font-bold mb-1">Q: <span
                                     x-text="formatPrompt(c.prompt)"></span></p>
                             <div class="mt-2 text-xs text-slate-400 border-l-2 border-slate-700 pl-2 line-clamp-3 hover:line-clamp-none transition-all cursor-pointer"

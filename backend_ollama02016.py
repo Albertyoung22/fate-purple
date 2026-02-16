@@ -104,14 +104,18 @@ def save_json_file(filename, data):
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-def log_chat(model, prompt, response):
+def log_chat(model, prompt, response, user_info=None):
     logs = load_json_file(CHAT_LOG_FILE)
-    logs.append({
+    entry = {
         "timestamp": datetime.now().isoformat(),
         "model": model,
         "prompt": prompt,
         "response": response
-    })
+    }
+    if user_info:
+        entry.update(user_info)
+        
+    logs.append(entry)
     save_json_file(CHAT_LOG_FILE, logs[-1000:]) # Keep last 1000
 
 # --- App Globals ---
@@ -423,6 +427,13 @@ def chat():
     client_sys = data.get('system_prompt', '')
     gender = data.get('gender', 'M')
     chart_data = data.get('chart_data')
+    
+    # Extract User Identity
+    user_info = {
+        "user_name": data.get("name", "Unknown"),
+        "birth_date": data.get("birth_date", ""),
+        "birth_hour": data.get("birth_hour", "")
+    }
 
     matched = []
     if chart_data:
@@ -515,7 +526,8 @@ def chat():
             else:
                 yield "無法生成足夠資訊以進行總結。"
             
-            log_chat("Hybrid-Report-Chapter", user_prompt, "Successfully generated detailed report.")
+                yield "連線斷開，請檢查後端日誌。"
+            log_chat("Hybrid-Report-Chapter", user_prompt, "Successfully generated detailed report.", user_info)
         else:
             # 一般對話也優化排版
             final = call_ai(user_prompt, final_system_prompt)
@@ -525,7 +537,7 @@ def chat():
                 yield formatted_final
             else:
                 yield "連線斷開，請檢查後端日誌。"
-            log_chat("Hybrid-Fallback", user_prompt, final or "ERR")
+            log_chat("Hybrid-Fallback", user_prompt, final or "ERR", user_info)
 
     return Response(stream_with_context(generate()), content_type='text/plain; charset=utf-8', headers={"Access-Control-Allow-Origin": "*"})
 
