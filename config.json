@@ -11,7 +11,7 @@
         "timeout": 1
     },
     "gemini": {
-        "api_key": "AIzaSyDHKuL1Sgj-04yNrlOookpfBaeveSZeO4E",
+        "api_key": "AIzaSyBEVWhdoibHyuw56osfTbgGFSZ2D9iP3bk",
         "model": "gemini-1.5-flash",
         "max_output_tokens": 1024,
         "temperature": 0.7
