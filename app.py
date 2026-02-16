@@ -8,8 +8,15 @@ import webbrowser
 import logging
 import subprocess
 import time
-import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox
+
+# --- GUI Support Check ---
+try:
+    import tkinter as tk
+    from tkinter import ttk, scrolledtext, messagebox
+    HAS_TK = True
+except ImportError:
+    HAS_TK = False
+    print("Tkinter not found (Headless environment detected). GUI will be disabled.")
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, make_response, send_file, Response, stream_with_context, send_from_directory
 from flask_cors import CORS
@@ -188,8 +195,15 @@ def call_gemini_api(prompt, system_prompt=""):
     return None
 
 # --- UI Application Class ---
-class BackendApp(tk.Tk):
+# --- UI Application Class ---
+if HAS_TK:
+    BaseClass = tk.Tk
+else:
+    BaseClass = object
+
+class BackendApp(BaseClass):
     def __init__(self, flask_app):
+        if not HAS_TK: return
         super().__init__()
         self.flask_app = flask_app
         self.title("紫微八字 · 天機命譜系統 [全功能後端中控台]")
@@ -517,7 +531,7 @@ def chat():
 
 if __name__ == '__main__':
     # Check for Headless mode (e.g. Render, Docker, or GitHub Codespaces)
-    if os.environ.get('HEADLESS') or os.environ.get('RENDER'):
+    if os.environ.get('HEADLESS') or os.environ.get('RENDER') or not HAS_TK:
         print("Starting in HEADLESS mode (Web Server Only)...")
         app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
     else:
@@ -525,7 +539,7 @@ if __name__ == '__main__':
         try:
             ui = BackendApp(app)
             ui.mainloop()
-        except tk.TclError:
+        except Exception as e:
             # Fallback if no display found (linux server etc)
-            print("No display found, falling back to HEADLESS mode...")
+            print(f"GUI launch failed ({e}), falling back to HEADLESS mode...")
             app.run(host="0.0.0.0", port=5000, debug=False)
