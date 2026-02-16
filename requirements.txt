@@ -5,6 +5,3 @@ lunar-python
 gunicorn
 groq
 google-generativeai
-pyngrok
-pillow
-lunar-javascript
