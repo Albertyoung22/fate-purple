@@ -1,4 +1,4 @@
-
+好
 import os
 import json
 import requests
@@ -18,10 +18,13 @@ from rule_engine import create_chart_from_dict, evaluate_rules, PALACE_NAMES
 # --- Configuration & Constants Loading ---
 
 def load_config():
-    config_path = 'config.json'
+    # Use absolute path relative to this script
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(base_dir, 'config.json')
+    
     defaults = {
         "server": {"host": "0.0.0.0", "port": 5000, "debug": False},
-        "ollama": {"api_url": "http://localhost:11434/api/generate", "default_model": "gemma2:2b"},
+        # Use 127.0.0.1 by default
         "gemini": {"api_key": "", "model": "gemini-1.5-flash"},
         "app": {"title": "紫微八字 · 天機命譜系統", "geometry": "1000x750", "icon_path": "icon.png"}
     }
@@ -39,7 +42,9 @@ def load_config():
     return defaults
 
 def load_constants():
-    const_path = 'ziwei_constants.json'
+    # Use absolute path relative to this script
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    const_path = os.path.join(base_dir, 'ziwei_constants.json')
     defaults = {
         "STEMS": ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"],
         "BRANCHES": ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"],
@@ -93,9 +98,8 @@ app = Flask(__name__)
 # Enable CORS for all domains to allow proxy/remote access easily
 CORS(app) 
 
-OLLAMA_API_URL = CONFIG['ollama']['api_url']
-DEFAULT_MODEL = CONFIG['ollama']['default_model']
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or CONFIG['gemini'].get('api_key', "")
+DEFAULT_MODEL = "gemini-1.5-flash"
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL") or CONFIG['gemini'].get('model', "gemini-1.5-flash")
 
 print(f"Server Config: Model={GEMINI_MODEL}, Key={'Set' if GEMINI_API_KEY else 'Missing'}")
@@ -110,7 +114,7 @@ def call_gemini_api(prompt, system_prompt="", stream=True):
         return None
     
     full_prompt = f"{system_prompt}\n\n{prompt}"
-    url = f"https://generativelanguage.googleapis.com/v1/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
     
     headers = {'Content-Type': 'application/json'}
     payload = {
@@ -377,26 +381,8 @@ def chat():
                         time.sleep(0.01)
                     return True
             
-            ai_payload = {
-                "model": model,
-                "prompt": target_prompt,
-                "system": target_system_prompt,
-                "stream": True,
-                "options": options
-            }
-            try:
-                endpoint = OLLAMA_API_URL
-                with requests.post(endpoint, json=ai_payload, stream=True, timeout=(10, 300)) as r:
-                    r.raise_for_status()
-                    for line in r.iter_lines():
-                        if line:
-                            chunk = json.loads(line)
-                            if "response" in chunk:
-                                yield chunk["response"]
-                return True
-            except Exception as e:
-                print(f"Ollama Fallback Error: {e}")
-                return False
+            yield "【系統訊息】無法連接 AI 服務 (Gemini Key 未設定或連線失敗)。\n"
+            return False
 
         if is_daily_query:
             yield "【大師感應中...】正在為您抽取今日錦囊，請稍候...\n\n"
@@ -449,28 +435,54 @@ def chat():
 
         # --- Default / Full Report ---
         if matched_results and is_full_report:
-            yield "【天機運算中...】大師正在詳批您的命盤與格局，請稍候...\n\n"
-            yield "【紫微命譜格局偵測報告】\nUse logic as rule descriptions:\n"
+            yield "【天機運算中...】大師正在詳批您的命盤格局，請稍候...\n\n"
+            yield "【紫微命譜格局逐條精批】\n"
+            yield "==========================================\n"
             
+            explanation_system_prompt = """你是一位精通紫微斗數的命理大師。
+現在，你會收到一個特定的「命理格局」。
+請你針對這個格局進行【白話解釋】。
+告訴緣主：這個格局代表什麼意思？對人生有什麼具體影響（吉凶、性格、運勢）？
+請直接回答，不要重複題目，字數 50-80 字。"""
+
             group_a = [r for r in matched_results if r.get("rule_group") == "A"]
             group_b = [r for r in matched_results if r.get("rule_group") == "B"]
             group_c = [r for r in matched_results if r.get("rule_group") == "C"]
+            print(f"DEBUG: Found Groups - A:{len(group_a)}, B:{len(group_b)}, C:{len(group_c)}")
+            print(f"DEBUG: Gemini Key Present? {bool(GEMINI_API_KEY)}")
 
-            if group_a:
-                yield "一、 星曜坐守與神煞特徵\n------------------------------------------\n"
-                for res in group_a: yield f"● 【{res.get('detected_palace_names', '全盤')}】{res.get('description')}：{res.get('text')}\n"
-                yield "\n"
-            if group_b:
-                yield "二、 命宮宮干飛化\n------------------------------------------\n"
-                for res in group_b: yield f"● 【{res.get('detected_palace_names', '命宮飛入')}】{res.get('description')}：{res.get('text')}\n"
-                yield "\n"
-            if group_c:
-                yield "三、 宮位間的交互飛化\n------------------------------------------\n"
-                for res in group_c: yield f"● 【{res.get('detected_palace_names', '關聯宮位')}】{res.get('description')}：{res.get('text')}\n"
-                yield "\n"
+            def process_group(group, title):
+                if not group: return
+                yield f"\n{title}\n------------------------------------------\n"
+                for res in group:
+                    palace = res.get('detected_palace_names', '全盤')
+                    desc = res.get('description', '')
+                    text = res.get('text', '')
+                    yield f"● 【{palace}】{desc}：{text}\n"
+                    
+                    if GEMINI_API_KEY:
+                        mini_prompt = f"請解釋紫微斗數格局：「{desc}」。\n格局內容：「{text}」。\n這代表什麼意思？"
+                        try:
+                            time.sleep(1)
+                            explanation = call_gemini_api(mini_prompt, explanation_system_prompt)
+                            if explanation:
+                                yield f"  ↳ 💡大師解讀：{explanation}\n\n"
+                            else:
+                                yield f"  (大師沈默...)\n\n"
+                        except Exception as e:
+                            yield f"  (連線異常: {str(e)})\n\n"
+                    else:
+                        yield f"  (詳情請參閱古籍，未設定API Key)\n\n"
+
+            yield from process_group(group_a, "一、 星曜坐守與神煞特徵")
+            yield from process_group(group_b, "二、 命宮宮干飛化")
+            yield from process_group(group_c, "三、 宮位間的交互飛化")
             
-            yield f"{'='*40}\n\n四、道長綜合結論\n------------------------------------------\n"
-        
+            yield f"{'='*40}\n"
+            yield "【批註完成】以上為您的命盤格局逐條解析。\n"
+            return
+
+            
         rules_context_str = ""
         if matched_results:
             for r in matched_results[:25]: 
@@ -481,27 +493,14 @@ def chat():
 【偵測格局】：{rules_context_str}
 【指令】：綜合论断。"""
         
+        # Only call summary IF NOT full report (though currently full report returns above)
+        # But this logic was "Summary ONLY" in backend_fix, here it seems mixed.
+        # The user wanted to CANCEL the conclusion.
+        # So providing return above effectively cancels it.
+        
         if (yield from call_ai_engine(summary_prompt, full_system_prompt)): return
         
-        # Fallback raw Ollama if Gemini failed inside prompt construction (unlikely to reach here if Gemini worked)
-        ai_payload = {
-            "model": model,
-            "prompt": summary_prompt,
-            "system": full_system_prompt,
-            "stream": True,
-            "options": options
-        }
-        try:
-            endpoint = OLLAMA_API_URL
-            with requests.post(endpoint, json=ai_payload, stream=True, timeout=(10, 300)) as r:
-                r.raise_for_status()
-                for line in r.iter_lines():
-                    if line:
-                        chunk = json.loads(line)
-                        if "response" in chunk:
-                            yield chunk["response"]
-        except Exception as e:
-            yield f"\n[Error: {e}]"
+        yield "\n[系統訊息: 無法取得 AI 回應]\n"
 
     return Response(stream_with_context(generate_unified_response()), content_type='text/plain; charset=utf-8', headers={
         "Access-Control-Allow-Origin": "*",

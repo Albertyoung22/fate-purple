@@ -1220,6 +1220,8 @@
             const chatEndRef = useRef(null);
             const baziRef = useRef(null);
             const reportRef = useRef(null);
+            const chatCardRef = useRef(null);
+            const chatInputRef = useRef(null);
 
             useEffect(() => { if (typeof localStorage !== 'undefined') localStorage.setItem('ziwei_api_key', userApiKey); }, [userApiKey]);
             // useEffect(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }); // Removed to fix React conflict
@@ -1488,8 +1490,10 @@
 
             const callAiApi = async (prompt, type = 'chat', onStream = null) => {
                 // Determine API endpoint
-                // 連接至 Render 雲端伺服器 (若要改回本機請自行修改)
-                const BACKEND_URL = "https://fate-purple.onrender.com";
+                // 自動偵測：若是部署在雲端 (Render)，則使用相對路徑；若在本地端，則連至 localhost:5000
+                const BACKEND_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+                    ? "http://localhost:5000"
+                    : window.location.origin;
                 const apiUrl = `${BACKEND_URL}/api/chat`;
 
 
@@ -1741,7 +1745,7 @@ ${chartContext}
                 const nameToSave = userName.trim() || "未知緣主";
 
                 try {
-                    const BACKEND_URL = "https://fate-purple.onrender.com";
+                    const BACKEND_URL = "http://localhost:5000";
                     const apiUrl = `${BACKEND_URL}/api/save_record`;
                     const res = await fetch(apiUrl, {
                         method: 'POST',
@@ -1817,7 +1821,21 @@ ${getFullChartContext()}
             const handlePastLife = async () => { setActionLoading('pastLife'); setPastLife(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請專注分析上述命盤中的【福德宮】（精神位）與【命宮】星曜，發揮想像力，講述一段關於緣主的前世因果故事。\n\n【特別要求】：故事請用「繁體中文」撰寫。`, 'pastLife', (c) => setPastLife(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
             const handleRitual = async () => { setActionLoading('ritual'); setRitual(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請檢視上述命盤中目前的【化忌】與【煞星】位置，提供一套具體可行的現代轉運儀式。\n\n【特別要求】：請使用「繁體中文」。`, 'ritual', (c) => setRitual(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
             const handleGlyph = async () => { if (!input.trim()) { alert("請先輸入一個字！"); return; } const char = input.trim().charAt(0); const q = input.trim(); setInput(""); setChat(prev => [...prev, { role: 'user', text: `測字：「${char}」 - ${q}` }, { role: 'assistant', text: "" }]); setIsChatLoading(true); setActionLoading('glyph'); await callAiApi(`${getFullChartContext()}\n\n用戶測字：「${char}」。\n用戶提問：「${q}」。\n\n請務必結合上述【緣主目前命盤資訊】（特別是命宮、福德宮氣場）與這個漢字，進行綜合測字占卜。\n\n【特別要求】：請使用「繁體中文」。`, 'glyph', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); setIsChatLoading(false); setActionLoading(null); };
-            const handleDream = async () => { if (!input.trim()) { alert("請先描述夢境..."); return; } const q = input.trim(); setInput(""); setChat(prev => [...prev, { role: 'user', text: `夢境解析：${q}` }, { role: 'assistant', text: "" }]); setIsChatLoading(true); setActionLoading('dream'); await callAiApi(`${getFullChartContext()}\n\n用戶夢境內容：「${q}」。\n\n請務必依據上述命盤中的【福德宮】星曜特質，來解析此夢境的深層含義。\n\n【特別要求】：請使用「繁體中文」。`, 'dream', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); setIsChatLoading(false); setActionLoading(null); };
+            const handleDream = async () => {
+                chatCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                if (!input.trim()) {
+                    chatInputRef.current?.focus();
+                    return;
+                }
+                const q = input.trim();
+                setInput("");
+                setChat(prev => [...prev, { role: 'user', text: `夢境解析：${q}` }, { role: 'assistant', text: "" }]);
+                setIsChatLoading(true);
+                setActionLoading('dream');
+                await callAiApi(`${getFullChartContext()}\n\n用戶夢境內容：「${q}」。\n\n請務必依據上述命盤中的【福德宮】星曜特質，來解析此夢境的深層含義。\n\n【特別要求】：請使用「繁體中文」。`, 'dream', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                setIsChatLoading(false);
+                setActionLoading(null);
+            };
             const handleLove = async () => { setActionLoading('love'); setChat(prev => [...prev, { role: 'user', text: "請大師指點迷津，賜予我桃花攻略！" }, { role: 'assistant', text: "" }]); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【夫妻宮】與【命宮】星曜，提供緣主一條具體的桃花攻略或相處之道。\n\n【特別要求】：請使用「繁體中文」。`, 'love', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); setIsChatLoading(false); setActionLoading(null); };
             const handleFinance = async () => { setActionLoading('finance'); setFinance(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【財帛宮】、【官祿宮】與【田宅宮】，提供緣主關於【投資理財】與【流年財運】的專業建議。\n\n【特別要求】：請使用「繁體中文」。`, 'finance', (c) => setFinance(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
             const handleBazi = async () => {
@@ -1864,11 +1882,6 @@ ${getFullChartContext()}
                 const chatActions = ['chat', 'glyph', 'dream', 'love'];
                 if (actionLoading && chatActions.includes(actionLoading)) {
                     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                }
-
-                // 如果是八字或報告完成，滾動到對應的區域
-                if (!actionLoading && bazi) {
-                    // baziRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
 
                 lucide.createIcons();
@@ -2196,7 +2209,7 @@ ${getFullChartContext()}
                                 </CardContent>
                             </Card>
 
-                            <Card className="print:hidden h-[600px] flex flex-col border-0 shadow-2xl rounded-[2.5rem] ring-4 ring-indigo-50/50 bg-white overflow-hidden mb-12">
+                            <Card ref={chatCardRef} className="print:hidden h-[600px] flex flex-col border-0 shadow-2xl rounded-[2.5rem] ring-4 ring-indigo-50/50 bg-white overflow-hidden mb-12">
                                 <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-5 relative shrink-0">
                                     <div className="relative flex items-center gap-4">
                                         <div className="p-2.5 bg-indigo-500 rounded-xl shadow-lg ring-2 ring-indigo-400/30">
@@ -2241,6 +2254,7 @@ ${getFullChartContext()}
                                 <div className="p-4 bg-white border-t border-slate-100/50 shrink-0">
                                     <div className="bg-slate-50 p-2 rounded-[2rem] border border-slate-200 focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-50 transition-all flex gap-2 items-center shadow-inner">
                                         <input
+                                            ref={chatInputRef}
                                             type="text"
                                             value={input}
                                             onChange={e => setInput(e.target.value)}

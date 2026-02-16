@@ -437,14 +437,17 @@ def evaluate_rules(chart, rules):
                 res_obj["description"] = rule.get("description", "")
                 
                 # --- 新增：識別規則類別類型 ---
-                conds = rule["conditions"]
-                if "flying_from" in conds:
-                    if conds["flying_from"] == "life":
-                        res_obj["rule_group"] = "B" # 命宮飛化
-                    else:
-                        res_obj["rule_group"] = "C" # 宮位間交互飛化
-                else:
-                    res_obj["rule_group"] = "A" # 星曜坐守與神煞
+                def detect_group(cond):
+                    if isinstance(cond, dict):
+                        if "flying_from" in cond:
+                            return "B" if cond["flying_from"] == "life" else "C"
+                        if "criteria" in cond:
+                            for sub in cond["criteria"]:
+                                res = detect_group(sub)
+                                if res != "A": return res
+                    return "A"
+                
+                res_obj["rule_group"] = detect_group(rule["conditions"])
                 
                 if context["details"]:
                     unique_details = list(set(context["details"]))

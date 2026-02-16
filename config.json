@@ -4,15 +4,10 @@
         "port": 5000,
         "debug": false
     },
-    "ollama": {
-        "base_url": "http://localhost:11434",
-        "api_url": "http://localhost:11434/api/generate",
-        "default_model": "gemma2:2b",
-        "timeout": 1
-    },
     "gemini": {
-        "api_key": "AIzaSyBEVWhdoibHyuw56osfTbgGFSZ2D9iP3bk",
-        "model": "gemini-1.5-flash",
+        "provider": "groq",
+        "api_key": "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",
+        "model": "llama-3.3-70b-versatile",
         "max_output_tokens": 1024,
         "temperature": 0.7
     },

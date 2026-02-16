@@ -1,1 +1,1 @@
-web: gunicorn server_headless:app
+web: gunicorn app:app

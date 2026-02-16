@@ -1,0 +1,23 @@
+如何部署到 GitHub & Render？
+上傳 Github：
+將整個資料夾（包含 
+app.py
+, 
+fate.html
+, 
+requirements.txt
+, 
+Procfile
+ 等）上傳到您的 GitHub Repository。
+連結 Render：
+在 Render 官網點擊 "New Web Service"，連結您的 GitHub。
+設定 Render：
+Runtime: Python 3
+Build Command: pip install -r requirements.txt
+Start Command: gunicorn app:app
+Environment Variables (重要):
+AI_PROVIDER = 
+groq
+AI_API_KEY = 
+(您的 Groq API Key)
+AI_MODEL = llama-3.3-70b-versatile
