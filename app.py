@@ -116,8 +116,14 @@ if MONGO_URI:
         users_collection = db["user_records"]
         chats_collection = db["chat_history"]
         print(f"✅ MongoDB connected: {db.name}")
+        if "test" in db.name and not "?" in MONGO_URI: # Heuristic check
+             print("WARNING: Default database is 'test'. You may want to specify a DB name in URI.")
     except Exception as e:
-        print(f"❌ MongoDB connection failed: {e}. Falling back to JSON files.")
+        import traceback
+        print(f"❌ MongoDB connection failed. Detailed Error:\n{traceback.format_exc()}")
+        db = None
+        users_collection = None
+        chats_collection = None
 
 def load_json_file(filename):
     # MongoDB Mode
