@@ -101,6 +101,7 @@ users_collection = None
 chats_collection = None
 
 if MONGO_URI:
+    print(f"DEBUG: Found MONGO_URI environment variable (Length: {len(MONGO_URI)})") # Debug check
     # Explicitly install dnspython if missing (Render fix)
     try:
         import dns
@@ -453,11 +454,29 @@ def index(): return send_file('fate.html')
 @app.route('/admin')
 def admin_page(): return send_file('admin.html')
 
+@app.route('/api/db_check')
+def db_check():
+    status = {
+        "mongo_uri_set": bool(MONGO_URI),
+        "db_connected": db is not None,
+        "users_collection": users_collection is not None,
+        "db_name": db.name if db else None
+    }
+    return jsonify(status)
+
 @app.route('/api/admin/data')
 def get_admin_data():
     records = load_json_file(RECORD_FILE)
     chats = load_json_file(CHAT_LOG_FILE)
-    # Simple formatting for dashboard
+    
+    # Determine DB Status text
+    status_text = "Local JSON"
+    if MONGO_URI:
+        if db is not None:
+             status_text = f"MongoDB ({db.name})"
+        else:
+             status_text = "MongoDB Connect Failed"
+    
     return jsonify({
         "records_count": len(records),
         "chats_count": len(chats),
@@ -465,7 +484,7 @@ def get_admin_data():
         "chats": list(reversed(chats[-50:])),    # Last 50 chats
         "status": "Online",
         "uptime": "Running",
-        "db_status": "MongoDB" if db is not None else "Local JSON"
+        "db_status": status_text
     })
 
 @app.route('/<path:filename>')
