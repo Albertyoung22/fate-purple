@@ -5,5 +5,5 @@ lunar-python
 gunicorn
 groq
 google-generativeai
-pymongo
+pymongo[srv]
 dnspython

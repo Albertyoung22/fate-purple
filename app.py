@@ -101,6 +101,13 @@ users_collection = None
 chats_collection = None
 
 if MONGO_URI:
+    # Explicitly install dnspython if missing (Render fix)
+    try:
+        import dns
+    except ImportError:
+        print("Installing dnspython...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "dnspython"])
+
     try:
         from pymongo import MongoClient
         client = MongoClient(MONGO_URI)
