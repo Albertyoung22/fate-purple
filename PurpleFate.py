@@ -124,11 +124,9 @@ CORS(app)
 
 # AI Priority & Key Pools (Supports multiple keys separated by comma)
 def get_key_list(env_name, config_key):
-    # Render or other PAAS will provide env vars, local relies on config.json
     val = os.environ.get(env_name) or CONFIG['gemini'].get(config_key, "")
     if isinstance(val, list): return val
-    if not val: return []
-    return [k.strip() for k in str(val).split(",") if k.strip()]
+    return [k.strip() for k in val.split(",") if k.strip()]
 
 GROQ_KEYS = get_key_list("GROQ_API_KEY", "groq_key")
 GEMINI_KEYS = get_key_list("GEMINI_API_KEY", "api_key")
@@ -140,9 +138,6 @@ import random
 # --- AI Engine Callers ---
 def call_ollama_api(prompt, system_prompt=""):
     """呼叫本地 Ollama API (根據 config.json 設定)"""
-    # 如果是在 Render 等雲端環境，通常無法連線到本地 Ollama，直接跳過
-    if os.environ.get('RENDER'): return None
-
     ollama_cfg = CONFIG.get('ollama', {})
     if not ollama_cfg.get('enable', True): return None
 
@@ -155,7 +150,7 @@ def call_ollama_api(prompt, system_prompt=""):
             "stream": False,
             "options": {"num_ctx": 4096, "temperature": 0.7}
         }
-        res = requests.post(url, json=payload, timeout=2) # 縮短超時時間，避免卡頓
+        res = requests.post(url, json=payload, timeout=5) # 縮短超時時間，避免卡頓
         if res.status_code == 200:
             return res.json().get("response")
     except Exception as e:
@@ -463,10 +458,8 @@ def chat():
             print(f">>> AI 請求 (Prompt: {p[:15]}...)")
             
             # Phase 1: Local
-            # 如果是 Render 部署，Ollama 應該在 setup 時被禁用或跳過，這裡再做一次保險
-            if not os.environ.get('RENDER'):
-                res = call_ollama_api(p, s)
-                if res and len(res.strip()) > 5: return res
+            res = call_ollama_api(p, s)
+            if res and len(res.strip()) > 5: return res
 
             # Phase 2: Groq
             print(">>> 嘗試 Groq (8B)...")
