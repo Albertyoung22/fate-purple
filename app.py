@@ -140,7 +140,7 @@ if MONGO_URI:
 
 def load_json_file(filename):
     # MongoDB Mode
-    if db:
+    if db is not None:
         if filename == RECORD_FILE and users_collection is not None:
             return list(users_collection.find({}, {'_id': 0}))
         elif filename == CHAT_LOG_FILE and chats_collection is not None:
@@ -154,7 +154,7 @@ def load_json_file(filename):
 
 def save_json_file(filename, data):
     # MongoDB Mode
-    if db:
+    if db is not None:
         # For bulk save, we might want to just insert the new item, but the current logic passes the WHOLE list.
         # To adapt without rewriting everything, we'll check if it's an append operation.
         # But here 'data' is the full list.
@@ -194,7 +194,7 @@ def log_chat(model, prompt, response, user_info=None):
     if user_info:
         entry.update(user_info)
     
-    if db and chats_collection is not None:
+    if db is not None and chats_collection is not None:
         chats_collection.insert_one(entry)
     else:
         logs = load_json_file(CHAT_LOG_FILE)
@@ -479,7 +479,7 @@ def db_check():
         "mongo_uri_set": bool(MONGO_URI),
         "db_connected": db is not None,
         "users_collection": users_collection is not None,
-        "db_name": db.name if db else None
+        "db_name": db.name if db is not None else None
     }
     return jsonify(status)
 
@@ -523,7 +523,7 @@ def save_record():
         "birth_hour": data.get("birth_hour"), "lunar_date": data.get("lunar_date")
     }
     
-    if db and users_collection is not None:
+    if db is not None and users_collection is not None:
         users_collection.insert_one(record)
     else:
         recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
