@@ -609,7 +609,7 @@ def chat():
                 yield formatted_final
             else:
                 yield "連線斷開，請檢查後端日誌。"
-            log_chat("Hybrid-Fallback", user_prompt, final or "ERR", user_info)
+            log_chat(data.get("model", "Hybrid-Fallback"), user_prompt, final or "ERR", user_info)
 
     return Response(stream_with_context(generate()), content_type='text/plain; charset=utf-8', headers={"Access-Control-Allow-Origin": "*"})
 

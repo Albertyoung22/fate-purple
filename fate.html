@@ -1646,7 +1646,7 @@ ${FLYING_STAR_DATA}
                         body: JSON.stringify({
                             prompt: promptWithLang,
                             system_prompt: systemPrompt,
-                            model: "gemma2:2b",
+                            model: type, // Pass the feature type (e.g. 'simple', 'bazi', 'love') 
                             chart_data: cleanChartData,
                             gender: gender === "male" ? "M" : "F",
                             name: userName || "未知緣主",
