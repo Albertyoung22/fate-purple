@@ -111,6 +111,7 @@ if MONGO_URI:
 
     try:
         import pymongo
+        from pymongo import MongoClient
         print(f"DEBUG: Pymongo Version: {pymongo.version}")
         client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000) # 5s timeout
         
