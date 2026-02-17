@@ -94,18 +94,70 @@ SI_HUA_TABLE = CONSTANTS['SI_HUA_TABLE']
 CHAT_LOG_FILE = 'chat_history.json'
 RECORD_FILE = 'user_records.json'
 
+# --- Persistence Layer (JSON vs MongoDB) ---
+MONGO_URI = os.environ.get("MONGO_URI")
+db = None
+users_collection = None
+chats_collection = None
+
+if MONGO_URI:
+    try:
+        from pymongo import MongoClient
+        client = MongoClient(MONGO_URI)
+        db = client.get_database() # Uses the DB name from the URI
+        users_collection = db["user_records"]
+        chats_collection = db["chat_history"]
+        print(f"✅ MongoDB connected: {db.name}")
+    except Exception as e:
+        print(f"❌ MongoDB connection failed: {e}. Falling back to JSON files.")
+
 def load_json_file(filename):
+    # MongoDB Mode
+    if db:
+        if filename == RECORD_FILE and users_collection is not None:
+            return list(users_collection.find({}, {'_id': 0}))
+        elif filename == CHAT_LOG_FILE and chats_collection is not None:
+            return list(chats_collection.find({}, {'_id': 0}).sort("timestamp", 1))
+    
+    # File Mode
     if not os.path.exists(filename): return []
     try:
         with open(filename, 'r', encoding='utf-8') as f: return json.load(f)
     except: return []
 
 def save_json_file(filename, data):
+    # MongoDB Mode
+    if db:
+        # For bulk save, we might want to just insert the new item, but the current logic passes the WHOLE list.
+        # To adapt without rewriting everything, we'll check if it's an append operation.
+        # But here 'data' is the full list.
+        # OPTIMIZATION: In a real app, we shouldn't pass the full list. 
+        # However, for compatibility with existing code structure:
+        if filename == RECORD_FILE and users_collection is not None:
+            # Dangerous: Replacing all data? No, let's just insert the LAST item if it's new.
+            # But the caller (log_chat/save_record) usually appends and passes the full list.
+            # Let's change the caller to pass only the NEW item? No, that requires changing callers.
+            # Let's just grab the last item from `data` assuming it's an append.
+            if data:
+                last_item = data[-1]
+                # Simple check to avoid duplicates if possible, or just insert.
+                # Timestamps are unique enough.
+                if users_collection.count_documents({"timestamp": last_item.get("timestamp")}, limit=1) == 0:
+                    users_collection.insert_one(last_item)
+            return
+        elif filename == CHAT_LOG_FILE and chats_collection is not None:
+            if data:
+                last_item = data[-1]
+                if chats_collection.count_documents({"timestamp": last_item.get("timestamp")}, limit=1) == 0:
+                    chats_collection.insert_one(last_item)
+            return
+
+    # File Mode
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 def log_chat(model, prompt, response, user_info=None):
-    logs = load_json_file(CHAT_LOG_FILE)
+    # In MongoDB mode, we don't need to load all logs just to append one.
     entry = {
         "timestamp": datetime.now().isoformat(),
         "model": model,
@@ -114,9 +166,13 @@ def log_chat(model, prompt, response, user_info=None):
     }
     if user_info:
         entry.update(user_info)
-        
-    logs.append(entry)
-    save_json_file(CHAT_LOG_FILE, logs[-1000:]) # Keep last 1000
+    
+    if db and chats_collection is not None:
+        chats_collection.insert_one(entry)
+    else:
+        logs = load_json_file(CHAT_LOG_FILE)
+        logs.append(entry)
+        save_json_file(CHAT_LOG_FILE, logs[-1000:]) # Keep last 1000
 
 # --- App Globals ---
 app = Flask(__name__, static_folder='.', static_url_path='')
@@ -343,7 +399,8 @@ class BackendApp(BaseClass):
         c = self.chat_cache[int(sel[0])]
         self.txt_chat_detail.configure(state="normal")
         self.txt_chat_detail.delete("1.0", "end")
-        self.txt_chat_detail.insert("1.0", f"【提問】:\n{c.get('prompt')}\n\n【回答】:\n{c.get('response')}")
+        info = f"【緣主】: {c.get('user_name','?')} | {c.get('gender','')} | {c.get('birth_date','')} {c.get('birth_hour','')} | {c.get('lunar_date','')}\n"
+        self.txt_chat_detail.insert("1.0", f"{info}\n【提問】:\n{c.get('prompt')}\n\n【回答】:\n{c.get('response')}")
         self.txt_chat_detail.configure(state="disabled")
 
     def toggle_ngrok(self):
@@ -400,7 +457,8 @@ def get_admin_data():
         "records": list(reversed(records[-50:])), # Last 50 records
         "chats": list(reversed(chats[-50:])),    # Last 50 chats
         "status": "Online",
-        "uptime": "Running" 
+        "uptime": "Running",
+        "db_status": "MongoDB" if db is not None else "Local JSON"
     })
 
 @app.route('/<path:filename>')
@@ -419,7 +477,12 @@ def save_record():
         "gender": data.get("gender"), "birth_date": data.get("birth_date"),
         "birth_hour": data.get("birth_hour"), "lunar_date": data.get("lunar_date")
     }
-    recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
+    
+    if db and users_collection is not None:
+        users_collection.insert_one(record)
+    else:
+        recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
+        
     return make_response(jsonify({"success": True}), 200, {"Access-Control-Allow-Origin": "*"})
 
 @app.route('/api/chat', methods=['POST', 'OPTIONS'])
@@ -437,7 +500,9 @@ def chat():
     user_info = {
         "user_name": data.get("name", "Unknown"),
         "birth_date": data.get("birth_date", ""),
-        "birth_hour": data.get("birth_hour", "")
+        "birth_hour": data.get("birth_hour", ""),
+        "lunar_date": data.get("lunar_date", ""),
+        "gender": data.get("gender", "")
     }
 
     matched = []

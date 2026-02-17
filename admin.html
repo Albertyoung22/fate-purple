@@ -57,6 +57,12 @@
                     <p class="text-slate-400 text-xs uppercase tracking-widest">AI 對話總數</p>
                     <p class="text-3xl font-black text-white mt-1" x-text="data.chats_count || 0">0</p>
                 </div>
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 w-40 text-center">
+                    <p class="text-slate-400 text-xs uppercase tracking-widest">系統狀態</p>
+                    <p class="text-sm font-black mt-2 inline-block px-2 py-1 rounded-full"
+                        :class="data.db_status === 'MongoDB' ? 'bg-emerald-900 text-emerald-400 border border-emerald-500/30' : 'bg-amber-900 text-amber-400 border border-amber-500/30'"
+                        x-text="data.db_status || 'Local JSON'"></p>
+                </div>
             </div>
         </header>
 
@@ -131,7 +137,11 @@
                                 class="flex items-center gap-2 mb-2 text-xs text-indigo-300 font-bold bg-indigo-900/30 p-2 rounded">
                                 <span x-text="c.user_name || '未知緣主'"></span>
                                 <span class="text-slate-500 mx-1">|</span>
+                                <span x-text="(c.gender === 'M' ? '乾造' : (c.gender === 'F' ? '坤造' : ''))"></span>
+                                <span class="text-slate-500 mx-1" x-show="c.gender">|</span>
                                 <span x-text="(c.birth_date || '') + ' ' + (c.birth_hour || '')"></span>
+                                <span class="text-slate-500 mx-1" x-show="c.lunar_date">|</span>
+                                <span x-text="c.lunar_date" x-show="c.lunar_date" class="text-slate-400"></span>
                             </div>
                             <p class="text-sm text-indigo-200 font-bold mb-1">Q: <span
                                     x-text="formatPrompt(c.prompt)"></span></p>
