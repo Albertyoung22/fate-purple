@@ -1193,6 +1193,7 @@
             const [targetMonth, setTargetMonth] = useState(today.getMonth() + 1);
             const [targetDay, setTargetDay] = useState(today.getDate());
             const [aiReport, setAiReport] = useState("");
+            const [simpleResult, setSimpleResult] = useState("");
             const [dailyTip, setDailyTip] = useState("");
             const [showSanFang, setShowSanFang] = useState(true);
             const [showFlying, setShowFlying] = useState(true);
@@ -1860,6 +1861,18 @@ ${getFullChartContext()}
                 setIsChatLoading(false);
                 setActionLoading(null);
             };
+
+            const handleSimpleExec = async () => {
+                setActionLoading('simple');
+                setSimpleResult("");
+                setIsChatLoading(true);
+
+                await callAiApi(`${getFullChartContext()}\n\n請以現代白話文，針對上述命盤進行【性格與人生發展】的精簡分析。\n不需引用古文口訣，直接給予緣主具體建議與人格特質描述。\n\n【特別要求】：請使用「繁體中文」回答。`, 'simple', (c) => setSimpleResult(p => p + c));
+
+                setIsChatLoading(false);
+                setActionLoading(null);
+            };
+
             const handleChatSend = async () => {
                 if (!input.trim()) return;
                 const m = input;
@@ -2140,7 +2153,10 @@ ${getFullChartContext()}
 
                         <div className="xl:col-span-4 space-y-12 print:w-full print:mt-16">
                             <div className="grid grid-cols-3 gap-3">
-                                <button onClick={() => fetchAiReport()} disabled={actionLoading === 'report'} className={`bg-indigo-900 text-white p-3 rounded-2xl shadow-lg hover:bg-indigo-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-indigo-200 ring-offset-2 ${actionLoading === 'report' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                <button onClick={() => handleSimpleExec()} disabled={actionLoading === 'simple'} className={`bg-teal-600 text-white p-3 rounded-2xl shadow-lg hover:bg-teal-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-teal-200 ring-offset-2 ${actionLoading === 'simple' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                    {actionLoading === 'simple' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="message-circle" className="w-4 h-4" />} 白話精解
+                                </button>
+                                <button onClick={() => fetchAiReport()} disabled={actionLoading === 'report'} className={`bg-indigo-900 text-white p-3 rounded-2xl shadow-lg hover:bg-indigo-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'report' ? 'opacity-75 cursor-not-allowed' : ''}`}>
                                     {actionLoading === 'report' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="feather" className="w-4 h-4" />} 命譜詳評
                                 </button>
                                 <button onClick={() => handleDailyTip()} disabled={actionLoading === 'daily'} className={`bg-emerald-600 text-white p-3 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'daily' ? 'opacity-75 cursor-not-allowed' : ''}`}>
@@ -2165,14 +2181,15 @@ ${getFullChartContext()}
                                     {actionLoading === 'bazi' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="compass" className="w-4 h-4" />} 八字論命
                                 </button>
                             </div>
-                            {(dailyTip || pastLife || ritual || finance || bazi) && (
+                            {(dailyTip || pastLife || ritual || finance || bazi || simpleResult) && (
                                 <Card ref={baziRef} className="animate-in fade-in duration-700">
                                     <CardContent className="p-6 text-[14px] font-bold leading-relaxed text-slate-800 bg-yellow-50/50">
                                         {dailyTip && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-emerald-700 font-black mb-2 flex items-center gap-2"><Icon name="sun" className="w-4 h-4" /> 大師今日指引</h5>{dailyTip}</div>)}
                                         {ritual && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-orange-600 font-black mb-2 flex items-center gap-2"><Icon name="sparkle" className="w-4 h-4" /> 專屬轉運儀式</h5>{ritual}</div>)}
                                         {pastLife && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-purple-700 font-black mb-2 flex items-center gap-2"><Icon name="infinity" className="w-4 h-4" /> 前世因果故事</h5><div className="whitespace-pre-wrap">{pastLife}</div></div>)}
                                         {finance && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-amber-700 font-black mb-2 flex items-center gap-2"><Icon name="trending-up" className="w-4 h-4" /> 紫微財運佈局</h5><div className="whitespace-pre-wrap">{finance}</div></div>)}
-                                        {bazi && (<div><h5 className="text-slate-700 font-black mb-2 flex items-center gap-2"><Icon name="compass" className="w-4 h-4" /> 子平八字精批</h5><div className="whitespace-pre-wrap">{bazi}</div></div>)}
+                                        {bazi && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-slate-700 font-black mb-2 flex items-center gap-2"><Icon name="compass" className="w-4 h-4" /> 子平八字精批</h5><div className="whitespace-pre-wrap">{bazi}</div></div>)}
+                                        {simpleResult && (<div><h5 className="text-teal-700 font-black mb-2 flex items-center gap-2"><Icon name="message-circle" className="w-4 h-4" /> 白話精選命理</h5><div className="whitespace-pre-wrap">{simpleResult}</div></div>)}
                                     </CardContent>
                                 </Card>
                             )}
