@@ -110,12 +110,24 @@ if MONGO_URI:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "dnspython"])
 
     try:
-        from pymongo import MongoClient
-        client = MongoClient(MONGO_URI)
-        db = client.get_database() # Uses the DB name from the URI
+        import pymongo
+        print(f"DEBUG: Pymongo Version: {pymongo.version}")
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000) # 5s timeout
+        
+        # Try to get default database, if fails (e.g. URI has no path), use 'fate_purple'
+        try:
+            db = client.get_database()
+        except:
+            db = client["fate_purple"]
         users_collection = db["user_records"]
         chats_collection = db["chat_history"]
         print(f"✅ MongoDB connected: {db.name}")
+        
+        # FORCE CHECK: The client is lazy, so we must command it to check connectivity now
+        print("DEBUG: Pinging MongoDB...")
+        client.admin.command('ping')
+        print("DEBUG: Ping successful!")
+
         if "test" in db.name and not "?" in MONGO_URI: # Heuristic check
              print("WARNING: Default database is 'test'. You may want to specify a DB name in URI.")
     except Exception as e:
