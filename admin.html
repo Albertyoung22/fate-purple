@@ -130,13 +130,23 @@
                             <div class="flex justify-between items-start mb-2">
                                 <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest" x-text="(() => {
                                         const m = c.model || '';
-                                        const debug = ' (' + m + ')';
-                                        if(m.includes('simple')) return '【功能】白話精解' + debug;
-                                        if(m.includes('bazi')) return '【功能】八字論命' + debug;
-                                        if(m.includes('daily')) return '【功能】今日錦囊' + debug;
-                                        if(m.includes('love')) return '【功能】感情專題' + debug;
-                                        if(m.includes('finance')) return '【功能】財運專題' + debug;
-                                        if(m.includes('report')) return '【功能】命譜詳評' + debug;
+                                        if(m.includes('simple')) return '【功能】白話精解';
+                                        if(m.includes('bazi')) return '【功能】八字論命';
+                                        if(m.includes('daily')) return '【功能】今日錦囊';
+                                        if(m.includes('love')) return '【功能】感情專題';
+                                        if(m.includes('dream')) return '【功能】夢境解碼';
+                                        if(m.includes('name')) return '【功能】姓名分析';
+                                        if(m.includes('career')) return '【功能】事業運勢';
+                                        if(m.includes('wealth')) return '【功能】財運分析';
+                                        if(m.includes('baby')) return '【功能】新生兒命名';
+                                        if(m.includes('pastLife')) return '【功能】前世因果';
+                                        if(m.includes('ritual')) return '【功能】轉運儀式';
+                                        if(m.includes('finance')) return '【功能】財運預測';
+                                        
+                                        // Fallback for reports
+                                        if(m.includes('Report')) return '【功能】命譜詳評';
+                                        if(m.includes('Fallback')) return '【功能】混合模型';
+                                        
                                         return '【功能】' + m;
                                     })()">MODEL</span>
                                 <span class="text-[10px] font-mono text-slate-500"
@@ -151,6 +161,10 @@
                                 <span x-text="(c.birth_date || '') + ' ' + (c.birth_hour || '')"></span>
                                 <span class="text-slate-500 mx-1" x-show="c.lunar_date">|</span>
                                 <span x-text="c.lunar_date" x-show="c.lunar_date" class="text-slate-400"></span>
+                                <span class="text-slate-500 mx-1" x-show="c.location">|</span>
+                                <span x-text="c.location" x-show="c.location"
+                                    class="text-emerald-400/80 bg-emerald-900/20 px-1 rounded"></span>
+                                <span x-text="'(' + c.ip + ')'" x-show="c.ip" class="text-[10px] text-slate-600"></span>
                             </div>
                             <p class="text-sm text-indigo-200 font-bold mb-1">Q: <span
                                     x-text="formatPrompt(c.prompt)"></span></p>
@@ -158,6 +172,52 @@
                                 title="點擊展開">
                                 A: <span x-text="c.response"></span>
                             </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Insights Management -->
+        <div class="mt-8 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl mb-12">
+            <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-indigo-900/20">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                    </svg>
+                    大師隨心密令 (隱藏訊息注入)
+                </h2>
+                <div class="flex gap-2">
+                    <button @click="fetchInsights()"
+                        class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition-colors">重新整理</button>
+                    <button @click="saveInsights()"
+                        class="text-xs bg-indigo-600 hover:bg-indigo-500 px-4 py-1.5 rounded font-bold transition-all active:scale-95">儲存所有設定</button>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-slate-400 mb-6">在這裡輸入的內容會「不露痕跡」地加入到 AI 的思考邏輯中。你可以用來置入廣告、特定品牌訊息，或是要求 AI
+                    在特定功能中表現出特別的個性。</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <template x-for="(label, key) in {
+                        'report': '命譜詳評 (全盤詳解)',
+                        'daily': '今日錦囊 (流日運勢)',
+                        'pastLife': '前世因果/故事',
+                        'ritual': '轉運儀式',
+                        'love': '桃花攻略/姻緣',
+                        'finance': '財運分析/投資',
+                        'bazi': '子平八字模式',
+                        'simple': '白話精解',
+                        'chat': '一般對話聊天'
+                    }" :key="key">
+                        <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                            <label class="block text-xs font-bold text-indigo-400 mb-2 tracking-widest uppercase"
+                                x-text="label"></label>
+                            <textarea x-model="insights[key]"
+                                class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs text-white h-24 focus:border-indigo-500 outline-none custom-scrollbar resize-none"
+                                placeholder="例如：請在結尾提到『關注天機公眾號』..."></textarea>
                         </div>
                     </template>
                 </div>
@@ -172,12 +232,17 @@
                 password: '',
                 error: false,
                 data: { records: [], chats: [] },
+                insights: {
+                    report: "", daily: "", pastLife: "", ritual: "",
+                    love: "", finance: "", bazi: "", simple: "", chat: ""
+                },
 
                 init() {
                     // Check session storage for login Persistence
                     if (sessionStorage.getItem('admin_auth') === 'true') {
                         this.authenticated = true;
                         this.startPolling();
+                        this.fetchInsights();
                     }
                 },
 
@@ -187,6 +252,7 @@
                         this.authenticated = true;
                         sessionStorage.setItem('admin_auth', 'true');
                         this.startPolling();
+                        this.fetchInsights();
                     } else {
                         this.error = true;
                         this.password = '';
@@ -219,6 +285,31 @@
                         this.data = json;
                     } catch (e) {
                         console.error("Fetch error", e);
+                    }
+                },
+
+                async fetchInsights() {
+                    try {
+                        const res = await fetch('/api/admin/hidden_insights');
+                        const json = await res.json();
+                        this.insights = json;
+                    } catch (e) {
+                        console.error("Fetch insights error", e);
+                    }
+                },
+
+                async saveInsights() {
+                    try {
+                        const res = await fetch('/api/admin/hidden_insights', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.insights)
+                        });
+                        if (res.ok) {
+                            alert("密令已成功儲存！大師已接收。");
+                        }
+                    } catch (e) {
+                        alert("儲存失敗：" + e.message);
                     }
                 },
 

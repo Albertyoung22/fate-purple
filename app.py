@@ -187,6 +187,20 @@ def save_json_file(filename, data):
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
+HIDDEN_INSIGHTS_FILE = 'hidden_insights.json'
+def load_hidden_insights():
+    if os.path.exists(HIDDEN_INSIGHTS_FILE):
+        try:
+            with open(HIDDEN_INSIGHTS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
+        except: return {}
+    return {
+        "report": "", "daily": "", "pastLife": "", "ritual": "", 
+        "love": "", "finance": "", "bazi": "", "simple": "", "chat": ""
+    }
+
+def save_hidden_insights(data):
+    with open(HIDDEN_INSIGHTS_FILE, 'w', encoding='utf-8') as f: json.dump(data, f, ensure_ascii=False, indent=2)
+
 def log_chat(model, prompt, response, user_info=None):
     # In MongoDB mode, we don't need to load all logs just to append one.
     entry = {
@@ -204,6 +218,42 @@ def log_chat(model, prompt, response, user_info=None):
         logs = load_json_file(CHAT_LOG_FILE)
         logs.append(entry)
         save_json_file(CHAT_LOG_FILE, logs[-1000:]) # Keep last 1000
+
+def get_location_from_ip(ip):
+    """Resolve IP address to City/Region using ip-api.com"""
+    if not ip or ip in ['127.0.0.1', 'localhost']:
+        return "台灣 (本地測試)"
+    try:
+        # ip-api.com (Free for non-commercial, 45 req/min)
+        res = requests.get(f"http://ip-api.com/json/{ip}?fields=status,message,country,regionName,city", timeout=2).json()
+        if res.get('status') == 'success':
+            return f"{res.get('country')} {res.get('regionName')} {res.get('city')}"
+    except:
+        pass
+    return "未知地點"
+
+def get_heavenly_timing():
+    """Calculate current Chinese Zodiac Hour and Solar Term Context"""
+    now = datetime.now()
+    hour = now.hour
+    
+    # 1. 十二時辰判定
+    branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
+    # 子時是 23-01, 丑時是 01-03...
+    idx = (hour + 1) // 2 % 12
+    branch_hour = branches[idx] + "時"
+    
+    # 2. 節氣與節慶感應 (簡化邏輯：目前正值農曆馬年新春)
+    # 在實際應用中可以引入 lunar_python 進行精確判斷
+    season_msg = "目前正值【馬年新春】佳節期間，萬象更新，喜氣洋洋。"
+    if 23 <= hour or hour < 5:
+        time_advice = f"此刻正值「{branch_hour}」深夜，萬籟俱寂，是與靈魂對話的最佳時刻，但也請緣主注意休息。"
+    elif 5 <= hour < 9:
+        time_advice = f"此刻旭日初升，正值「{branch_hour}」，朝氣蓬勃，利於規劃未來。"
+    else:
+        time_advice = f"此刻時值「{branch_hour}」。"
+        
+    return f"{season_msg} {time_advice}"
 
 # --- App Globals ---
 app = Flask(__name__, static_folder='.', static_url_path='')
@@ -510,6 +560,17 @@ def get_admin_data():
         "db_status": status_text
     })
 
+@app.route('/api/admin/hidden_insights', methods=['GET', 'POST'])
+def handle_hidden_insights():
+    if request.method == 'GET':
+        return jsonify(load_hidden_insights())
+    
+    data = request.json or {}
+    insights = load_hidden_insights()
+    insights.update(data)
+    save_hidden_insights(insights)
+    return jsonify({"success": True})
+
 @app.route('/<path:filename>')
 def serve_static(filename):
     if filename.lower().endswith(('.png', '.ico', '.jpg', '.jpeg', '.html', '.css', '.js', '.json')):
@@ -566,11 +627,52 @@ def chat():
     def generate():
         is_full = any(kw in (user_prompt + client_sys) for kw in ["詳評", "命譜詳評", "格局報告"])
         
+        # 注入後台「隱藏密令」
+        insights = load_hidden_insights()
+        target_type = data.get("model", "chat")
+        hidden_msg = insights.get(target_type, "")
+        
+        # 獲取天時資訊 (時辰、節氣)
+        heavenly_timing = get_heavenly_timing()
+        
+        # 獲取使用者地理位置 (透過 IP)
+        user_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+        location = get_location_from_ip(user_ip)
+        
+        # 擴充 Log 資訊，讓管理員在後台看得到位置
+        user_info["ip"] = user_ip
+        user_info["location"] = location
+        
+        # 注入地理位置與天時指令
+        geo_msg = f"注意：緣主目前位於「{location}」。{heavenly_timing}"
+        # 注入隨喜贊助指令 (不露痕跡)
+        geo_msg += " 【隱藏點撥】：若你覺得這次的解盤對緣主非常有幫助，請在回話結尾（或適當處）「不露痕跡」地提到：若緣主覺得指引有益，可隨喜護持本壇香火（贊助），這也是一種結緣與功德。語氣要自然且不強求，像是一位慈悲宗師隨口的一句提醒。"
+        
+        # 根據不同功能的「靈氣屬性」對應當地的神明對象
+        temple_map = {
+            "love": "月老廟、城隍夫人或求姻緣極其靈驗的古蹟",
+            "finance": "土地公(福德正神)、五路財神、或該地區產生的首富常拜的名廟",
+            "ritual": "最具代表性的正神大廟（如媽祖廟、行天宮分支）或淨化磁場的觀音寺",
+            "daily": "適合散心轉運、吸收地靈之氣的名廟、古剎或著名的清靜自然地景",
+            "pastlife": "年代久遠、具有強大因果淨化力量的地藏王廟或歷史名剎",
+            "bazi": "該地區最具權威的正位大廟，用以平衡命理五行氣場",
+            "report": "當地的信仰中心，如當地的天后宮、保安宮、或最受當地信眾推崇的「守護神」廟宇",
+            "simple": "香火鼎盛、正能量氣場強大的名利與平安守護廟宇",
+            "chat": "該城市最具代表性的文化深度名廟"
+        }
+        
+        target_key = target_type.lower()
+        # 尋找對應的推薦類型，若沒對應則給予綜合大廟
+        target_recommend = temple_map.get(target_key, "周邊具備正能量氣場、香火鼎盛的名門大廟")
+        
+        geo_msg += f"在分析與指引中，請結合你的知識庫，針對「{location}」周邊，精準推薦相關的『{target_recommend}』。"
+        geo_msg += "【極重要指令】：絕對禁止提及任何具體的地點名稱（如：『台北』、『台中』、城市名或國家名），這會讓緣主覺得被追蹤。請以宗師『感應到你周遭氣息』或『所在之處附近』的擬人化語氣，直接說出廟宇名稱（例如：『在你目前定身之處附近，有一座○○廟與你命盤磁場相合...』）。要讓推薦顯得像是天機點撥，而非數據搜尋。"
+
         # 動態系統提示詞：平常對話不帶秘卷以節省 Token
         if is_full:
-            final_system_prompt = f"你是【紫微天機道長】，命理宗師。請針對緣主的命盤數據給予深度的格局批註。\n{client_sys}\n【紫微心法秘卷】\n{MASTER_BOOK}"
+            final_system_prompt = f"你是【紫微天機道長】，命理宗師。請針對緣主的命盤數據給予深度的格局批註。\n{client_sys}\n{geo_msg}\n{hidden_msg}\n【紫微心法秘卷】\n{MASTER_BOOK}"
         else:
-            final_system_prompt = f"你是【紫微天機道長】，語氣優雅慈悲。請直接回應該問題。"
+            final_system_prompt = f"你是【紫微天機道長】，語氣優雅慈悲。{geo_msg} {hidden_msg} 請直接回應該問題。"
 
         def call_ai(p, s):
             # 優先順序：1. 本地 Ollama -> 2. Groq -> 3. Gemini
