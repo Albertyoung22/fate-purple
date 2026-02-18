@@ -1674,8 +1674,9 @@
 
                 const FLYING_STAR_DATA = getFlyingStars() + "\n\n" + analyzeHeartMethod();
 
-                // 強制追加繁體中文指令到用戶 Prompt，以提高成功率
-                const promptWithLang = prompt + " (請強制使用繁體中文 Traditional Chinese 回答)";
+                // 強制追加繁體中文指令到用戶 Prompt，以提高成功率。針對「緣主」做特別處理
+                const promptWithLang = prompt + ` (請強制使用繁體中文 Traditional Chinese 回答。` +
+                    (userName === "緣主" ? `對方未提供真實姓名，請稱呼為「有緣人」或「您」，語氣需如得道高僧般慈悲溫暖)` : `請尊稱對方為「${userName}」居士/信士，語氣需如得道高僧般慈悲溫暖)`);
 
                 const BAZI_KNOWLEDGE = `
 【子平八字斷命精要】
@@ -1821,6 +1822,7 @@ ${chartContext}
 
             const fetchAiReport = async () => {
                 if (!destiny) return;
+                if (!checkName()) return;
                 setIsLoading(true);
                 setAiReport(""); // Clear previous
                 try {
@@ -1867,7 +1869,34 @@ ${chartContext}
                 }
             };
 
+            const checkName = () => {
+                if (userName === "緣主" || !userName.trim()) {
+                    const wantToEnter = confirm("【大師提示】：您尚未輸入姓名。\n這是天機，雖不強求，但輸入「真實姓名」或「暱稱」能讓大師更準確地連結您的命盤磁場，解盤也會更有專屬感。\n\n是否要現在補上姓名？\n(按「確定」去輸入，按「取消」繼續不具名解盤)");
+                    if (wantToEnter) {
+                        // Focus the name input field (it has the title we set earlier)
+                        const nameInput = document.querySelector('input[title*="準確地為您解惑"]');
+                        if (nameInput) {
+                            nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            setTimeout(() => nameInput.focus(), 500);
+                        } else {
+                            // Fallback search
+                            const inputs = document.getElementsByTagName('input');
+                            for (let i = 0; i < inputs.length; i++) {
+                                if (inputs[i].placeholder && inputs[i].placeholder.includes("姓名")) {
+                                    inputs[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    setTimeout(() => inputs[i].focus(), 500);
+                                    break;
+                                }
+                            }
+                        }
+                        return false; // Stop the current action to let user type
+                    }
+                }
+                return true; // Proceed if user has name or chooses skip
+            };
+
             const handleReport = async () => {
+                if (!checkName()) return;
                 if (!isDateModified) {
                     const confirmDefault = confirm("系統偵測到您尚未修改【生辰日期】。\n目前的排盤是依據今日（或預設）時間產生的。\n\n確定要使用這個日期進行批命嗎？\n(若要輸入正確生日，請按「取消」)");
                     if (!confirmDefault) return;
@@ -2030,8 +2059,17 @@ ${getFullChartContext()}
                             {/* Row 1: Birth Data */}
                             <div className="flex flex-wrap justify-center items-end gap-2 bg-white/60 backdrop-blur-md p-2.5 rounded-2xl border border-white shadow-xl relative w-full lg:w-auto ring-2 ring-indigo-50/50">
                                 <div className="flex flex-col gap-0.5 w-24">
-                                    <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">緣主姓名</span>
-                                    <input type="text" value={userName} onChange={e => setUserName(e.target.value)} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 placeholder-slate-300 transition-all shadow-sm" placeholder="姓名" />
+                                    <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">您的法名/姓名</span>
+                                    <input
+                                        type="text"
+                                        value={userName}
+                                        onChange={e => setUserName(e.target.value)}
+                                        onFocus={(e) => { if (e.target.value === "緣主") setUserName(""); }}
+                                        onBlur={(e) => { if (e.target.value.trim() === "") setUserName("緣主"); }}
+                                        className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 placeholder-slate-300 transition-all shadow-sm"
+                                        placeholder="真實姓名更有感"
+                                        title="輸入真實姓名有助於大師更準確地為您解惑"
+                                    />
                                 </div>
                                 <div className="flex flex-col gap-0.5 w-20">
                                     <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">定性</span>
