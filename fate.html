@@ -1895,13 +1895,16 @@ ${chartContext}
                 return true; // Proceed if user has name or chooses skip
             };
 
-            const handleReport = async () => {
-                if (!checkName()) return;
+            const checkDate = () => {
                 if (!isDateModified) {
-                    const confirmDefault = confirm("系統偵測到您尚未修改【生辰日期】。\n目前的排盤是依據今日（或預設）時間產生的。\n\n確定要使用這個日期進行批命嗎？\n(若要輸入正確生日，請按「取消」)");
-                    if (!confirmDefault) return;
+                    const confirmDefault = confirm("【重要提醒】：系統偵測到您尚未修改【生辰日期】。\n目前的排盤是依據「今日時間」產生的，這將導致算命結果與您本人不符。\n\n確定要用今天的日期繼續嗎？\n(按「取消」去修改正確生日，按「確定」繼續隨機解盤)");
+                    return confirmDefault; // true if proceed, false if cancel
                 }
+                return true;
+            };
 
+            const handleReport = async () => {
+                if (!checkName() || !checkDate()) return;
                 await saveUserProfile(true); // Auto-save silently
                 setIsLoading(true);
                 setAiReport(""); // 重要：每次開始前清空舊的報表，避免重複顯示
@@ -1941,16 +1944,17 @@ ${getFullChartContext()}
                 setIsLoading(false);
                 setIsLoading(false);
             };
-            const handleDailyTip = async () => { await saveUserProfile(true); setActionLoading('daily'); setDailyTip(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n查詢日期：${targetYear}年${targetMonth}月${targetDay}日。\n請務必依據上述命盤的【流日】與【本命】星曜互動，給予緣主一條該日錦囊妙計。\n\n【特別要求】：請使用「繁體中文」。`, 'daily', (c) => setDailyTip(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
-            const handlePastLife = async () => { await saveUserProfile(true); setActionLoading('pastLife'); setPastLife(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請專注分析上述命盤中的【福德宮】（精神位）與【命宮】星曜，發揮想像力，講述一段關於緣主的前世因果故事。\n\n【特別要求】：故事請用「繁體中文」撰寫。`, 'pastLife', (c) => setPastLife(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
-            const handleRitual = async () => { await saveUserProfile(true); setActionLoading('ritual'); setRitual(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請檢視上述命盤中目前的【化忌】與【煞星】位置，提供一套具體可行的現代轉運儀式。\n\n【特別要求】：請使用「繁體中文」。`, 'ritual', (c) => setRitual(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
-            const handleGlyph = async () => { if (!input.trim()) { alert("請先輸入一個字！"); return; } await saveUserProfile(true); const char = input.trim().charAt(0); const q = input.trim(); setInput(""); setChat(prev => [...prev, { role: 'user', text: `測字：「${char}」 - ${q}` }, { role: 'assistant', text: "" }]); setIsChatLoading(true); setActionLoading('glyph'); await callAiApi(`${getFullChartContext()}\n\n用戶測字：「${char}」。\n用戶提問：「${q}」。\n\n請務必結合上述【緣主目前命盤資訊】（特別是命宮、福德宮氣場）與這個漢字，進行綜合測字占卜。\n\n【特別要求】：請使用「繁體中文」。`, 'glyph', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); setIsChatLoading(false); setActionLoading(null); };
+            const handleDailyTip = async () => { if (!checkName() || !checkDate()) return; await saveUserProfile(true); setActionLoading('daily'); setDailyTip(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n查詢日期：${targetYear}年${targetMonth}月${targetDay}日。\n請務必依據上述命盤的【流日】與【本命】星曜互動，給予緣主一條該日錦囊妙計。\n\n【特別要求】：請使用「繁體中文」。`, 'daily', (c) => setDailyTip(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
+            const handlePastLife = async () => { if (!checkName() || !checkDate()) return; await saveUserProfile(true); setActionLoading('pastLife'); setPastLife(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請專注分析上述命盤中的【福德宮】（精神位）與【命宮】星曜，發揮想像力，講述一段關於緣主的前世因果故事。\n\n【特別要求】：故事請用「繁體中文」撰寫。`, 'pastLife', (c) => setPastLife(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
+            const handleRitual = async () => { if (!checkName() || !checkDate()) return; await saveUserProfile(true); setActionLoading('ritual'); setRitual(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請檢視上述命盤中目前的【化忌】與【煞星】位置，提供一套具體可行的現代轉運儀式。\n\n【特別要求】：請使用「繁體中文」。`, 'ritual', (c) => setRitual(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
+            const handleGlyph = async () => { if (!input.trim()) { alert("請先輸入一個字！"); return; } if (!checkName() || !checkDate()) return; await saveUserProfile(true); const char = input.trim().charAt(0); const q = input.trim(); setInput(""); setChat(prev => [...prev, { role: 'user', text: `測字：「${char}」 - ${q}` }, { role: 'assistant', text: "" }]); setIsChatLoading(true); setActionLoading('glyph'); await callAiApi(`${getFullChartContext()}\n\n用戶測字：「${char}」。\n用戶提問：「${q}」。\n\n請務必結合上述【緣主目前命盤資訊】（特別是命宮、福德宮氣場）與這個漢字，進行綜合測字占卜。\n\n【特別要求】：請使用「繁體中文」。`, 'glyph', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); setIsChatLoading(false); setActionLoading(null); };
             const handleDream = async () => {
                 chatCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
                 if (!input.trim()) {
                     chatInputRef.current?.focus();
                     return;
                 }
+                if (!checkName() || !checkDate()) return;
                 await saveUserProfile(true);
                 const q = input.trim();
                 setInput("");
@@ -1961,9 +1965,10 @@ ${getFullChartContext()}
                 setIsChatLoading(false);
                 setActionLoading(null);
             };
-            const handleLove = async () => { await saveUserProfile(true); setActionLoading('love'); setChat(prev => [...prev, { role: 'user', text: "請大師指點迷津，賜予我桃花攻略！" }, { role: 'assistant', text: "" }]); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【夫妻宮】與【命宮】星曜，提供緣主一條具體的桃花攻略或相處之道。\n\n【特別要求】：請使用「繁體中文」。`, 'love', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); setIsChatLoading(false); setActionLoading(null); };
-            const handleFinance = async () => { await saveUserProfile(true); setActionLoading('finance'); setFinance(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【財帛宮】、【官祿宮】與【田宅宮】，提供緣主關於【投資理財】與【流年財運】的專業建議。\n\n【特別要求】：請使用「繁體中文」。`, 'finance', (c) => setFinance(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
+            const handleLove = async () => { if (!checkName() || !checkDate()) return; await saveUserProfile(true); setActionLoading('love'); setChat(prev => [...prev, { role: 'user', text: "請大師指點迷津，賜予我桃花攻略！" }, { role: 'assistant', text: "" }]); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【夫妻宮】與【命宮】星曜，提供緣主一條具體的桃花攻略或相處之道。\n\n【特別要求】：請使用「繁體中文」。`, 'love', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); setIsChatLoading(false); setActionLoading(null); };
+            const handleFinance = async () => { if (!checkName() || !checkDate()) return; await saveUserProfile(true); setActionLoading('finance'); setFinance(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【財帛宮】、【官祿宮】與【田宅宮】，提供緣主關於【投資理財】與【流年財運】的專業建議。\n\n【特別要求】：請使用「繁體中文」。`, 'finance', (c) => setFinance(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
             const handleBazi = async () => {
+                if (!checkName() || !checkDate()) return;
                 await saveUserProfile(true);
                 setActionLoading('bazi');
                 setBazi("");
@@ -1988,6 +1993,7 @@ ${getFullChartContext()}
             };
 
             const handleSimpleExec = async () => {
+                if (!checkName() || !checkDate()) return;
                 await saveUserProfile(true);
                 setActionLoading('simple');
                 setSimpleResult("");
