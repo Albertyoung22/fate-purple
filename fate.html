@@ -1194,24 +1194,33 @@
             const [targetDay, setTargetDay] = useState(today.getDate());
             const [aiReport, setAiReport] = useState("");
             const [simpleResult, setSimpleResult] = useState("");
-            const [dailyTip, setDailyTip] = useState("");
+            const [userApiKey, setUserApiKey] = useState(() => (typeof localStorage !== 'undefined' ? localStorage.getItem('ziwei_api_key') || "" : ""));
+            const [showKeyInput, setShowKeyInput] = useState(false);
+            const [dailyTip, setDailyTip] = useState(null); // Changed initial value
             const [showSanFang, setShowSanFang] = useState(true);
             const [showFlying, setShowFlying] = useState(true);
             const [showDonate, setShowDonate] = useState(false);
-            const [pastLife, setPastLife] = useState("");
+            const [pastLife, setPastLife] = useState(null); // Changed initial value
             const [ritual, setRitual] = useState("");
             const [finance, setFinance] = useState("");
             const [bazi, setBazi] = useState("");
             const [isLoading, setIsLoading] = useState(false);
-            const [chat, setChat] = useState([{ role: 'assistant', text: '緣主好，大師已完整融入《紫微心法》與《子平八字》雙盤絕學。請輸入生辰，我將依據「天機命譜」為您進行精準批命。' }]);
+            const [chat, setChat] = useState([]); // Changed initial value
             const [input, setInput] = useState("");
-            const [userApiKey, setUserApiKey] = useState(() => (typeof localStorage !== 'undefined' ? localStorage.getItem('ziwei_api_key') || "" : ""));
-            const [showKeyInput, setShowKeyInput] = useState(false);
+            const [reportOpen, setReportOpen] = useState(false); // NEW
             const [focusedPalace, setFocusedPalace] = useState(null);
+            const [isChatLoading, setIsChatLoading] = useState(false); // Moved from below
+
+            // TTS State: { id: string | null, status: 'idle' | 'loading' | 'playing' }
+            const [ttsState, setTtsState] = useState({ id: null, status: 'idle' });
+
+            // Helper to check if a specific ID is active (loading or playing)
+            const isTTSActive = (id) => ttsState.id === id && (ttsState.status === 'loading' || ttsState.status === 'playing');
+            const isTTSLoading = (id) => ttsState.id === id && ttsState.status === 'loading';
+            const isTTSPlaying = (id) => ttsState.id === id && ttsState.status === 'playing';
 
             // 監控使用者是否修改過生日
             const [isDateModified, setIsDateModified] = useState(false);
-            const [isChatLoading, setIsChatLoading] = useState(false);
             const [actionLoading, setActionLoading] = useState(null);
 
             const chatEndRef = useRef(null);
@@ -1219,6 +1228,7 @@
             const reportRef = useRef(null);
             const chatCardRef = useRef(null);
             const chatInputRef = useRef(null);
+            const currentTtsIdRef = useRef(null); // Ref to track active TTS request
 
             useEffect(() => { if (typeof localStorage !== 'undefined') localStorage.setItem('ziwei_api_key', userApiKey); }, [userApiKey]);
             // useEffect(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }); // Removed to fix React conflict
@@ -1484,6 +1494,89 @@
                 if (!text) return "";
                 return text.replace(/\*\*/g, "").replace(/#/g, "").replace(/`/g, "").replace(/- /g, "• ");
             };
+            // Global Audio Registry to track ALL instances to prevent zombie audio
+            if (!window._audioRegistry) window._audioRegistry = [];
+
+            const stopGlobalAudio = () => {
+                currentTtsIdRef.current = null; // Cancel any pending requests
+
+                // Force stop ALL known audio instances
+                if (window._audioRegistry && window._audioRegistry.length > 0) {
+                    window._audioRegistry.forEach(audio => {
+                        try {
+                            audio.pause();
+                            audio.currentTime = 0;
+                            audio.src = ""; // Cut off stream
+                            audio.load();
+                        } catch (e) { console.warn("Stop error", e); }
+                    });
+                }
+                window._audioRegistry = []; // Clear registry
+                window.globalAudio = null;
+                setTtsState({ id: null, status: 'idle' });
+            };
+
+            const playTTS = async (text, id) => {
+                try {
+                    // Toggle behavior: If the same ID is clicked, stop it
+                    if (ttsState.id === id && (ttsState.status === 'loading' || ttsState.status === 'playing')) {
+                        stopGlobalAudio();
+                        return;
+                    }
+
+                    stopGlobalAudio(); // Stop any existing audio first
+
+                    // Set as active request
+                    currentTtsIdRef.current = id;
+                    setTtsState({ id: id, status: 'loading' });
+
+                    const BACKEND_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+                        ? "http://localhost:5000"
+                        : window.location.origin;
+
+                    const res = await fetch(`${BACKEND_URL}/api/tts`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: stripMarkdown(text) })
+                    });
+
+                    // Check if this request was cancelled (e.g. by stop button)
+                    if (currentTtsIdRef.current !== id) return;
+
+                    if (!res.ok) throw new Error("TTS Failed");
+                    const blob = await res.blob();
+
+                    // DOUBLE CHECK: Was it cancelled during blob processing?
+                    if (currentTtsIdRef.current !== id) return;
+
+                    const url = URL.createObjectURL(blob);
+
+                    const audio = new Audio(url);
+                    window._audioRegistry.push(audio); // Register to global list
+                    window.globalAudio = audio;
+
+                    audio.play();
+                    setTtsState({ id: id, status: 'playing' });
+
+                    // Auto-release memory when done
+                    window.globalAudio.onended = () => {
+                        window.globalAudio = null;
+                        URL.revokeObjectURL(url);
+                        setTtsState({ id: null, status: 'idle' });
+                    };
+
+                } catch (e) {
+                    console.error("TTS Error:", e);
+                    alert("語音播放失敗，請檢查後端連線。");
+                    setTtsState({ id: null, status: 'idle' });
+                }
+            };
+
+            // Expose to window for global access if needed
+            window.stopTTS = stopGlobalAudio;
+
+            // Expose to window for global access if needed
+            window.stopTTS = stopGlobalAudio;
 
             const callAiApi = async (prompt, type = 'chat', onStream = null) => {
                 // Determine API endpoint
@@ -1885,7 +1978,7 @@ ${getFullChartContext()}
                 setChat(prev => [...prev, { role: 'user', text: m }, { role: 'assistant', text: "" }]);
                 setIsChatLoading(true);
                 setActionLoading('chat');
-                await callAiApi(`${getFullChartContext()}\n\n【緣主提問】：${m}\n\n【大師指令】：請務必「優先引用」且「深度分析」《紫微心法》中的相關口訣來回答。若心法中有對應的特殊格局（如空劫、羊陀、化忌等組合），請務必點出並詳細解釋，不可僅用通用知識帶過。\n\n【特別要求】：請務必使用「繁體中文」回答，並要在思考過程中嚴謹地運用心法邏輯。`, 'chat', (chunk) => setChat(prev => {
+                await callAiApi(`${getFullChartContext()}\n\n【緣主提問】：${m}\n\n【大師指令】：請務必「優先引用」且「深度分析」《紫微心法》中的相關口訣來回答。若心法中有對應的特殊格局（如空劫、羊陀、化忌等組合），請務必點出並詳細解釋，不可僅用通用知識帶過。\n\n【特別要求】：1. 請務必使用「繁體中文」回答。\n2. 每個回答必須「分段清晰」，不要全部擠在一起，方便閱讀。\n3. 在思考過程中嚴謹地運用心法邏輯。`, 'chat', (chunk) => setChat(prev => {
                     const newChat = [...prev];
                     if (newChat.length > 0) {
                         newChat[newChat.length - 1].text += chunk;
@@ -2156,8 +2249,8 @@ ${getFullChartContext()}
 
                         <div className="xl:col-span-4 space-y-12 print:w-full print:mt-16">
                             <div className="grid grid-cols-3 gap-3">
-                                <button onClick={() => { console.log('Clicked Simple Exec'); handleSimpleExec(); }} disabled={actionLoading === 'simple'} className={`bg-teal-600 text-white p-3 rounded-2xl shadow-lg hover:bg-teal-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-teal-200 ring-offset-2 ${actionLoading === 'simple' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                    {actionLoading === 'simple' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="message-circle" className="w-4 h-4" />} 白話精解 (V2)
+                                <button onClick={() => handleSimpleExec()} disabled={actionLoading === 'simple'} className={`bg-teal-600 text-white p-3 rounded-2xl shadow-lg hover:bg-teal-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-teal-200 ring-offset-2 ${actionLoading === 'simple' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                    {actionLoading === 'simple' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="message-circle" className="w-4 h-4" />} 白話精解
                                 </button>
                                 <button onClick={() => fetchAiReport()} disabled={actionLoading === 'report'} className={`bg-indigo-900 text-white p-3 rounded-2xl shadow-lg hover:bg-indigo-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'report' ? 'opacity-75 cursor-not-allowed' : ''}`}>
                                     {actionLoading === 'report' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="feather" className="w-4 h-4" />} 命譜詳評
@@ -2187,12 +2280,12 @@ ${getFullChartContext()}
                             {(dailyTip || pastLife || ritual || finance || bazi || simpleResult) && (
                                 <Card ref={baziRef} className="animate-in fade-in duration-700">
                                     <CardContent className="p-6 text-[14px] font-bold leading-relaxed text-slate-800 bg-yellow-50/50">
-                                        {dailyTip && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-emerald-700 font-black mb-2 flex items-center gap-2"><Icon name="sun" className="w-4 h-4" /> 大師今日指引</h5>{dailyTip}</div>)}
-                                        {ritual && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-orange-600 font-black mb-2 flex items-center gap-2"><Icon name="sparkle" className="w-4 h-4" /> 專屬轉運儀式</h5>{ritual}</div>)}
-                                        {pastLife && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-purple-700 font-black mb-2 flex items-center gap-2"><Icon name="infinity" className="w-4 h-4" /> 前世因果故事</h5><div className="whitespace-pre-wrap">{pastLife}</div></div>)}
-                                        {finance && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-amber-700 font-black mb-2 flex items-center gap-2"><Icon name="trending-up" className="w-4 h-4" /> 紫微財運佈局</h5><div className="whitespace-pre-wrap">{finance}</div></div>)}
-                                        {bazi && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-slate-700 font-black mb-2 flex items-center gap-2"><Icon name="compass" className="w-4 h-4" /> 子平八字精批</h5><div className="whitespace-pre-wrap">{bazi}</div></div>)}
-                                        {simpleResult && (<div><h5 className="text-teal-700 font-black mb-2 flex items-center gap-2"><Icon name="message-circle" className="w-4 h-4" /> 白話精選命理</h5><div className="whitespace-pre-wrap">{simpleResult}</div></div>)}
+                                        {dailyTip && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-emerald-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="sun" className="w-4 h-4" /> 大師今日指引</span><button onClick={() => playTTS(dailyTip, 'daily')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('daily') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}>{isTTSLoading('daily') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('daily') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('daily') ? 'animate-pulse' : ''}`} />} {isTTSActive('daily') ? '停止' : '朗讀'}</button></h5>{dailyTip}</div>)}
+                                        {ritual && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-orange-600 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="sparkle" className="w-4 h-4" /> 專屬轉運儀式</span><button onClick={() => playTTS(ritual, 'ritual')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('ritual') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`}>{isTTSLoading('ritual') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('ritual') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('ritual') ? 'animate-pulse' : ''}`} />} {isTTSActive('ritual') ? '停止' : '朗讀'}</button></h5>{ritual}</div>)}
+                                        {pastLife && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-purple-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="infinity" className="w-4 h-4" /> 前世因果故事</span><button onClick={() => playTTS(pastLife, 'pastLife')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('pastLife') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}>{isTTSLoading('pastLife') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('pastLife') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('pastLife') ? 'animate-pulse' : ''}`} />} {isTTSActive('pastLife') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{pastLife}</div></div>)}
+                                        {finance && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-amber-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="trending-up" className="w-4 h-4" /> 紫微財運佈局</span><button onClick={() => playTTS(finance, 'finance')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('finance') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>{isTTSLoading('finance') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('finance') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('finance') ? 'animate-pulse' : ''}`} />} {isTTSActive('finance') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{finance}</div></div>)}
+                                        {bazi && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-slate-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="compass" className="w-4 h-4" /> 子平八字精批</span><button onClick={() => playTTS(bazi, 'bazi')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('bazi') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}>{isTTSLoading('bazi') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('bazi') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('bazi') ? 'animate-pulse' : ''}`} />} {isTTSActive('bazi') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{bazi}</div></div>)}
+                                        {simpleResult && (<div><h5 className="text-teal-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="message-circle" className="w-4 h-4" /> 白話精選命理</span><button onClick={() => playTTS(simpleResult, 'simple')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('simple') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-teal-100 text-teal-700 hover:bg-teal-200'}`}>{isTTSLoading('simple') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('simple') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('simple') ? 'animate-pulse' : ''}`} />} {isTTSActive('simple') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{simpleResult}</div></div>)}
                                     </CardContent>
                                 </Card>
                             )}
@@ -2204,9 +2297,16 @@ ${getFullChartContext()}
                                         <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md shadow-inner ring-1 ring-white/10">
                                             <i data-lucide="feather" className="w-8 h-8 text-indigo-100 print:hidden"></i>
                                         </div>
-                                        <div>
-                                            <h3 className="text-xl font-black tracking-[0.3em] uppercase text-white drop-shadow-md print:text-black">命譜詳評</h3>
-                                            <p className="text-[10px] text-indigo-200 font-bold tracking-widest mt-1 opacity-80 print:hidden">詳盡命盤解析</p>
+                                        <div className="flex-1 flex justify-between items-center">
+                                            <div>
+                                                <h3 className="text-xl font-black tracking-[0.3em] uppercase text-white drop-shadow-md print:text-black">命譜詳評</h3>
+                                                <p className="text-[10px] text-indigo-200 font-bold tracking-widest mt-1 opacity-80 print:hidden">詳盡命盤解析</p>
+                                            </div>
+                                            {aiReport && (
+                                                <button onClick={() => isTTSActive('report') ? stopGlobalAudio() : playTTS(aiReport, 'report')} className={`bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md transition-all flex items-center gap-1 border border-white/20 ${isTTSActive('report') ? 'bg-red-500/80 hover:bg-red-500' : ''}`}>
+                                                    {isTTSLoading('report') ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name={isTTSActive('report') ? "square" : "volume-2"} className={`w-4 h-4 ${isTTSPlaying('report') ? 'animate-pulse' : ''}`} />} {isTTSActive('report') ? '停止播放' : '朗讀全文'}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -2241,6 +2341,9 @@ ${getFullChartContext()}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 absolute top-5 right-5">
+                                        <button onClick={stopGlobalAudio} className="w-6 h-6 rounded-full bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all" title="停止語音">
+                                            <Icon name="square" className="w-3 h-3 fill-current" />
+                                        </button>
                                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
                                         <span className="text-[9px] font-bold text-emerald-400">連線中</span>
                                     </div>
@@ -2249,11 +2352,18 @@ ${getFullChartContext()}
                                 <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#f8fafc] custom-scrollbar">
                                     {chat.map((m, i) => (
                                         <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                            <div className={`max-w-[85%] p-5 text-[14px] font-bold leading-relaxed shadow-sm ${m.role === 'user'
+                                            <div className={`max-w-[85%] p-5 text-[14px] font-bold leading-relaxed shadow-sm whitespace-pre-wrap ${m.role === 'user'
                                                 ? 'bg-indigo-600 text-white rounded-[2rem] rounded-br-[4px]'
                                                 : 'bg-white border border-slate-100 text-slate-700 rounded-[2rem] rounded-bl-[4px]'
                                                 }`}>
                                                 {m.text}
+                                                {m.role === 'assistant' && (
+                                                    <div className="mt-3 pt-2 border-t border-slate-100/50 flex justify-end">
+                                                        <button onClick={() => isTTSActive(`chat-${i}`) ? stopGlobalAudio() : playTTS(m.text, `chat-${i}`)} className={`flex items-center gap-1 text-[10px] transition-colors bg-indigo-50 px-2 py-1 rounded-full hover:bg-indigo-100 ${isTTSActive(`chat-${i}`) ? 'bg-red-500 text-white hover:bg-red-600' : 'text-indigo-400 hover:text-indigo-600'}`} title="朗讀">
+                                                            {isTTSLoading(`chat-${i}`) ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive(`chat-${i}`) ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying(`chat-${i}`) ? 'animate-pulse' : ''}`} />} <span>{isTTSActive(`chat-${i}`) ? '停止' : '朗讀'}</span>
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
@@ -2322,6 +2432,14 @@ ${getFullChartContext()}
                         </div>
                     </div>
                     <footer className="text-center py-24 text-slate-400 font-black text-[11px] uppercase tracking-[1em] no-print">專業紫微斗數 · 天機命譜正宗</footer>
+
+                    {/* Global Floating Stop Button */}
+                    <div className="fixed bottom-6 right-6 z-50 print:hidden">
+                        <button onClick={stopGlobalAudio} className="w-12 h-12 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 hover:scale-110 transition-all flex items-center justify-center ring-4 ring-white/50" title="強制停止所有語音">
+                            <Icon name="square" className="w-5 h-5 fill-current" />
+                        </button>
+                    </div>
+
                     {showDonate && <DonateModal onClose={() => setShowDonate(false)} />}
                 </div >
             );
