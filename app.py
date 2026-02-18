@@ -8,6 +8,10 @@ import webbrowser
 import logging
 import subprocess
 import time
+import asyncio
+import edge_tts
+if os.name == 'nt':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # --- GUI Support Check ---
 try:
@@ -657,6 +661,39 @@ def chat():
             log_chat(data.get("model", "Hybrid-Fallback"), user_prompt, final or "ERR", user_info)
 
     return Response(stream_with_context(generate()), content_type='text/plain; charset=utf-8', headers={"Access-Control-Allow-Origin": "*"})
+
+@app.route('/api/tts', methods=['POST', 'OPTIONS'])
+def tts_handler():
+    if request.method == 'OPTIONS':
+        resp = make_response()
+        resp.headers.add("Access-Control-Allow-Origin", "*")
+        resp.headers.add("Access-Control-Allow-Headers", "*")
+        return resp
+    
+    data = request.json or {}
+    text = data.get('text', '')
+    if not text: return jsonify({"error": "No text"}), 400
+    
+    # Simple cleanup
+    clean_text = text.replace("*", "").replace("#", "").strip()[:4000]
+
+    async def get_audio():
+        # Using zh-CN-YunyangNeural for a more professional/master-like male voice
+        communicate = edge_tts.Communicate(clean_text, "zh-CN-YunyangNeural")
+        audio = b""
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio += chunk["data"]
+        return audio
+
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        audio_data = loop.run_until_complete(get_audio())
+        loop.close()
+        return Response(audio_data, mimetype="audio/mpeg")
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     # Check for Headless mode (e.g. Render, Docker, or GitHub Codespaces)
