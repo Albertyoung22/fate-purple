@@ -20,6 +20,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
     <script src="https://unpkg.com/lucide@latest" crossorigin></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lunar-javascript/1.6.12/lunar.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap');
 
@@ -188,6 +189,120 @@
 
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background-color: rgba(99, 102, 241, 0.4);
+        }
+
+        /* 萬德開運卡特定樣式 */
+        .wisdom-card-vertical {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+
+        .ink-bg {
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(0, 0, 0, 0.02) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 0, 0, 0.02) 0%, transparent 20%);
+            background-color: #fcfaf2;
+        }
+
+        .seal-red {
+            color: #b91c1c;
+            border: 2px solid #b91c1c;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 900;
+        }
+
+        /* 即時天時掛軸 - 卷軸風格 */
+        .heavenly-widget {
+            background: linear-gradient(to right, #0f172a, #1e1b4b, #0f172a);
+            color: #f8fafc;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.5em;
+            padding: 14px 0;
+            text-align: center;
+            border-bottom: 2px solid #fbbf24;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 52px;
+            text-shadow: 0 0 15px rgba(165, 180, 252, 0.8);
+        }
+
+        .heavenly-widget::before,
+        .heavenly-widget::after {
+            content: "✦";
+            margin: 0 25px;
+            color: #fbbf24;
+            animation: pulse 2.5s infinite;
+            font-size: 1.2rem;
+        }
+
+        /* 大師法像互動 */
+        .master-avatar-ring {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            padding: 5px;
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 20;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .master-avatar-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #1e1b4b;
+            overflow: hidden;
+            border: 4px solid #fff;
+            position: relative;
+        }
+
+        .breathing-avatar {
+            animation: breathe 4s ease-in-out infinite;
+            background: linear-gradient(45deg, #fbbf24, #f59e0b, #fbbf24);
+            background-size: 200% 200%;
+            animation: breathe 4s ease-in-out infinite, gradient-spin 3s linear infinite;
+        }
+
+        @keyframes gradient-spin {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(1) translateY(0);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 20px rgba(251, 191, 36, 0.1);
+            }
+
+            50% {
+                transform: scale(1.08) translateY(-5px);
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), 0 0 40px rgba(251, 191, 36, 0.5);
+            }
         }
     </style>
 </head>
@@ -1177,6 +1292,89 @@
             </div>
         );
 
+        const WisdomCardModal = ({ text, onClose }) => {
+            const cardRef = useRef(null);
+            const [isGenerating, setIsGenerating] = useState(false);
+
+            const downloadCard = async () => {
+                if (!cardRef.current) return;
+                setIsGenerating(true);
+                try {
+                    const canvas = await html2canvas(cardRef.current, {
+                        scale: 3,
+                        backgroundColor: '#fcfaf2',
+                        useCORS: true
+                    });
+                    const link = document.createElement('a');
+                    link.download = `天機錦囊-${new Date().getTime()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } catch (e) {
+                    console.error("Card Gen Error:", e);
+                    alert("卡片生成失敗，請手動截圖分享。");
+                }
+                setIsGenerating(false);
+            };
+
+            return (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in" onClick={onClose}>
+                    <div className="fixed top-6 right-6 flex gap-4">
+                        <button onClick={downloadCard} disabled={isGenerating} className="px-6 py-3 bg-indigo-600 text-white rounded-full font-black shadow-xl hover:bg-indigo-700 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50">
+                            {isGenerating ? <Icon name="loader" className="w-5 h-5 animate-spin" /> : <Icon name="download" className="w-5 h-5" />}
+                            {isGenerating ? "正在煉製..." : "下載開運卡"}
+                        </button>
+                        <button onClick={onClose} className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all">
+                            <Icon name="x" className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    <div className="relative animate-in zoom-in duration-300 max-w-full max-h-[85vh] overflow-auto no-scrollbar">
+                        {/* The Actual Card to Render */}
+                        <div
+                            ref={cardRef}
+                            className="w-[450px] min-h-[600px] ink-bg p-12 relative flex flex-col items-center justify-between border-[12px] border-double border-amber-900/20 shadow-2xl print-font"
+                            style={{ backgroundColor: '#fcfaf2' }}
+                        >
+                            {/* Decorative Corners */}
+                            <div className="absolute top-4 left-4 border-t-4 border-l-4 border-amber-900/30 w-8 h-8"></div>
+                            <div className="absolute top-4 right-4 border-t-4 border-r-4 border-amber-900/30 w-8 h-8"></div>
+                            <div className="absolute bottom-4 left-4 border-b-4 border-l-4 border-amber-900/30 w-8 h-8"></div>
+                            <div className="absolute bottom-4 right-4 border-b-4 border-r-4 border-amber-900/30 w-8 h-8"></div>
+
+                            {/* Header */}
+                            <div className="w-full text-center border-b border-amber-900/10 pb-6 mb-8">
+                                <h4 className="text-amber-900/40 text-xs font-black tracking-[0.5em] uppercase mb-2">Destiny Secrets</h4>
+                                <h1 className="text-3xl font-black text-amber-950 tracking-[0.2em]">天機命譜 · 今日錦囊</h1>
+                            </div>
+
+                            {/* Content Middle Section */}
+                            <div className="flex-1 flex items-center justify-center w-full py-8">
+                                <div className="wisdom-card-vertical max-h-[400px] text-2xl font-bold text-amber-950 leading-[2] tracking-[0.1em] text-justify opacity-90 mx-auto px-4">
+                                    {text}
+                                </div>
+                            </div>
+
+                            {/* Footer & Seal */}
+                            <div className="w-full flex justify-between items-end mt-12 pt-6 border-t border-amber-900/10">
+                                <div className="text-left">
+                                    <p className="text-[10px] text-amber-900/40 font-black uppercase tracking-widest">{new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                    <p className="text-xs text-amber-900/60 font-bold mt-1">紫微天機道長 · 手筆</p>
+                                </div>
+                                <div className="seal-red w-12 h-12 text-sm leading-tight p-1 rotate-[-12deg] shadow-sm">
+                                    天機<br />道長
+                                </div>
+                            </div>
+
+                            {/* Watermark */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[80px] text-amber-900/[0.03] font-black pointer-events-none select-none z-0 rotate-[-45deg]">
+                                PURPLE FATE
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const App = () => {
             const [inputType, setInputType] = useState(() => localStorage.getItem('ziwei_input_type') || 'solar');
 
@@ -1204,6 +1402,7 @@
             const [showSanFang, setShowSanFang] = useState(true);
             const [showFlying, setShowFlying] = useState(true);
             const [showDonate, setShowDonate] = useState(false);
+            const [wisdomText, setWisdomText] = useState(""); // NEW for Card
             const [pastLife, setPastLife] = useState(null); // Changed initial value
             const [ritual, setRitual] = useState("");
             const [finance, setFinance] = useState("");
@@ -1214,6 +1413,7 @@
             const [reportOpen, setReportOpen] = useState(false); // NEW
             const [focusedPalace, setFocusedPalace] = useState(null);
             const [isChatLoading, setIsChatLoading] = useState(false); // Moved from below
+            const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('ziwei_sound_enabled') !== 'false'); // Default to true
 
             // TTS State: { id: string | null, status: 'idle' | 'loading' | 'playing' }
             const [ttsState, setTtsState] = useState({ id: null, status: 'idle' });
@@ -1245,7 +1445,42 @@
             }, [userName, gender, birthDate, lunarDate, birthHour, inputType]);
 
             useEffect(() => { if (typeof localStorage !== 'undefined') localStorage.setItem('ziwei_api_key', userApiKey); }, [userApiKey]);
-            // useEffect(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }); // Removed to fix React conflict
+            useEffect(() => { localStorage.setItem('ziwei_sound_enabled', soundEnabled); }, [soundEnabled]);
+
+            // Ritual Sound Refs
+            const ritualStartAudio = useRef(new Audio("https://assets.mixkit.co/sfx/preview/mixkit-meditation-bowl-single-hit-2097.mp3"));
+            const ritualEndAudio = useRef(new Audio("https://assets.mixkit.co/sfx/preview/mixkit-bell-meditation-2101.mp3"));
+
+            const playRitualSound = (type) => {
+                if (!soundEnabled) return;
+                try {
+                    // "Warm up" logic: browsers allow playing audio that was started during a user event.
+                    // We play both sounds on 'start' (one silent) to unlock them for the 'end' trigger later.
+                    if (type === 'start') {
+                        // Play start sound normally
+                        const start = ritualStartAudio.current;
+                        start.pause();
+                        start.currentTime = 0;
+                        start.volume = 0.4;
+                        start.play().catch(() => { });
+
+                        // Quietly "touch" the end sound to unlock it
+                        const end = ritualEndAudio.current;
+                        end.volume = 0;
+                        end.play().then(() => { end.pause(); end.currentTime = 0; }).catch(() => { });
+                    } else if (type === 'end') {
+                        // Play end sound with volume after a small delay
+                        setTimeout(() => {
+                            const end = ritualEndAudio.current;
+                            if (!end) return;
+                            end.pause();
+                            end.currentTime = 0;
+                            end.volume = 0.8;
+                            end.play().catch(e => console.warn("Ritual end sound failed:", e));
+                        }, 500);
+                    }
+                } catch (e) { console.error("Ritual sound error:", e); }
+            };
 
             const destiny = useMemo(() => {
                 if (inputType === 'solar') {
@@ -1254,6 +1489,75 @@
                     return getDestinyData('lunar', lunarDate, birthHour);
                 }
             }, [inputType, birthDate, lunarDate, birthHour]);
+
+            const HeavenlyStatus = () => {
+                const [status, setStatus] = useState("");
+                useEffect(() => {
+                    const update = () => {
+                        try {
+                            const l = Lunar.fromDate(new Date());
+                            const year = l.getYearInGanZhi();
+                            const month = l.getMonth();
+                            let season = "";
+                            if (month >= 1 && month <= 3) season = "春";
+                            else if (month >= 4 && month <= 6) season = "夏";
+                            else if (month >= 7 && month <= 9) season = "秋";
+                            else season = "冬";
+                            const hour = l.getTimeZhi();
+                            setStatus(`此刻天時：${year}年 · ${season}正值 · ${hour}時`);
+                        } catch (e) { console.error("Widget error:", e); }
+                    };
+                    update();
+                    const timer = setInterval(update, 60000);
+                    return () => clearInterval(timer);
+                }, []);
+                return <div className="heavenly-widget no-print">{status}</div>;
+            };
+
+            const MasterPresence = ({ isSpeaking }) => {
+                const [imgSrc, setImgSrc] = useState("master_portrait.png");
+                const [attempt, setAttempt] = useState(0);
+
+                const handleImgError = () => {
+                    if (attempt === 0) {
+                        setImgSrc("master_portrait.jpg");
+                        setAttempt(1);
+                    } else if (attempt === 1) {
+                        setImgSrc("master_avatar.svg");
+                        setAttempt(2);
+                    } else if (attempt === 2) {
+                        setImgSrc("https://api.dicebear.com/7.x/notionists/svg?seed=TianjiMaster");
+                        setAttempt(3);
+                    }
+                };
+
+                return (
+                    <div className="flex flex-col items-center mb-10 no-print animate-in fade-in slide-in-from-top-6 duration-1000 relative">
+                        {isSpeaking && <div className="absolute top-0 w-32 h-32 bg-indigo-500/30 blur-[40px] rounded-full animate-pulse"></div>}
+                        <div className={`master-avatar-ring ${isSpeaking ? 'breathing-avatar' : ''} z-10`}>
+                            <div className="master-avatar-inner border-[6px] border-indigo-900/10 bg-indigo-950 overflow-hidden">
+                                <img
+                                    src={imgSrc}
+                                    className="w-full h-full object-cover transition-all duration-700"
+                                    alt="天機道長"
+                                    onError={handleImgError}
+                                />
+                            </div>
+                            <div className={`absolute bottom-1 right-1 w-5 h-5 rounded-full border-4 border-white ${isSpeaking ? 'bg-amber-400 animate-ping shadow-[0_0_10px_rgba(251,191,36,0.8)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} title={isSpeaking ? "天機推演中" : "入定觀星中"}></div>
+                        </div>
+                        <div className="mt-4 flex flex-col items-center relative">
+                            <h4 className="text-[17px] font-black tracking-[0.5em] text-indigo-950 drop-shadow-sm">紫微天機道長</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="h-px w-6 bg-indigo-200"></span>
+                                <span className="text-[11px] font-black tracking-[0.2em] text-indigo-400 uppercase italic">
+                                    {isSpeaking ? '天機推演中...' : '觀星悟道中'}
+                                </span>
+                                <span className="h-px w-6 bg-indigo-200"></span>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
 
             const bureau = useMemo(() => {
                 if (!destiny) return "金四局";
@@ -1372,20 +1676,16 @@
                 };
 
                 // --- 12 Chang Sheng (Life Stages) Calculation ---
-                // 2. Determine Start Palace for Chang Sheng
                 let csStartIdx;
                 if (bureauNum === 2 || bureauNum === 5) csStartIdx = 8; // Shen
                 else if (bureauNum === 3) csStartIdx = 11; // Hai
                 else if (bureauNum === 6) csStartIdx = 2; // Yin
                 else csStartIdx = 5; // Gold(4) -> Si
 
-                // 3. Determine Direction
                 const isClockwise = (isYangStem && isMale) || (!isYangStem && !isMale);
-
                 const CS_STAGES = ["長生", "沐浴", "冠帶", "臨官", "帝旺", "衰", "病", "死", "墓", "絕", "胎", "養"];
 
                 const getChangshengStage = (palaceIdx) => {
-                    // Logic: Distance from startIdx
                     let steps;
                     if (isClockwise) {
                         steps = (palaceIdx - csStartIdx + 12) % 12;
@@ -1395,32 +1695,25 @@
                     return CS_STAGES[steps];
                 };
 
-                return layout.map(id => {
+                // --- 流日化忌預警邏輯 ---
+                let flowDayJiStar = "";
+                try {
+                    if (window.Solar) {
+                        const sDate = Solar.fromYmd(targetYear, targetMonth, targetDay);
+                        const lDate = sDate.getLunar();
+                        const fStem = lDate.getDayGan();
+                        flowDayJiStar = SI_HUA_TABLE[fStem]?.ji || "";
+                    }
+                } catch (e) { }
+
+                const tempChart = layout.map(id => {
                     if (id === -1) return { id: -1, stars: [] };
                     const pName = PALACES[(lifeIdx - id + 12) % 12];
-
-                    // Yearly Name: Relative to Liu Nian Ming Gong
-                    // Liu Nian Ming is at targetYearBranchIdx
-                    // If id == targetYearBranchIdx -> Liu Nian Ming
-                    // Rel formula: (id - targetYearBranchIdx + 12) % 12 ? No.
-                    // Ming (0) is at tYB.
-                    // Brother (1) is at tYB - 1 ? No, standard sequence is counter-clockwise for Palaces?
-                    // Wait, Palace Layout is fixed: Zi(0), Chou(1)...
-                    // Ming is at LifeIdx.
-                    // Brother is at LifeIdx - 1.
-                    // So: (LifeIdx - id) gives palace index.
-
-                    // For Yearly:
-                    // Yearly Ming is at targetYearBranchIdx.
-                    // So Yearly Palace Index = (targetYearBranchIdx - id + 12) % 12.
                     const yearlyPalaceIdx = (targetYearBranchIdx - id + 12) % 12;
                     const yearlyNameVar = PALACES[yearlyPalaceIdx];
-
-                    // Monthly & Daily Flags
                     const isDouJun = id === douJunPos;
                     const isMonthlyMing = id === currentMonthPalaceIdx;
                     const isDailyMing = id === currentDayPalaceIdx;
-
                     const pStemIdx = getPalaceStem(id);
                     const pStem = STEMS[pStemIdx];
                     const isLaiYin = pStemIdx === destiny.yearStemIdx;
@@ -1437,10 +1730,8 @@
                         });
                     }
 
-                    // Inject Life Stage
                     const lifeStageName = getChangshengStage(id);
                     const lifeStageStar = { name: lifeStageName, type: "life-stage" };
-
                     const finalStars = [...originalStars, ...selfSihua, lifeStageStar];
 
                     return {
@@ -1454,9 +1745,21 @@
                         isDailyMing,
                         bigLimit: getBigLimit(id),
                         isSmallLimit: id === currentSmallLimitIdx,
-                        smallLimitAge: getSmallLimitAgeText(id)
+                        smallLimitAge: getSmallLimitAgeText(id),
+                        hasFlowDayJi: flowDayJiStar && finalStars.some(s => s.name === flowDayJiStar)
                     };
                 });
+
+                // 第二輪標記：標記「被沖」的宮位 (忌的對宮)
+                const jiPalace = tempChart.find(p => p.hasFlowDayJi);
+                if (jiPalace) {
+                    const clashIdx = (jiPalace.id + 6) % 12;
+                    tempChart.forEach(p => {
+                        if (p.id === clashIdx) p.isJiClashed = true;
+                    });
+                }
+
+                return tempChart;
             }, [destiny, stars, targetYear, targetMonth, targetDay, birthHour, bureau, gender]);
 
 
@@ -1504,28 +1807,26 @@
                 return res;
             }, [chartData, destiny, gender]);
 
-            const stripMarkdown = (text) => {
-                if (!text) return "";
-                return text.replace(/\*\*/g, "").replace(/#/g, "").replace(/`/g, "").replace(/- /g, "• ");
-            };
             // Global Audio Registry to track ALL instances to prevent zombie audio
             if (!window._audioRegistry) window._audioRegistry = [];
 
             const stopGlobalAudio = () => {
-                currentTtsIdRef.current = null; // Cancel any pending requests
+                currentTtsIdRef.current = null;
+                // Stop ritual sounds
+                if (ritualStartAudio.current) { ritualStartAudio.current.pause(); ritualStartAudio.current.currentTime = 0; }
+                if (ritualEndAudio.current) { ritualEndAudio.current.pause(); ritualEndAudio.current.currentTime = 0; }
 
-                // Force stop ALL known audio instances
                 if (window._audioRegistry && window._audioRegistry.length > 0) {
                     window._audioRegistry.forEach(audio => {
                         try {
                             audio.pause();
                             audio.currentTime = 0;
-                            audio.src = ""; // Cut off stream
+                            audio.src = "";
                             audio.load();
                         } catch (e) { console.warn("Stop error", e); }
                     });
                 }
-                window._audioRegistry = []; // Clear registry
+                window._audioRegistry = [];
                 window.globalAudio = null;
                 setTtsState({ id: null, status: 'idle' });
             };
@@ -1919,6 +2220,7 @@ ${chartContext}
 
             const handleReport = async () => {
                 if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
                 await saveUserProfile(true); // Auto-save silently
                 setIsLoading(true);
                 setAiReport(""); // 重要：每次開始前清空舊的報表，避免重複顯示
@@ -1955,13 +2257,13 @@ ${getFullChartContext()}
 請依據上述資訊與心法，為緣主進行詳細且專業的命盤批註。
 
 【嚴格要求】：全篇必須使用「繁體中文」。`, 'report', (chunk) => setAiReport(prev => prev + chunk));
-                setIsLoading(false);
+                playRitualSound('end');
                 setIsLoading(false);
             };
-            const handleDailyTip = async () => { if (!checkName() || !checkDate()) return; await saveUserProfile(true); setActionLoading('daily'); setDailyTip(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n查詢日期：${targetYear}年${targetMonth}月${targetDay}日。\n請務必依據上述命盤的【流日】與【本命】星曜互動，給予緣主一條該日錦囊妙計。\n\n【特別要求】：請使用「繁體中文」。`, 'daily', (c) => setDailyTip(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
-            const handlePastLife = async () => { if (!checkName() || !checkDate()) return; await saveUserProfile(true); setActionLoading('pastLife'); setPastLife(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請專注分析上述命盤中的【福德宮】（精神位）與【命宮】星曜，發揮想像力，講述一段關於緣主的前世因果故事。\n\n【特別要求】：故事請用「繁體中文」撰寫。`, 'pastLife', (c) => setPastLife(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
-            const handleRitual = async () => { if (!checkName() || !checkDate()) return; await saveUserProfile(true); setActionLoading('ritual'); setRitual(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請檢視上述命盤中目前的【化忌】與【煞星】位置，提供一套具體可行的現代轉運儀式。\n\n【特別要求】：請使用「繁體中文」。`, 'ritual', (c) => setRitual(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
-            const handleGlyph = async () => { if (!input.trim()) { alert("請先輸入一個字！"); return; } if (!checkName() || !checkDate()) return; await saveUserProfile(true); const char = input.trim().charAt(0); const q = input.trim(); setInput(""); setChat(prev => [...prev, { role: 'user', text: `測字：「${char}」 - ${q}` }, { role: 'assistant', text: "" }]); setIsChatLoading(true); setActionLoading('glyph'); await callAiApi(`${getFullChartContext()}\n\n用戶測字：「${char}」。\n用戶提問：「${q}」。\n\n請務必結合上述【緣主目前命盤資訊】（特別是命宮、福德宮氣場）與這個漢字，進行綜合測字占卜。\n\n【特別要求】：請使用「繁體中文」。`, 'glyph', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); setIsChatLoading(false); setActionLoading(null); };
+            const handleDailyTip = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('daily'); setDailyTip(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n查詢日期：${targetYear}年${targetMonth}月${targetDay}日。\n請務必依據上述命盤的【流日】與【本命】星曜互動，給予緣主一條該日錦囊妙計。\n\n【特別要求】：請使用「繁體中文」。`, 'daily', (c) => setDailyTip(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
+            const handlePastLife = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('pastLife'); setPastLife(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請專注分析上述命盤中的【福德宮】（精神位）與【命宮】星曜，發揮想像力，講述一段關於緣主的前世因果故事。\n\n【特別要求】：故事請用「繁體中文」撰寫。`, 'pastLife', (c) => setPastLife(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
+            const handleRitual = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('ritual'); setRitual(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請檢視上述命盤中目前的【化忌】與【煞星】位置，提供一套具體可行的現代轉運儀式。\n\n【特別要求】：請使用「繁體中文」。`, 'ritual', (c) => setRitual(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
+            const handleGlyph = async () => { if (!input.trim()) { alert("請先輸入一個字！"); return; } if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); const char = input.trim().charAt(0); const q = input.trim(); setInput(""); setChat(prev => [...prev, { role: 'user', text: `測字：「${char}」 - ${q}` }, { role: 'assistant', text: "" }]); setIsChatLoading(true); setActionLoading('glyph'); await callAiApi(`${getFullChartContext()}\n\n用戶測字：「${char}」。\n用戶提問：「${q}」。\n\n請務必結合上述【緣主目前命盤資訊】（特別是命宮、福德宮氣場）與這個漢字，進行綜合測字占卜。\n\n【特別要求】：請使用「繁體中文」。`, 'glyph', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
             const handleDream = async () => {
                 chatCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
                 if (!input.trim()) {
@@ -1969,6 +2271,7 @@ ${getFullChartContext()}
                     return;
                 }
                 if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
                 await saveUserProfile(true);
                 const q = input.trim();
                 setInput("");
@@ -1976,13 +2279,15 @@ ${getFullChartContext()}
                 setIsChatLoading(true);
                 setActionLoading('dream');
                 await callAiApi(`${getFullChartContext()}\n\n用戶夢境內容：「${q}」。\n\n請務必依據上述命盤中的【福德宮】星曜特質，來解析此夢境的深層含義。\n\n【特別要求】：請使用「繁體中文」。`, 'dream', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                playRitualSound('end');
                 setIsChatLoading(false);
                 setActionLoading(null);
             };
-            const handleLove = async () => { if (!checkName() || !checkDate()) return; await saveUserProfile(true); setActionLoading('love'); setChat(prev => [...prev, { role: 'user', text: "請大師指點迷津，賜予我桃花攻略！" }, { role: 'assistant', text: "" }]); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【夫妻宮】與【命宮】星曜，提供緣主一條具體的桃花攻略或相處之道。\n\n【特別要求】：請使用「繁體中文」。`, 'love', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); setIsChatLoading(false); setActionLoading(null); };
-            const handleFinance = async () => { if (!checkName() || !checkDate()) return; await saveUserProfile(true); setActionLoading('finance'); setFinance(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【財帛宮】、【官祿宮】與【田宅宮】，提供緣主關於【投資理財】與【流年財運】的專業建議。\n\n【特別要求】：請使用「繁體中文」。`, 'finance', (c) => setFinance(p => p + c)); setIsChatLoading(false); setActionLoading(null); };
+            const handleLove = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('love'); setChat(prev => [...prev, { role: 'user', text: "請大師指點迷津，賜予我桃花攻略！" }, { role: 'assistant', text: "" }]); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【夫妻宮】與【命宮】星曜，提供緣主一條具體的桃花攻略或相處之道。\n\n【特別要求】：請使用「繁體中文」。`, 'love', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
+            const handleFinance = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('finance'); setFinance(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【財帛宮】、【官祿宮】與【田宅宮】，提供緣主關於【投資理財】與【流年財運】的專業建議。\n\n【特別要求】：請使用「繁體中文」。`, 'finance', (c) => setFinance(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
             const handleBazi = async () => {
                 if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
                 await saveUserProfile(true);
                 setActionLoading('bazi');
                 setBazi("");
@@ -2001,39 +2306,42 @@ ${getFullChartContext()}
 時柱 [${destiny.pillars.hour}]
 `;
 
-                await callAiApi(`${baziContext}\n\n請略過紫微斗數，**專注於分析上述命盤中的【八字四柱】資訊**，進行子平八字論命。\n\n【特別要求】：請使用「繁體中文」並包含喜用神分析。`, 'bazi', (c) => setBazi(p => p + c));
+                await callAiApi(`${baziContext}\n\n請詳細解析上述【八字四柱】資訊（含藏干、十神、大運、納音），並特別關注日主強弱與喜用神。`, 'bazi', (c) => setBazi(p => p + c));
+                playRitualSound('end');
                 setIsChatLoading(false);
                 setActionLoading(null);
             };
 
             const handleSimpleExec = async () => {
                 if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
                 await saveUserProfile(true);
                 setActionLoading('simple');
                 setSimpleResult("");
                 setIsChatLoading(true);
 
                 await callAiApi(`${getFullChartContext()}\n\n請以現代白話文，針對上述命盤進行【性格與人生發展】的精簡分析。\n不需引用古文口訣，直接給予緣主具體建議與人格特質描述。\n\n【特別要求】：請使用「繁體中文」回答。`, 'simple', (c) => setSimpleResult(p => p + c));
-
+                playRitualSound('end');
                 setIsChatLoading(false);
                 setActionLoading(null);
             };
 
             const handleChatSend = async () => {
-                if (!input.trim()) return;
-                await saveUserProfile(true);
-                const m = input;
+                if (!input.trim() || isChatLoading) return;
+                playRitualSound('start');
+                const userMsg = input.trim();
                 setInput("");
-                setChat(prev => [...prev, { role: 'user', text: m }, { role: 'assistant', text: "" }]);
+                setChat(prev => [...prev, { role: 'user', text: userMsg }, { role: 'assistant', text: "" }]);
                 setIsChatLoading(true);
                 setActionLoading('chat');
-                await callAiApi(`${getFullChartContext()}\n\n【緣主提問】：${m}\n\n【大師指令】：請務必「優先引用」且「深度分析」《紫微心法》中的相關口訣來回答。若心法中有對應的特殊格局（如空劫、羊陀、化忌等組合），請務必點出並詳細解釋，不可僅用通用知識帶過。\n\n【特別要求】：1. 請務必使用「繁體中文」回答。\n2. 每個回答必須「分段清晰」，不要全部擠在一起，方便閱讀。\n3. 在思考過程中嚴謹地運用心法邏輯。`, 'chat', (chunk) => setChat(prev => {
+                await callAiApi(`${getFullChartContext()}\n\n【緣主提問】：${userMsg}\n\n【大師指令】：請務必「優先引用」且「深度分析」《紫微心法》中的相關口訣來回答。若心法中有對應的特殊格局（如空劫、羊陀、化忌等組合），請務必點出並詳細解釋，不可僅用通用知識帶過。\n\n【特別要求】：1. 請務必使用「繁體中文」回答。\n2. 每個回答必須「分段清晰」，不要全部擠在一起，方便閱讀。\n3. 在思考過程中嚴謹地運用心法邏輯。`, 'chat', (chunk) => setChat(prev => {
                     const newChat = [...prev];
                     if (newChat.length > 0) {
                         newChat[newChat.length - 1].text += chunk;
                     }
                     return newChat;
                 }));
+                playRitualSound('end');
                 setIsChatLoading(false);
                 setActionLoading(null);
             };
@@ -2048,504 +2356,542 @@ ${getFullChartContext()}
             }, [chat, aiReport, isChatLoading, actionLoading, bazi, dailyTip, pastLife, ritual, finance]);
 
             return (
-                <div className="max-w-7xl mx-auto p-4 lg:p-8">
-                    <header className="bg-gradient-to-r from-fuchsia-50 via-purple-50 to-indigo-50 p-4 md:p-6 lg:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl border border-white/50 flex flex-col lg:flex-row justify-between items-center gap-4 md:gap-8 no-print mb-6 md:mb-12 relative overflow-hidden backdrop-blur-xl">
-                        {/* Decorative background elements */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-200 rounded-full blur-[100px] opacity-30 -translate-y-1/2 translate-x-1/4"></div>
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-200 rounded-full blur-[100px] opacity-30 translate-y-1/2 -translate-x-1/4"></div>
+                <div className="min-h-screen bg-[#f8fafc] pb-20 overflow-x-hidden">
+                    <div className="no-print sticky top-0 z-[1000]">
+                        <HeavenlyStatus />
+                    </div>
+                    <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 relative">
+                        <header className="bg-gradient-to-r from-fuchsia-50 via-purple-50 to-indigo-50 p-4 md:p-6 lg:p-10 rounded-[2rem] md:rounded-[3rem] shadow-2xl border border-white/50 flex flex-col lg:flex-row justify-between items-center gap-4 md:gap-8 no-print mb-6 md:mb-12 relative overflow-hidden backdrop-blur-xl">
+                            {/* Decorative background elements */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-200 rounded-full blur-[100px] opacity-30 -translate-y-1/2 translate-x-1/4"></div>
+                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-200 rounded-full blur-[100px] opacity-30 translate-y-1/2 -translate-x-1/4"></div>
 
-                        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 relative z-10 text-center md:text-left mt-6 md:mt-0">
-                            <div className="relative group">
-                                <img src="logo_transparent.png" className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 object-contain" alt="紫微帝星" />
-                            </div>
-                            <div className="flex flex-col gap-1 items-center md:items-start">
-                                <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-indigo-900 tracking-tighter drop-shadow-sm font-serif leading-none whitespace-nowrap">紫微八字</h1>
-                                <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-indigo-600 tracking-widest drop-shadow-sm font-serif leading-none whitespace-nowrap">天機命譜</h1>
-                                <div className="flex items-center gap-3 mt-2 md:mt-3 justify-center md:justify-start">
-                                    <div className="h-[2px] w-6 md:w-8 bg-indigo-900/10"></div>
-                                    <p className="text-slate-500 font-bold text-[9px] md:text-[10px] uppercase tracking-[0.3em]">天機命譜 V20.0</p>
-                                    <div className="h-[2px] w-6 md:w-8 bg-indigo-900/10"></div>
+                            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 relative z-10 text-center md:text-left mt-6 md:mt-0">
+                                <div className="relative group">
+                                    <img src="logo_transparent.png" className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 object-contain" alt="紫微帝星" />
+                                </div>
+                                <div className="flex flex-col gap-1 items-center md:items-start">
+                                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-indigo-900 tracking-tighter drop-shadow-sm font-serif leading-none whitespace-nowrap">紫微八字</h1>
+                                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-indigo-600 tracking-widest drop-shadow-sm font-serif leading-none whitespace-nowrap">天機命譜</h1>
+                                    <div className="flex items-center gap-3 mt-2 md:mt-3 justify-center md:justify-start">
+                                        <div className="h-[2px] w-6 md:w-8 bg-indigo-900/10"></div>
+                                        <p className="text-slate-500 font-bold text-[9px] md:text-[10px] uppercase tracking-[0.3em]">天機命譜 V20.0</p>
+                                        <div className="h-[2px] w-6 md:w-8 bg-indigo-900/10"></div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="absolute top-2 right-2 md:top-6 md:right-6 flex flex-col items-end gap-2 z-50">
-                            <div className="flex gap-1 md:gap-2">
-                                <button onClick={() => setShowDonate(true)} className="text-[11px] md:text-xs font-black flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 bg-[length:200%_auto] animate-gradient text-white border-2 border-white/50 hover:shadow-lg hover:shadow-orange-500/50 hover:-translate-y-0.5 transition-all shadow-md"><i data-lucide="gift" className="w-4 h-4 animate-bounce" /> 隨喜贊助</button>
+                            <div className="absolute top-2 right-2 md:top-6 md:right-6 flex flex-col items-end gap-2 z-50">
+                                <div className="flex gap-1 md:gap-2">
+                                    <button onClick={() => setShowDonate(true)} className="text-[11px] md:text-xs font-black flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 bg-[length:200%_auto] animate-gradient text-white border-2 border-white/50 hover:shadow-lg hover:shadow-orange-500/50 hover:-translate-y-0.5 transition-all shadow-md"><i data-lucide="gift" className="w-4 h-4 animate-bounce" /> 隨喜贊助</button>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="flex flex-col gap-4 items-center w-full lg:w-auto z-10">
-                            {/* Row 1: Birth Data */}
-                            <div className="flex flex-wrap justify-center items-end gap-2 bg-white/60 backdrop-blur-md p-2.5 rounded-2xl border border-white shadow-xl relative w-full lg:w-auto ring-2 ring-indigo-50/50">
-                                <div className="flex flex-col gap-0.5 w-24">
-                                    <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">您的法名/姓名</span>
-                                    <input
-                                        type="text"
-                                        value={userName}
-                                        onChange={e => setUserName(e.target.value)}
-                                        onFocus={(e) => { if (e.target.value === "緣主") setUserName(""); }}
-                                        onBlur={(e) => { if (e.target.value.trim() === "") setUserName("緣主"); }}
-                                        className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 placeholder-slate-300 transition-all shadow-sm"
-                                        placeholder="真實姓名更有感"
-                                        title="輸入真實姓名有助於大師更準確地為您解惑"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-0.5 w-20">
-                                    <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">定性</span>
-                                    <select value={gender} onChange={e => setGender(e.target.value)} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 appearance-none cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
-                                        <option value="male">乾造 (男)</option>
-                                        <option value="female">坤造 (女)</option>
-                                    </select>
-                                </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">曆法</span>
-                                    <select value={inputType} onChange={e => { setInputType(e.target.value); setIsDateModified(true); }} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 appearance-none cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
-                                        <option value="solar">國曆</option>
-                                        <option value="lunar">農曆</option>
-                                    </select>
-                                </div>
-                                {inputType === 'solar' ? (
+                            <div className="flex flex-col gap-4 items-center w-full lg:w-auto z-10">
+                                {/* Row 1: Birth Data */}
+                                <div className="flex flex-wrap justify-center items-end gap-2 bg-white/60 backdrop-blur-md p-2.5 rounded-2xl border border-white shadow-xl relative w-full lg:w-auto ring-2 ring-indigo-50/50">
+                                    <div className="flex flex-col gap-0.5 w-24">
+                                        <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">您的法名/姓名</span>
+                                        <input
+                                            type="text"
+                                            value={userName}
+                                            onChange={e => setUserName(e.target.value)}
+                                            onFocus={(e) => { if (e.target.value === "緣主") setUserName(""); }}
+                                            onBlur={(e) => { if (e.target.value.trim() === "") setUserName("緣主"); }}
+                                            className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 placeholder-slate-300 transition-all shadow-sm"
+                                            placeholder="真實姓名更有感"
+                                            title="輸入真實姓名有助於大師更準確地為您解惑"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-0.5 w-20">
+                                        <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">定性</span>
+                                        <select value={gender} onChange={e => setGender(e.target.value)} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 appearance-none cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                                            <option value="male">乾造 (男)</option>
+                                            <option value="female">坤造 (女)</option>
+                                        </select>
+                                    </div>
                                     <div className="flex flex-col gap-0.5">
-                                        <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">國曆生辰</span>
-                                        <input type="date" value={birthDate} onChange={e => { setBirthDate(e.target.value); setIsDateModified(true); }} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 cursor-pointer placeholder-slate-300 transition-all shadow-sm" />
+                                        <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">曆法</span>
+                                        <select value={inputType} onChange={e => { setInputType(e.target.value); setIsDateModified(true); }} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 appearance-none cursor-pointer hover:bg-slate-50 transition-colors shadow-sm">
+                                            <option value="solar">國曆</option>
+                                            <option value="lunar">農曆</option>
+                                        </select>
                                     </div>
-                                ) : (
-                                    <div className="flex gap-1">
-                                        <div className="flex flex-col gap-0.5 w-16">
-                                            <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">農曆年</span>
-                                            <input type="number" value={lunarDate.year} onChange={e => { setLunarDate({ ...lunarDate, year: parseInt(e.target.value) }); setIsDateModified(true); }} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all shadow-sm" />
-                                        </div>
-                                        <div className="flex flex-col gap-0.5 w-14">
-                                            <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">月</span>
-                                            <select value={lunarDate.month} onChange={e => { setLunarDate({ ...lunarDate, month: parseInt(e.target.value) }); setIsDateModified(true); }} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-1 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-sm">{Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}月</option>)}</select>
-                                        </div>
-                                        <div className="flex flex-col gap-0.5 w-14">
-                                            <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">日</span>
-                                            <select value={lunarDate.day} onChange={e => { setLunarDate({ ...lunarDate, day: parseInt(e.target.value) }); setIsDateModified(true); }} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-1 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-sm">{Array.from({ length: 30 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}日</option>)}</select>
-                                        </div>
+                                    <div className="flex gap-1 items-end self-stretch mb-0.5 ml-2">
+                                        <button onClick={() => setSoundEnabled(!soundEnabled)}
+                                            className={`p-2 rounded-xl transition-all active:scale-95 ${soundEnabled ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-400'}`}
+                                            title={soundEnabled ? "音效已開啟" : "音效已關閉"}
+                                        >
+                                            <Icon name={soundEnabled ? "volume-2" : "volume-x"} className="w-4 h-4" />
+                                        </button>
+                                        <button onClick={() => setShowDonate(true)} className="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-all active:scale-95" title="隨喜功德">
+                                            <Icon name="heart" className="w-4 h-4" />
+                                        </button>
                                     </div>
-                                )}
-                                <div className="flex flex-col gap-0.5 w-28">
-                                    <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">時辰</span>
-                                    <select value={birthHour} onChange={e => setBirthHour(parseInt(e.target.value))} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors shadow-sm">
-                                        {BRANCHES.map((z, i) => <option key={i} value={i}>{z} ({TIME_RANGES[i]})</option>)}
-                                    </select>
-                                </div>
-                            </div>
-
-
-
-                            <div className="flex gap-4 items-center z-10">
-                                <button onClick={handleReport} disabled={isLoading} className="group relative bg-indigo-600 hover:bg-indigo-700 text-white p-5 rounded-2xl shadow-xl shadow-indigo-300 hover:shadow-2xl hover:shadow-indigo-400 active:scale-95 transition-all duration-300 active:translate-y-1">
-                                    <div className="absolute top-0 right-0 -mt-1 -mr-1 w-3 h-3 bg-red-400 rounded-full animate-ping"></div>
-                                    <i data-lucide="sparkles" className="w-8 h-8 group-hover:rotate-12 transition-transform duration-300"></i>
-                                </button>
-                                <button onClick={() => window.print()} className="bg-white hover:bg-slate-50 text-indigo-900 p-5 rounded-2xl border-2 border-indigo-50 hover:border-indigo-100 shadow-xl shadow-slate-200 active:scale-95 transition-all duration-300 group">
-                                    <i data-lucide="printer" className="w-8 h-8 group-hover:text-indigo-600 transition-colors"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </header>
-
-                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 print:block">
-                        <div className="xl:col-span-8 print:w-full relative">
-                            {/* Scrollable Container specifically for mobile chart view */}
-                            <div className="overflow-x-auto pb-6 custom-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-
-                                <div className="flex justify-center flex-wrap gap-3 mb-4 text-[10px] font-bold tracking-widest bg-white/50 py-2 border border-slate-100 rounded-full w-fit mx-auto px-6 shadow-sm print:hidden">
-
-                                    {/* 流年流月流日 Controls - Compact */}
-                                    <div className="flex items-center gap-2 border-r border-slate-200 pr-3 mr-1">
-                                        <div className="flex items-center gap-1">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                            <select value={targetYear} onChange={e => setTargetYear(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
-                                                {Array.from({ length: 100 }, (_, i) => 2024 - 50 + i).map(y => <option key={y} value={y}>{y}年</option>)}
-                                            </select>
+                                    {inputType === 'solar' ? (
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">國曆生辰</span>
+                                            <input type="date" value={birthDate} onChange={e => { setBirthDate(e.target.value); setIsDateModified(true); }} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 cursor-pointer placeholder-slate-300 transition-all shadow-sm" />
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                                            <select value={targetMonth} onChange={e => setTargetMonth(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
-                                                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}月</option>)}
-                                            </select>
+                                    ) : (
+                                        <div className="flex gap-1">
+                                            <div className="flex flex-col gap-0.5 w-16">
+                                                <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">農曆年</span>
+                                                <input type="number" value={lunarDate.year} onChange={e => { setLunarDate({ ...lunarDate, year: parseInt(e.target.value) }); setIsDateModified(true); }} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all shadow-sm" />
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 w-14">
+                                                <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">月</span>
+                                                <select value={lunarDate.month} onChange={e => { setLunarDate({ ...lunarDate, month: parseInt(e.target.value) }); setIsDateModified(true); }} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-1 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-sm">{Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}月</option>)}</select>
+                                            </div>
+                                            <div className="flex flex-col gap-0.5 w-14">
+                                                <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">日</span>
+                                                <select value={lunarDate.day} onChange={e => { setLunarDate({ ...lunarDate, day: parseInt(e.target.value) }); setIsDateModified(true); }} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-1 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 shadow-sm">{Array.from({ length: 30 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}日</option>)}</select>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                            <select value={targetDay} onChange={e => setTargetDay(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
-                                                {Array.from({ length: 30 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}日</option>)}
-                                            </select>
-                                        </div>
-                                        <button onClick={() => { const n = new Date(); setTargetYear(n.getFullYear()); setTargetMonth(n.getMonth() + 1); setTargetDay(n.getDate()); }} className="text-[9px] text-slate-400 hover:text-indigo-500 bg-slate-100 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors" title="回到今日">歸位</button>
+                                    )}
+                                    <div className="flex flex-col gap-0.5 w-28">
+                                        <span className="text-[9px] font-bold text-indigo-900/60 uppercase tracking-widest ml-0.5">時辰</span>
+                                        <select value={birthHour} onChange={e => setBirthHour(parseInt(e.target.value))} className="bg-white border border-indigo-100 text-slate-700 rounded-lg px-2 py-1 text-xs font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors shadow-sm">
+                                            {BRANCHES.map((z, i) => <option key={i} value={i}>{z} ({TIME_RANGES[i]})</option>)}
+                                        </select>
                                     </div>
-
-                                    {/* Toggle Buttons */}
-                                    <button
-                                        onClick={() => setShowSanFang(!showSanFang)}
-                                        className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest border transition-all ${showSanFang ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'}`}
-                                    >
-                                        {showSanFang ? '三方四正' : '隱藏三方'}
-                                    </button>
-                                    <button
-                                        onClick={() => setShowFlying(!showFlying)}
-                                        className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest border transition-all ${showFlying ? 'bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'}`}
-                                    >
-                                        {showFlying ? '四化飛星' : '隱藏飛星'}
-                                    </button>
                                 </div>
 
-                                <div className="relative min-w-[700px]">
-                                    <div className="absolute inset-0 z-20 pointer-events-none">
-                                        {showSanFang && <SanFangSiZhengLines focusedId={focusedPalace} />}
-                                        {showFlying && <FlyingStarOverlay focusedId={focusedPalace} chartData={chartData} />}
+
+
+                                <div className="flex gap-4 items-center z-10">
+                                    <button onClick={handleReport} disabled={isLoading} className="group relative bg-indigo-600 hover:bg-indigo-700 text-white p-5 rounded-2xl shadow-xl shadow-indigo-300 hover:shadow-2xl hover:shadow-indigo-400 active:scale-95 transition-all duration-300 active:translate-y-1">
+                                        <div className="absolute top-0 right-0 -mt-1 -mr-1 w-3 h-3 bg-red-400 rounded-full animate-ping"></div>
+                                        <i data-lucide="sparkles" className="w-8 h-8 group-hover:rotate-12 transition-transform duration-300"></i>
+                                    </button>
+                                    <button onClick={() => window.print()} className="bg-white hover:bg-slate-50 text-indigo-900 p-5 rounded-2xl border-2 border-indigo-50 hover:border-indigo-100 shadow-xl shadow-slate-200 active:scale-95 transition-all duration-300 group">
+                                        <i data-lucide="printer" className="w-8 h-8 group-hover:text-indigo-600 transition-colors"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </header>
+
+                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 print:block">
+                            <div className="xl:col-span-8 print:w-full relative">
+                                {/* Scrollable Container specifically for mobile chart view */}
+                                <div className="overflow-x-auto pb-6 custom-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+
+                                    <div className="flex justify-center flex-wrap gap-3 mb-4 text-[10px] font-bold tracking-widest bg-white/50 py-2 border border-slate-100 rounded-full w-fit mx-auto px-6 shadow-sm print:hidden">
+
+                                        {/* 流年流月流日 Controls - Compact */}
+                                        <div className="flex items-center gap-2 border-r border-slate-200 pr-3 mr-1">
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                                <select value={targetYear} onChange={e => setTargetYear(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
+                                                    {Array.from({ length: 100 }, (_, i) => 2024 - 50 + i).map(y => <option key={y} value={y}>{y}年</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                <select value={targetMonth} onChange={e => setTargetMonth(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
+                                                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}月</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                <select value={targetDay} onChange={e => setTargetDay(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
+                                                    {Array.from({ length: 30 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}日</option>)}
+                                                </select>
+                                            </div>
+                                            <button onClick={() => { const n = new Date(); setTargetYear(n.getFullYear()); setTargetMonth(n.getMonth() + 1); setTargetDay(n.getDate()); }} className="text-[9px] text-slate-400 hover:text-indigo-500 bg-slate-100 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors" title="回到今日">歸位</button>
+                                        </div>
+
+                                        {/* Toggle Buttons */}
+                                        <button
+                                            onClick={() => setShowSanFang(!showSanFang)}
+                                            className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest border transition-all ${showSanFang ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'}`}
+                                        >
+                                            {showSanFang ? '三方四正' : '隱藏三方'}
+                                        </button>
+                                        <button
+                                            onClick={() => setShowFlying(!showFlying)}
+                                            className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest border transition-all ${showFlying ? 'bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'}`}
+                                        >
+                                            {showFlying ? '四化飛星' : '隱藏飛星'}
+                                        </button>
                                     </div>
 
-                                    <div id="chart-grid-container" className="relative z-10 bg-indigo-50/30 border-8 border-white ring-1 ring-indigo-100 p-4 grid grid-cols-4 grid-rows-4 gap-3 aspect-square print:h-[19cm] print:w-[19cm] print:mx-auto shadow-2xl shadow-indigo-200/50 print:shadow-none rounded-[2.5rem]">
+                                    <div className="relative min-w-[700px]">
+                                        <div className="absolute inset-0 z-20 pointer-events-none">
+                                            {showSanFang && <SanFangSiZhengLines focusedId={focusedPalace} />}
+                                            {showFlying && <FlyingStarOverlay focusedId={focusedPalace} chartData={chartData} />}
+                                        </div>
 
-                                        {chartData.map((c, i) => (
-                                            c.id !== -1 ? (
-                                                <div
-                                                    key={i}
-                                                    id={`palace-${c.id}`}
-                                                    onClick={() => setFocusedPalace(c.id)}
-                                                    className={`grid-palace border border-indigo-50 p-2 flex flex-col justify-between overflow-hidden relative transition-all duration-300 palace-hover rounded-2xl
+                                        <div id="chart-grid-container" className="relative z-10 bg-indigo-50/30 border-8 border-white ring-1 ring-indigo-100 p-4 grid grid-cols-4 grid-rows-4 gap-3 aspect-square print:h-[19cm] print:w-[19cm] print:mx-auto shadow-2xl shadow-indigo-200/50 print:shadow-none rounded-[2.5rem]">
+
+                                            {chartData.map((c, i) => (
+                                                c.id !== -1 ? (
+                                                    <div
+                                                        key={i}
+                                                        id={`palace-${c.id}`}
+                                                        onClick={() => setFocusedPalace(c.id)}
+                                                        className={`grid-palace border border-indigo-50 p-2 flex flex-col justify-between overflow-hidden relative transition-all duration-300 palace-hover rounded-2xl
                                                 ${c.isLife ? 'bg-white shadow-md shadow-indigo-100 ring-2 ring-indigo-50' : 'bg-white/60 hover:bg-white'}
                                                 ${focusedPalace === c.id ? 'palace-focused' : ''}
+                                                ${c.hasFlowDayJi ? 'warning-pulse' : ''}
+                                                ${c.isJiClashed ? 'clash-pulse' : ''}
                                             `}
-                                                >
-                                                    <div className="flex flex-col border-b border-slate-100 pb-1 relative z-30">
-                                                        <div className="flex justify-between items-start w-full">
-                                                            <div className="flex items-center">
-                                                                <span className="text-[14px] font-black text-slate-400 mr-1"><span className="palace-stem">{c.gan}</span>{c.zhi}</span>
+                                                    >
+                                                        {c.hasFlowDayJi && (
+                                                            <div className="warning-badge" title="流日化忌坐守">忌坐</div>
+                                                        )}
+                                                        {c.isJiClashed && (
+                                                            <div className="clash-badge" title="流日化忌沖照">忌沖</div>
+                                                        )}
+                                                        <div className="flex flex-col border-b border-slate-100 pb-1 relative z-30">
+                                                            <div className="flex justify-between items-start w-full">
+                                                                <div className="flex items-center">
+                                                                    <span className="text-[14px] font-black text-slate-400 mr-1"><span className="palace-stem">{c.gan}</span>{c.zhi}</span>
+                                                                </div>
+                                                                <div className="text-right flex flex-col items-end">
+                                                                    <span className={`px-1.5 py-0.5 rounded text-[11px] font-black leading-none ${c.isLife ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}>{c.palaceName}</span>
+                                                                    {c.isBody && <span className="mt-1 bg-fuchsia-600 text-white px-1.5 py-0.5 rounded text-[10px] font-black leading-none shadow-md ring-1 ring-white/50">身宮</span>}
+                                                                </div>
                                                             </div>
-                                                            <div className="text-right flex flex-col items-end">
-                                                                <span className={`px-1.5 py-0.5 rounded text-[11px] font-black leading-none ${c.isLife ? 'bg-indigo-600 text-white' : 'bg-slate-100'}`}>{c.palaceName}</span>
-                                                                {c.isBody && <span className="mt-1 bg-fuchsia-600 text-white px-1.5 py-0.5 rounded text-[10px] font-black leading-none shadow-md ring-1 ring-white/50">身宮</span>}
+                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                {c.isLaiYin && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">來因</span>}
+                                                                {c.isYearlyMing && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流年</span>}
+                                                                {c.isMonthlyMing && <span className="bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流月</span>}
+                                                                {c.isDailyMing && <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流日</span>}
                                                             </div>
                                                         </div>
-                                                        <div className="flex flex-wrap gap-1 mt-1">
-                                                            {c.isLaiYin && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">來因</span>}
-                                                            {c.isYearlyMing && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流年</span>}
-                                                            {c.isMonthlyMing && <span className="bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流月</span>}
-                                                            {c.isDailyMing && <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流日</span>}
+                                                        <div className="flex-1 flex flex-wrap content-start items-start gap-0.5 py-1 overflow-y-auto custom-scrollbar relative z-30">
+                                                            {c.stars.filter(s => s.type === "main").map((s, idx) => (<span key={'m' + idx} className="star-main w-full text-center block mb-1">{s.name}</span>))}
+                                                            {c.stars.filter(s => s.type === "lucky").map((s, idx) => (<span key={'l' + idx} className="star-lucun">{s.name}</span>))}
+                                                            {c.stars.filter(s => s.type === "auspicious").map((s, idx) => (<span key={'a' + idx} className="star-auspicious">{s.name}</span>))}
+                                                            {c.stars.filter(s => s.type === "malefic").map((s, idx) => (<span key={'b' + idx} className="star-malefic">{s.name}</span>))}
+                                                            {c.stars.filter(s => s.type === "sihua").map((s, idx) => (<span key={'s' + idx} className="star-sihua">{s.name}</span>))}
+                                                            {c.stars.filter(s => s.type === "self-sihua").map((s, idx) => (<span key={'ss' + idx} className="star-self-sihua">{s.name}</span>))}
+                                                            {c.stars.filter(s => s.type === "minor").map((s, idx) => (<span key={'mi' + idx} className="star-minor">{s.name}</span>))}
+                                                        </div>
+                                                        <div className="border-t border-slate-100 pt-1 mt-auto relative z-30">
+                                                            <div className="flex flex-wrap gap-x-1 gap-y-0 text-[9px] text-slate-400 leading-none justify-center">
+                                                                {c.stars.filter(s => s.type === "flow").map((s, idx) => (<span key={'f' + idx} className="star-mini">{s.name}</span>))}
+                                                            </div>
+                                                            <div className="flex justify-between items-end text-[10px] font-black text-slate-300 mt-1">
+                                                                <div className="flex gap-1 items-center">
+                                                                    <span className={`px-1 rounded text-[9px] ${c.isSmallLimit ? 'bg-red-100 text-red-600 font-black' : 'text-slate-400'}`}>小限{c.smallLimitAge}</span>
+                                                                </div>
+                                                                <div className="flex gap-1 items-end">
+                                                                    <span className="text-slate-500 text-[10px] font-bold">{c.bigLimit}</span>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex-1 flex flex-wrap content-start items-start gap-0.5 py-1 overflow-y-auto custom-scrollbar relative z-30">
-                                                        {c.stars.filter(s => s.type === "main").map((s, idx) => (<span key={'m' + idx} className="star-main w-full text-center block mb-1">{s.name}</span>))}
-                                                        {c.stars.filter(s => s.type === "lucky").map((s, idx) => (<span key={'l' + idx} className="star-lucun">{s.name}</span>))}
-                                                        {c.stars.filter(s => s.type === "auspicious").map((s, idx) => (<span key={'a' + idx} className="star-auspicious">{s.name}</span>))}
-                                                        {c.stars.filter(s => s.type === "malefic").map((s, idx) => (<span key={'b' + idx} className="star-malefic">{s.name}</span>))}
-                                                        {c.stars.filter(s => s.type === "sihua").map((s, idx) => (<span key={'s' + idx} className="star-sihua">{s.name}</span>))}
-                                                        {c.stars.filter(s => s.type === "self-sihua").map((s, idx) => (<span key={'ss' + idx} className="star-self-sihua">{s.name}</span>))}
-                                                        {c.stars.filter(s => s.type === "minor").map((s, idx) => (<span key={'mi' + idx} className="star-minor">{s.name}</span>))}
+                                                ) : (
+                                                    <div key={i} className="flex flex-col items-center justify-center p-4 bg-slate-50/30">
+                                                        {/* Center cells are now placeholders for the absolute overlay */}
                                                     </div>
-                                                    <div className="border-t border-slate-100 pt-1 mt-auto relative z-30">
-                                                        <div className="flex flex-wrap gap-x-1 gap-y-0 text-[9px] text-slate-400 leading-none justify-center">
-                                                            {c.stars.filter(s => s.type === "flow").map((s, idx) => (<span key={'f' + idx} className="star-mini">{s.name}</span>))}
-                                                        </div>
-                                                        <div className="flex justify-between items-end text-[10px] font-black text-slate-300 mt-1">
-                                                            <div className="flex gap-1 items-center">
-                                                                <span className={`px-1 rounded text-[9px] ${c.isSmallLimit ? 'bg-red-100 text-red-600 font-black' : 'text-slate-400'}`}>小限{c.smallLimitAge}</span>
-                                                            </div>
-                                                            <div className="flex gap-1 items-end">
-                                                                <span className="text-slate-500 text-[10px] font-bold">{c.bigLimit}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div key={i} className="flex flex-col items-center justify-center p-4 bg-slate-50/30">
-                                                    {/* Center cells are now placeholders for the absolute overlay */}
-                                                </div>
-                                            )
-                                        ))}
+                                                )
+                                            ))}
 
-                                        {/* Absolute Center Info Overlay */}
-                                        {destiny && centerInfo && (
-                                            <div className="absolute top-[25%] left-[25%] w-[50%] h-[50%] pointer-events-none flex flex-col items-center justify-center z-30 p-2">
-                                                <div className="text-center w-full h-full space-y-1 pointer-events-auto bg-white/90 backdrop-blur-md rounded-[2rem] shadow-lg shadow-indigo-100 border border-white ring-1 ring-indigo-50 p-4 flex flex-col justify-around overflow-hidden">
-                                                    <div className="border-b-2 border-indigo-50 pb-2 mb-1 shrink-0">
-                                                        <h2 className="text-xl font-black text-indigo-900 tracking-[0.3em] uppercase truncate">命譜中宮</h2>
-                                                        <p className="text-[11px] font-black text-indigo-400 mt-1 tracking-widest">{destiny.lunar}</p>
-                                                        <p className="text-[9px] font-black text-slate-400 mt-0.5 tracking-wider">陽曆：{destiny.solarDate} (虛{centerInfo.virtualAge} {centerInfo.zodiac})</p>
+                                            {/* Absolute Center Info Overlay */}
+                                            {destiny && centerInfo && (
+                                                <div className="absolute top-[25%] left-[25%] w-[50%] h-[50%] pointer-events-none flex flex-col items-center justify-center z-30 p-2">
+                                                    <div className="text-center w-full h-full space-y-1 pointer-events-auto bg-white/90 backdrop-blur-md rounded-[2rem] shadow-lg shadow-indigo-100 border border-white ring-1 ring-indigo-50 p-4 flex flex-col justify-around overflow-hidden">
+                                                        <div className="border-b-2 border-indigo-50 pb-2 mb-1 shrink-0">
+                                                            <h2 className="text-xl font-black text-indigo-900 tracking-[0.3em] uppercase truncate">命譜中宮</h2>
+                                                            <p className="text-[11px] font-black text-indigo-400 mt-1 tracking-widest">{destiny.lunar}</p>
+                                                            <p className="text-[9px] font-black text-slate-400 mt-0.5 tracking-wider">陽曆：{destiny.solarDate} (虛{centerInfo.virtualAge} {centerInfo.zodiac})</p>
+                                                        </div>
+                                                        <div className="grid grid-cols-4 gap-0 text-[12px] font-black shrink-0">
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">年</span>{destiny.pillars.year}</div>
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">月</span>{destiny.pillars.month}</div>
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">日</span>{destiny.pillars.day}</div>
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">時</span>{destiny.pillars.hour}</div>
+                                                        </div>
+                                                        <div className="shrink-0 flex justify-between px-2 bg-slate-50 rounded-lg py-1 border border-slate-200 my-1 overflow-y-auto max-h-[60px]">
+                                                            <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">五行局</span><span className="text-[12px] text-slate-800">{centerInfo.bureau}</span></div>
+                                                            <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">命主</span><span className="text-[12px] text-slate-800">{centerInfo.mingZhu}</span></div>
+                                                            <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">身主</span><span className="text-[12px] text-slate-800">{centerInfo.shenZhu}</span></div>
+                                                        </div>
+                                                        <div className="text-[10px] font-black text-left px-2 leading-relaxed shrink-0">
+                                                            <div className="flex justify-between border-b border-slate-200 pb-1 mb-1"><span className="text-slate-400">祿</span><span className="text-amber-600">{centerInfo.sihua.lu}</span><span className="text-slate-400 ml-1">權</span><span className="text-emerald-600">{centerInfo.sihua.quan}</span></div>
+                                                            <div className="flex justify-between"><span className="text-slate-400">科</span><span className="text-blue-600">{centerInfo.sihua.ke}</span><span className="text-slate-400 ml-1">忌</span><span className="text-red-600">{centerInfo.sihua.ji}</span></div>
+                                                        </div>
                                                     </div>
-                                                    <div className="grid grid-cols-4 gap-0 text-[12px] font-black shrink-0">
-                                                        <div className="flex flex-col"><span className="text-[9px] text-indigo-400">年</span>{destiny.pillars.year}</div>
-                                                        <div className="flex flex-col"><span className="text-[9px] text-indigo-400">月</span>{destiny.pillars.month}</div>
-                                                        <div className="flex flex-col"><span className="text-[9px] text-indigo-400">日</span>{destiny.pillars.day}</div>
-                                                        <div className="flex flex-col"><span className="text-[9px] text-indigo-400">時</span>{destiny.pillars.hour}</div>
-                                                    </div>
-                                                    <div className="shrink-0 flex justify-between px-2 bg-slate-50 rounded-lg py-1 border border-slate-200 my-1 overflow-y-auto max-h-[60px]">
-                                                        <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">五行局</span><span className="text-[12px] text-slate-800">{centerInfo.bureau}</span></div>
-                                                        <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">命主</span><span className="text-[12px] text-slate-800">{centerInfo.mingZhu}</span></div>
-                                                        <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">身主</span><span className="text-[12px] text-slate-800">{centerInfo.shenZhu}</span></div>
-                                                    </div>
-                                                    <div className="text-[10px] font-black text-left px-2 leading-relaxed shrink-0">
-                                                        <div className="flex justify-between border-b border-slate-200 pb-1 mb-1"><span className="text-slate-400">祿</span><span className="text-amber-600">{centerInfo.sihua.lu}</span><span className="text-slate-400 ml-1">權</span><span className="text-emerald-600">{centerInfo.sihua.quan}</span></div>
-                                                        <div className="flex justify-between"><span className="text-slate-400">科</span><span className="text-blue-600">{centerInfo.sihua.ke}</span><span className="text-slate-400 ml-1">忌</span><span className="text-red-600">{centerInfo.sihua.ji}</span></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                            {destiny && (
-                                <div className="print:break-before-page" style={{ pageBreakBefore: 'always' }}>
-                                    <BaZiChart
-                                        lunarDate={{
-                                            year: destiny.lYear,
-                                            month: destiny.lMonth,
-                                            day: destiny.lDay
-                                        }}
-                                        birthHour={birthHour}
-                                        gender={gender}
-                                        solarDateStr={destiny.solarDate}
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="xl:col-span-4 space-y-12 print:w-full print:mt-16">
-                            <div className="grid grid-cols-3 gap-3">
-                                <button onClick={() => handleSimpleExec()} disabled={actionLoading === 'simple'} className={`bg-teal-600 text-white p-3 rounded-2xl shadow-lg hover:bg-teal-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-teal-200 ring-offset-2 ${actionLoading === 'simple' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                    {actionLoading === 'simple' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="message-circle" className="w-4 h-4" />} 白話精解
-                                </button>
-                                <button onClick={() => fetchAiReport()} disabled={actionLoading === 'report'} className={`bg-indigo-900 text-white p-3 rounded-2xl shadow-lg hover:bg-indigo-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'report' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                    {actionLoading === 'report' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="feather" className="w-4 h-4" />} 命譜詳評
-                                </button>
-                                <button onClick={() => handleDailyTip()} disabled={actionLoading === 'daily'} className={`bg-emerald-600 text-white p-3 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'daily' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                    {actionLoading === 'daily' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sun" className="w-4 h-4" />} 今日錦囊
-                                </button>
-                                <button onClick={() => handlePastLife()} disabled={actionLoading === 'pastLife'} className={`bg-purple-600 text-white p-3 rounded-2xl shadow-lg hover:bg-purple-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'pastLife' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                    {actionLoading === 'pastLife' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="infinity" className="w-4 h-4" />} 前世因果
-                                </button>
-                                <button onClick={() => handleRitual()} disabled={actionLoading === 'ritual'} className={`bg-orange-500 text-white p-3 rounded-2xl shadow-lg hover:bg-orange-600 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'ritual' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                    {actionLoading === 'ritual' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkle" className="w-4 h-4" />} 轉運儀式
-                                </button>
-                                <button onClick={() => handleDream()} disabled={actionLoading === 'dream'} className={`bg-blue-600 text-white p-3 rounded-2xl shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'dream' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                    {actionLoading === 'dream' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="moon" className="w-4 h-4" />} 夢境解碼
-                                </button>
-                                <button onClick={() => handleLove()} disabled={actionLoading === 'love'} className={`bg-pink-500 text-white p-3 rounded-2xl shadow-lg hover:bg-pink-600 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'love' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                    {actionLoading === 'love' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="heart" className="w-4 h-4" />} 桃花攻略
-                                </button>
-                                <button onClick={() => handleFinance()} disabled={actionLoading === 'finance'} className={`bg-amber-600 text-white p-3 rounded-2xl shadow-lg hover:bg-amber-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'finance' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                    {actionLoading === 'finance' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="trending-up" className="w-4 h-4" />} 財運預測
-                                </button>
-                                <button onClick={() => handleBazi()} disabled={actionLoading === 'bazi'} className={`bg-slate-700 text-white p-3 rounded-2xl shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'bazi' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                    {actionLoading === 'bazi' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="compass" className="w-4 h-4" />} 八字論命
-                                </button>
-                            </div>
-                            {(dailyTip || pastLife || ritual || finance || bazi || simpleResult) && (
-                                <Card ref={baziRef} className="animate-in fade-in duration-700">
-                                    <CardContent className="p-6 text-[14px] font-bold leading-relaxed text-slate-800 bg-yellow-50/50">
-                                        {dailyTip && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-emerald-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="sun" className="w-4 h-4" /> 大師今日指引</span><button onClick={() => playTTS(dailyTip, 'daily')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('daily') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}>{isTTSLoading('daily') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('daily') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('daily') ? 'animate-pulse' : ''}`} />} {isTTSActive('daily') ? '停止' : '朗讀'}</button></h5>{dailyTip}</div>)}
-                                        {ritual && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-orange-600 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="sparkle" className="w-4 h-4" /> 專屬轉運儀式</span><button onClick={() => playTTS(ritual, 'ritual')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('ritual') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`}>{isTTSLoading('ritual') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('ritual') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('ritual') ? 'animate-pulse' : ''}`} />} {isTTSActive('ritual') ? '停止' : '朗讀'}</button></h5>{ritual}</div>)}
-                                        {pastLife && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-purple-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="infinity" className="w-4 h-4" /> 前世因果故事</span><button onClick={() => playTTS(pastLife, 'pastLife')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('pastLife') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}>{isTTSLoading('pastLife') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('pastLife') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('pastLife') ? 'animate-pulse' : ''}`} />} {isTTSActive('pastLife') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{pastLife}</div></div>)}
-                                        {finance && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-amber-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="trending-up" className="w-4 h-4" /> 紫微財運佈局</span><button onClick={() => playTTS(finance, 'finance')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('finance') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>{isTTSLoading('finance') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('finance') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('finance') ? 'animate-pulse' : ''}`} />} {isTTSActive('finance') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{finance}</div></div>)}
-                                        {bazi && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-slate-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="compass" className="w-4 h-4" /> 子平八字精批</span><button onClick={() => playTTS(bazi, 'bazi')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('bazi') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}>{isTTSLoading('bazi') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('bazi') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('bazi') ? 'animate-pulse' : ''}`} />} {isTTSActive('bazi') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{bazi}</div></div>)}
-                                        {simpleResult && (<div><h5 className="text-teal-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="message-circle" className="w-4 h-4" /> 白話精選命理</span><button onClick={() => playTTS(simpleResult, 'simple')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('simple') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-teal-100 text-teal-700 hover:bg-teal-200'}`}>{isTTSLoading('simple') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('simple') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('simple') ? 'animate-pulse' : ''}`} />} {isTTSActive('simple') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{simpleResult}</div></div>)}
-                                    </CardContent>
-                                </Card>
-                            )}
-                            <Card ref={reportRef} className="print:border-t-8 print:border-black print:rounded-none print:p-0 overflow-hidden border-0 shadow-2xl rounded-[2.5rem] ring-4 ring-indigo-50/50 bg-white mb-12">
-                                <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-950 text-white p-6 relative overflow-hidden print:bg-white print:text-black print:border-b-4 print:border-black">
-                                    <div className="absolute top-[-50%] right-[-10%] w-64 h-64 bg-white opacity-5 rounded-full blur-3xl pointer-events-none"></div>
-
-                                    <div className="relative flex items-center gap-5">
-                                        <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md shadow-inner ring-1 ring-white/10">
-                                            <i data-lucide="feather" className="w-8 h-8 text-indigo-100 print:hidden"></i>
-                                        </div>
-                                        <div className="flex-1 flex justify-between items-center">
-                                            <div>
-                                                <h3 className="text-xl font-black tracking-[0.3em] uppercase text-white drop-shadow-md print:text-black">命譜詳評</h3>
-                                                <p className="text-[10px] text-indigo-200 font-bold tracking-widest mt-1 opacity-80 print:hidden">詳盡命盤解析</p>
-                                            </div>
-                                            {aiReport && (
-                                                <div className="flex gap-2">
-                                                    {/隨喜|贊助|香火|結緣/.test(aiReport) && (
-                                                        <button onClick={() => setShowDonate(true)} className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-full text-xs font-black backdrop-blur-md transition-all flex items-center gap-1 border border-amber-400/30">
-                                                            <Icon name="heart" className="w-4 h-4" /> 隨喜贊助
-                                                        </button>
-                                                    )}
-                                                    <button onClick={() => isTTSActive('report') ? stopGlobalAudio() : playTTS(aiReport, 'report')} className={`bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md transition-all flex items-center gap-1 border border-white/20 ${isTTSActive('report') ? 'bg-red-500/80 hover:bg-red-500' : ''}`}>
-                                                        {isTTSLoading('report') ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name={isTTSActive('report') ? "square" : "volume-2"} className={`w-4 h-4 ${isTTSPlaying('report') ? 'animate-pulse' : ''}`} />} {isTTSActive('report') ? '停止播放' : '朗讀全文'}
-                                                    </button>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                 </div>
-                                <CardContent className="p-10 text-[16px] font-bold leading-[2] whitespace-pre-wrap text-justify text-slate-700 print-font pure-text min-h-[200px] max-h-[600px] overflow-y-auto custom-scrollbar bg-slate-50/30">
-                                    {isLoading ? (
-                                        <div className="flex flex-col items-center gap-6 py-20">
-                                            <div className="relative">
-                                                <div className="absolute inset-0 bg-indigo-500 blur-xl opacity-20 animate-pulse rounded-full"></div>
-                                                <div className="animate-spin w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full relative z-10"></div>
-                                            </div>
-                                            <p className="font-black animate-pulse text-indigo-800 tracking-widest text-sm">大師翻閱心法古籍中...</p>
-                                        </div>
-                                    ) : (
-                                        aiReport || <div className="text-center py-12 text-slate-400 select-none">
-                                            <Icon name="scroll" className="w-16 h-16 mx-auto mb-6 opacity-20" />
-                                            <p className="tracking-widest font-black opacity-50">大師已準備就緒。<br />請點擊下方按鈕，將根據《紫微心法》全書內容為您批命。</p>
-                                            <button onClick={fetchAiReport} className="mt-8 bg-indigo-600 text-white px-8 py-3 rounded-full font-black shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all flex items-center gap-2 mx-auto ring-4 ring-indigo-50"><Icon name="feather" className="w-5 h-5" /> 開始詳批</button>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-
-                            <Card ref={chatCardRef} className="print:hidden h-[600px] flex flex-col border-0 shadow-2xl rounded-[2.5rem] ring-4 ring-indigo-50/50 bg-white overflow-hidden mb-12">
-                                <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-5 relative shrink-0">
-                                    <div className="relative flex items-center gap-4">
-                                        <div className="p-2.5 bg-indigo-500 rounded-xl shadow-lg ring-2 ring-indigo-400/30">
-                                            <i data-lucide="sparkles" className="w-5 h-5 text-white" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-sm font-black uppercase tracking-[0.25em] text-slate-100">大師即時諮詢</h3>
-                                            <p className="text-[9px] text-slate-400 font-bold tracking-wider mt-0.5">大師在線解惑</p>
-                                        </div>
+                                {destiny && (
+                                    <div className="print:break-before-page" style={{ pageBreakBefore: 'always' }}>
+                                        <BaZiChart
+                                            lunarDate={{
+                                                year: destiny.lYear,
+                                                month: destiny.lMonth,
+                                                day: destiny.lDay
+                                            }}
+                                            birthHour={birthHour}
+                                            gender={gender}
+                                            solarDateStr={destiny.solarDate}
+                                        />
                                     </div>
-                                    <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 absolute top-5 right-5">
-                                        <button onClick={stopGlobalAudio} className="w-6 h-6 rounded-full bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all" title="停止語音">
-                                            <Icon name="square" className="w-3 h-3 fill-current" />
+                                )}
+                            </div>
+
+                            <div className="xl:col-span-4 space-y-12 print:w-full print:mt-16">
+                                <MasterPresence isSpeaking={isLoading || isChatLoading} />
+                                <div className="grid grid-cols-3 gap-3">
+                                    <button onClick={() => handleSimpleExec()} disabled={actionLoading === 'simple'} className={`bg-teal-600 text-white p-3 rounded-2xl shadow-lg hover:bg-teal-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-teal-200 ring-offset-2 ${actionLoading === 'simple' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                        {actionLoading === 'simple' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="message-circle" className="w-4 h-4" />} 白話精解
+                                    </button>
+                                    <button onClick={() => fetchAiReport()} disabled={actionLoading === 'report'} className={`bg-indigo-900 text-white p-3 rounded-2xl shadow-lg hover:bg-indigo-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'report' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                        {actionLoading === 'report' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="feather" className="w-4 h-4" />} 命譜詳評
+                                    </button>
+                                    <div className="flex gap-2">
+                                        <button onClick={handleDailyTip} disabled={actionLoading === 'daily'} className="flex-1 bg-gradient-to-tr from-amber-500 to-orange-500 text-white rounded-2xl py-4 font-black shadow-lg shadow-amber-200 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group disabled:opacity-50">
+                                            {actionLoading === 'daily' ? <Icon name="loader" className="w-5 h-5 animate-spin" /> : <Icon name="sparkles" className="w-5 h-5 group-hover:rotate-12 transition-transform" />}
+                                            今日錦囊妙計
                                         </button>
-                                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                                        <span className="text-[9px] font-bold text-emerald-400">連線中</span>
+                                        {dailyTip && (
+                                            <button onClick={() => setWisdomText(dailyTip)} className="bg-white border-2 border-amber-200 text-amber-600 px-4 rounded-2xl font-black hover:bg-amber-50 transition-all flex items-center gap-2">
+                                                <Icon name="image" className="w-5 h-5" />
+                                                製成開運卡
+                                            </button>
+                                        )}
                                     </div>
+                                    <button onClick={() => handlePastLife()} disabled={actionLoading === 'pastLife'} className={`bg-purple-600 text-white p-3 rounded-2xl shadow-lg hover:bg-purple-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'pastLife' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                        {actionLoading === 'pastLife' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="infinity" className="w-4 h-4" />} 前世因果
+                                    </button>
+                                    <button onClick={() => handleRitual()} disabled={actionLoading === 'ritual'} className={`bg-orange-500 text-white p-3 rounded-2xl shadow-lg hover:bg-orange-600 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'ritual' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                        {actionLoading === 'ritual' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkle" className="w-4 h-4" />} 轉運儀式
+                                    </button>
+                                    <button onClick={() => handleDream()} disabled={actionLoading === 'dream'} className={`bg-blue-600 text-white p-3 rounded-2xl shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'dream' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                        {actionLoading === 'dream' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="moon" className="w-4 h-4" />} 夢境解碼
+                                    </button>
+                                    <button onClick={() => handleLove()} disabled={actionLoading === 'love'} className={`bg-pink-500 text-white p-3 rounded-2xl shadow-lg hover:bg-pink-600 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'love' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                        {actionLoading === 'love' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="heart" className="w-4 h-4" />} 桃花攻略
+                                    </button>
+                                    <button onClick={() => handleFinance()} disabled={actionLoading === 'finance'} className={`bg-amber-600 text-white p-3 rounded-2xl shadow-lg hover:bg-amber-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'finance' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                        {actionLoading === 'finance' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="trending-up" className="w-4 h-4" />} 財運預測
+                                    </button>
+                                    <button onClick={() => handleBazi()} disabled={actionLoading === 'bazi'} className={`bg-slate-700 text-white p-3 rounded-2xl shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'bazi' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                        {actionLoading === 'bazi' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="compass" className="w-4 h-4" />} 八字論命
+                                    </button>
                                 </div>
+                                {(dailyTip || pastLife || ritual || finance || bazi || simpleResult) && (
+                                    <Card ref={baziRef} className="animate-in fade-in duration-700">
+                                        <CardContent className="p-6 text-[14px] font-bold leading-relaxed text-slate-800 bg-yellow-50/50">
+                                            {dailyTip && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-emerald-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="sun" className="w-4 h-4" /> 大師今日指引</span><button onClick={() => playTTS(dailyTip, 'daily')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('daily') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}>{isTTSLoading('daily') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('daily') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('daily') ? 'animate-pulse' : ''}`} />} {isTTSActive('daily') ? '停止' : '朗讀'}</button></h5>{dailyTip}</div>)}
+                                            {ritual && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-orange-600 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="sparkle" className="w-4 h-4" /> 專屬轉運儀式</span><button onClick={() => playTTS(ritual, 'ritual')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('ritual') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`}>{isTTSLoading('ritual') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('ritual') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('ritual') ? 'animate-pulse' : ''}`} />} {isTTSActive('ritual') ? '停止' : '朗讀'}</button></h5>{ritual}</div>)}
+                                            {pastLife && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-purple-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="infinity" className="w-4 h-4" /> 前世因果故事</span><button onClick={() => playTTS(pastLife, 'pastLife')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('pastLife') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}>{isTTSLoading('pastLife') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('pastLife') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('pastLife') ? 'animate-pulse' : ''}`} />} {isTTSActive('pastLife') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{pastLife}</div></div>)}
+                                            {finance && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-amber-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="trending-up" className="w-4 h-4" /> 紫微財運佈局</span><button onClick={() => playTTS(finance, 'finance')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('finance') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>{isTTSLoading('finance') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('finance') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('finance') ? 'animate-pulse' : ''}`} />} {isTTSActive('finance') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{finance}</div></div>)}
+                                            {bazi && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-slate-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="compass" className="w-4 h-4" /> 子平八字精批</span><button onClick={() => playTTS(bazi, 'bazi')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('bazi') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}>{isTTSLoading('bazi') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('bazi') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('bazi') ? 'animate-pulse' : ''}`} />} {isTTSActive('bazi') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{bazi}</div></div>)}
+                                            {simpleResult && (<div><h5 className="text-teal-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="message-circle" className="w-4 h-4" /> 白話精選命理</span><button onClick={() => playTTS(simpleResult, 'simple')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('simple') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-teal-100 text-teal-700 hover:bg-teal-200'}`}>{isTTSLoading('simple') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('simple') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('simple') ? 'animate-pulse' : ''}`} />} {isTTSActive('simple') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{simpleResult}</div></div>)}
+                                        </CardContent>
+                                    </Card>
+                                )}
+                                <Card ref={reportRef} className="print:border-t-8 print:border-black print:rounded-none print:p-0 overflow-hidden border-0 shadow-2xl rounded-[2.5rem] ring-4 ring-indigo-50/50 bg-white mb-12">
+                                    <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-950 text-white p-6 relative overflow-hidden print:bg-white print:text-black print:border-b-4 print:border-black">
+                                        <div className="absolute top-[-50%] right-[-10%] w-64 h-64 bg-white opacity-5 rounded-full blur-3xl pointer-events-none"></div>
 
-                                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#f8fafc] custom-scrollbar">
-                                    {chat.map((m, i) => (
-                                        <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                            <div className={`max-w-[85%] p-5 text-[14px] font-bold leading-relaxed shadow-sm whitespace-pre-wrap ${m.role === 'user'
-                                                ? 'bg-indigo-600 text-white rounded-[2rem] rounded-br-[4px]'
-                                                : 'bg-white border border-slate-100 text-slate-700 rounded-[2rem] rounded-bl-[4px]'
-                                                }`}>
-                                                {m.text}
-                                                {m.role === 'assistant' && (
-                                                    <div className="mt-3 pt-2 border-t border-slate-100/50 flex justify-end gap-2">
-                                                        {/隨喜|贊助|香火|結緣/.test(m.text) && (
-                                                            <button onClick={() => setShowDonate(true)} className="flex items-center gap-1 text-[10px] bg-amber-500 text-white px-3 py-1 rounded-full hover:bg-amber-600 transition-all font-black shadow-sm">
-                                                                <Icon name="heart" className="w-3 h-3" /> 隨喜贊助
+                                        <div className="relative flex items-center gap-5">
+                                            <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md shadow-inner ring-1 ring-white/10">
+                                                <i data-lucide="feather" className="w-8 h-8 text-indigo-100 print:hidden"></i>
+                                            </div>
+                                            <div className="flex-1 flex justify-between items-center">
+                                                <div>
+                                                    <h3 className="text-xl font-black tracking-[0.3em] uppercase text-white drop-shadow-md print:text-black">命譜詳評</h3>
+                                                    <p className="text-[10px] text-indigo-200 font-bold tracking-widest mt-1 opacity-80 print:hidden">詳盡命盤解析</p>
+                                                </div>
+                                                {aiReport && (
+                                                    <div className="flex gap-2">
+                                                        {/隨喜|贊助|香火|結緣/.test(aiReport) && (
+                                                            <button onClick={() => setShowDonate(true)} className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-full text-xs font-black backdrop-blur-md transition-all flex items-center gap-1 border border-amber-400/30">
+                                                                <Icon name="heart" className="w-4 h-4" /> 隨喜贊助
                                                             </button>
                                                         )}
-                                                        <button onClick={() => isTTSActive(`chat-${i}`) ? stopGlobalAudio() : playTTS(m.text, `chat-${i}`)} className={`flex items-center gap-1 text-[10px] transition-colors bg-indigo-50 px-2 py-1 rounded-full hover:bg-indigo-100 ${isTTSActive(`chat-${i}`) ? 'bg-red-500 text-white hover:bg-red-600' : 'text-indigo-400 hover:text-indigo-600'}`} title="朗讀">
-                                                            {isTTSLoading(`chat-${i}`) ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive(`chat-${i}`) ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying(`chat-${i}`) ? 'animate-pulse' : ''}`} />} <span>{isTTSActive(`chat-${i}`) ? '停止' : '朗讀'}</span>
+                                                        <button onClick={() => isTTSActive('report') ? stopGlobalAudio() : playTTS(aiReport, 'report')} className={`bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md transition-all flex items-center gap-1 border border-white/20 ${isTTSActive('report') ? 'bg-red-500/80 hover:bg-red-500' : ''}`}>
+                                                            {isTTSLoading('report') ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name={isTTSActive('report') ? "square" : "volume-2"} className={`w-4 h-4 ${isTTSPlaying('report') ? 'animate-pulse' : ''}`} />} {isTTSActive('report') ? '停止播放' : '朗讀全文'}
                                                         </button>
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
-                                    ))}
-
-                                    {isChatLoading && (
-                                        <div className="flex justify-start">
-                                            <div className="bg-white border border-slate-100 text-slate-500 rounded-[2rem] rounded-bl-[4px] p-5 shadow-sm flex items-center gap-2">
-                                                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
-                                                <span className="text-xs font-bold ml-2">大師正在推演心法...</span>
+                                    </div>
+                                    <CardContent className="p-10 text-[16px] font-bold leading-[2] whitespace-pre-wrap text-justify text-slate-700 print-font pure-text min-h-[200px] max-h-[600px] overflow-y-auto custom-scrollbar bg-slate-50/30">
+                                        {isLoading ? (
+                                            <div className="flex flex-col items-center gap-6 py-20">
+                                                <div className="relative">
+                                                    <div className="absolute inset-0 bg-indigo-500 blur-xl opacity-20 animate-pulse rounded-full"></div>
+                                                    <div className="animate-spin w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full relative z-10"></div>
+                                                </div>
+                                                <p className="font-black animate-pulse text-indigo-800 tracking-widest text-sm">大師翻閱心法古籍中...</p>
                                             </div>
-                                        </div>
-                                    )}
-                                    {chat.length === 0 && !isChatLoading && (
-                                        <div className="flex flex-col items-center justify-center h-full opacity-40 space-y-4">
-                                            <Icon name="message-square" className="w-12 h-12" />
-                                            <p className="text-xs font-black tracking-widest text-center">心中若有未解之謎<br />字句之間自有天機</p>
-                                        </div>
-                                    )}
-                                    <div ref={chatEndRef} />
-                                </div>
-
-                                <div className="p-4 bg-white border-t border-slate-100/50 shrink-0 space-y-3">
-                                    {/* 測字快選區 */}
-                                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                                        <span className="text-[10px] font-black text-slate-400 shrink-0">🔮 推薦測字：</span>
-                                        {['財', '情', '運', '命', '吉', '升', '平'].map(char => (
-                                            <button
-                                                key={char}
-                                                onClick={() => { setInput(char); setTimeout(handleGlyph, 100); }}
-                                                className="px-3 py-1 bg-amber-50 text-amber-700 text-[11px] font-black rounded-full border border-amber-100 hover:bg-amber-500 hover:text-white transition-all shadow-sm shrink-0 active:scale-95"
-                                            >
-                                                {char}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* 問事快選區 */}
-                                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                                        <span className="text-[10px] font-black text-slate-400 shrink-0">💬 諮詢方向：</span>
-                                        {['今日財位', '適合什麼職業', '如何避小人', '桃花在那裡'].map(q => (
-                                            <button
-                                                key={q}
-                                                onClick={() => { setInput(q); }}
-                                                className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[11px] font-black rounded-full border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm shrink-0 active:scale-95"
-                                            >
-                                                {q}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    <div className="bg-slate-50 p-2 rounded-[2rem] border border-slate-200 focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-50 transition-all flex gap-2 items-center shadow-inner mt-2">
-                                        <input
-                                            ref={chatInputRef}
-                                            type="text"
-                                            value={input}
-                                            onChange={e => setInput(e.target.value)}
-                                            onKeyDown={e => e.key === 'Enter' && handleChatSend()}
-                                            placeholder="請輸入您的問題..."
-                                            className="flex-1 min-w-0 bg-transparent px-4 py-2 text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400"
-                                        />
-                                        <div className="flex gap-1 pr-1">
-                                            <button onClick={handleGlyph} className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center transform active:scale-95" title="測字"><Icon name="pen-tool" className="w-4 h-4" /></button>
-                                            <button onClick={handleChatSend} className="w-10 h-10 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center justify-center transform active:scale-95"><Icon name="send" className="w-4 h-4 ml-0.5" /></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Card>
-
-                            <div className="rounded-[2.5rem] shadow-2xl bg-white overflow-hidden ring-4 ring-indigo-50/50 print:bg-white print:border-4 print:border-black print:shadow-none print:ring-0">
-                                <div className="bg-gradient-to-r from-red-950 via-slate-900 to-red-950 p-6 relative print:bg-white print:border-b-2 print:border-black">
-                                    <div className="relative flex items-center gap-5 z-10">
-                                        <div className="p-3 bg-red-500/10 rounded-2xl border border-red-500/20 backdrop-blur-sm print:hidden">
-                                            <Icon name="flame" className="w-6 h-6 text-red-500" />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-lg font-black uppercase tracking-[0.3em] text-red-100 print:text-black">心法不傳之秘偵測</h4>
-                                            <p className="text-[10px] text-red-200/60 font-bold tracking-wider mt-1 print:hidden">秘傳心法偵測</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="p-10 bg-slate-50 min-h-[200px] print:bg-white">
-                                    <div className="space-y-6">
-                                        {xinFaDetects.length > 0 ? xinFaDetects.map((p, idx) => (
-                                            <div key={idx} className="group relative pl-8 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-gradient-to-b before:from-red-500 before:to-transparent before:rounded-full">
-                                                <span className="font-black text-xl block text-red-800 mb-2 group-hover:text-red-600 transition-colors print:text-black">※ {p.name}</span>
-                                                <p className="text-[15px] font-medium text-slate-600 leading-loose text-justify print:text-black">{p.desc}</p>
-                                            </div>
-                                        )) : (
-                                            <div className="flex flex-col items-center justify-center py-10 opacity-50">
-                                                <i data-lucide="shield-check" className="w-16 h-16 text-emerald-500 mb-4" />
-                                                <p className="text-sm font-black text-slate-400 tracking-widest uppercase">盤面格局中和 · 偵測平安</p>
+                                        ) : (
+                                            aiReport || <div className="text-center py-12 text-slate-400 select-none">
+                                                <Icon name="scroll" className="w-16 h-16 mx-auto mb-6 opacity-20" />
+                                                <p className="tracking-widest font-black opacity-50">大師已準備就緒。<br />請點擊下方按鈕，將根據《紫微心法》全書內容為您批命。</p>
+                                                <button onClick={fetchAiReport} className="mt-8 bg-indigo-600 text-white px-8 py-3 rounded-full font-black shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all flex items-center gap-2 mx-auto ring-4 ring-indigo-50"><Icon name="feather" className="w-5 h-5" /> 開始詳批</button>
                                             </div>
                                         )}
+                                    </CardContent>
+                                </Card>
+
+                                <Card ref={chatCardRef} className="print:hidden h-[600px] flex flex-col border-0 shadow-2xl rounded-[2.5rem] ring-4 ring-indigo-50/50 bg-white overflow-hidden mb-12">
+                                    <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-5 relative shrink-0">
+                                        <div className="relative flex items-center gap-4">
+                                            <div className="p-2.5 bg-indigo-500 rounded-xl shadow-lg ring-2 ring-indigo-400/30">
+                                                <i data-lucide="sparkles" className="w-5 h-5 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-black uppercase tracking-[0.25em] text-slate-100">大師即時諮詢</h3>
+                                                <p className="text-[9px] text-slate-400 font-bold tracking-wider mt-0.5">大師在線解惑</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 absolute top-5 right-5">
+                                            <button onClick={stopGlobalAudio} className="w-6 h-6 rounded-full bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all" title="停止語音">
+                                                <Icon name="square" className="w-3 h-3 fill-current" />
+                                            </button>
+                                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                                            <span className="text-[9px] font-bold text-emerald-400">連線中</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#f8fafc] custom-scrollbar">
+                                        {chat.map((m, i) => (
+                                            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                                <div className={`max-w-[85%] p-5 text-[14px] font-bold leading-relaxed shadow-sm whitespace-pre-wrap ${m.role === 'user'
+                                                    ? 'bg-indigo-600 text-white rounded-[2rem] rounded-br-[4px]'
+                                                    : 'bg-white border border-slate-100 text-slate-700 rounded-[2rem] rounded-bl-[4px]'
+                                                    }`}>
+                                                    {m.text}
+                                                    {m.role === 'assistant' && (
+                                                        <div className="mt-3 pt-2 border-t border-slate-100/50 flex justify-end gap-2">
+                                                            {/隨喜|贊助|香火|結緣/.test(m.text) && (
+                                                                <button onClick={() => setShowDonate(true)} className="flex items-center gap-1 text-[10px] bg-amber-500 text-white px-3 py-1 rounded-full hover:bg-amber-600 transition-all font-black shadow-sm">
+                                                                    <Icon name="heart" className="w-3 h-3" /> 隨喜贊助
+                                                                </button>
+                                                            )}
+                                                            <button onClick={() => isTTSActive(`chat-${i}`) ? stopGlobalAudio() : playTTS(m.text, `chat-${i}`)} className={`flex items-center gap-1 text-[10px] transition-colors bg-indigo-50 px-2 py-1 rounded-full hover:bg-indigo-100 ${isTTSActive(`chat-${i}`) ? 'bg-red-500 text-white hover:bg-red-600' : 'text-indigo-400 hover:text-indigo-600'}`} title="朗讀">
+                                                                {isTTSLoading(`chat-${i}`) ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive(`chat-${i}`) ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying(`chat-${i}`) ? 'animate-pulse' : ''}`} />} <span>{isTTSActive(`chat-${i}`) ? '停止' : '朗讀'}</span>
+                                                            </button>
+                                                            <button onClick={() => setWisdomText(m.text)} className="flex items-center gap-1 text-[10px] bg-amber-50 text-amber-600 px-2 py-1 rounded-full hover:bg-amber-500 hover:text-white transition-all font-bold">
+                                                                <Icon name="image" className="w-3 h-3" /> 開運卡
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {isChatLoading && (
+                                            <div className="flex justify-start">
+                                                <div className="bg-white border border-slate-100 text-slate-500 rounded-[2rem] rounded-bl-[4px] p-5 shadow-sm flex items-center gap-2">
+                                                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
+                                                    <span className="text-xs font-bold ml-2">大師正在推演心法...</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {chat.length === 0 && !isChatLoading && (
+                                            <div className="flex flex-col items-center justify-center h-full opacity-40 space-y-4">
+                                                <Icon name="message-square" className="w-12 h-12" />
+                                                <p className="text-xs font-black tracking-widest text-center">心中若有未解之謎<br />字句之間自有天機</p>
+                                            </div>
+                                        )}
+                                        <div ref={chatEndRef} />
+                                    </div>
+
+                                    <div className="p-4 bg-white border-t border-slate-100/50 shrink-0 space-y-3">
+                                        {/* 測字快選區 */}
+                                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                                            <span className="text-[10px] font-black text-slate-400 shrink-0">🔮 推薦測字：</span>
+                                            {['財', '情', '運', '命', '吉', '升', '平'].map(char => (
+                                                <button
+                                                    key={char}
+                                                    onClick={() => { setInput(char); setTimeout(handleGlyph, 100); }}
+                                                    className="px-3 py-1 bg-amber-50 text-amber-700 text-[11px] font-black rounded-full border border-amber-100 hover:bg-amber-500 hover:text-white transition-all shadow-sm shrink-0 active:scale-95"
+                                                >
+                                                    {char}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* 問事快選區 */}
+                                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                                            <span className="text-[10px] font-black text-slate-400 shrink-0">💬 諮詢方向：</span>
+                                            {['今日財位', '適合什麼職業', '如何避小人', '桃花在那裡'].map(q => (
+                                                <button
+                                                    key={q}
+                                                    onClick={() => { setInput(q); }}
+                                                    className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[11px] font-black rounded-full border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm shrink-0 active:scale-95"
+                                                >
+                                                    {q}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="bg-slate-50 p-2 rounded-[2rem] border border-slate-200 focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-50 transition-all flex gap-2 items-center shadow-inner mt-2">
+                                            <input
+                                                ref={chatInputRef}
+                                                type="text"
+                                                value={input}
+                                                onChange={e => setInput(e.target.value)}
+                                                onKeyDown={e => e.key === 'Enter' && handleChatSend()}
+                                                placeholder="請輸入您的問題..."
+                                                className="flex-1 min-w-0 bg-transparent px-4 py-2 text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400"
+                                            />
+                                            <div className="flex gap-1 pr-1">
+                                                <button onClick={handleGlyph} className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center transform active:scale-95" title="測字"><Icon name="pen-tool" className="w-4 h-4" /></button>
+                                                <button onClick={handleChatSend} className="w-10 h-10 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center justify-center transform active:scale-95"><Icon name="send" className="w-4 h-4 ml-0.5" /></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Card>
+
+                                <div className="rounded-[2.5rem] shadow-2xl bg-white overflow-hidden ring-4 ring-indigo-50/50 print:bg-white print:border-4 print:border-black print:shadow-none print:ring-0">
+                                    <div className="bg-gradient-to-r from-red-950 via-slate-900 to-red-950 p-6 relative print:bg-white print:border-b-2 print:border-black">
+                                        <div className="relative flex items-center gap-5 z-10">
+                                            <div className="p-3 bg-red-500/10 rounded-2xl border border-red-500/20 backdrop-blur-sm print:hidden">
+                                                <Icon name="flame" className="w-6 h-6 text-red-500" />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-lg font-black uppercase tracking-[0.3em] text-red-100 print:text-black">心法不傳之秘偵測</h4>
+                                                <p className="text-[10px] text-red-200/60 font-bold tracking-wider mt-1 print:hidden">秘傳心法偵測</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-10 bg-slate-50 min-h-[200px] print:bg-white">
+                                        <div className="space-y-6">
+                                            {xinFaDetects.length > 0 ? xinFaDetects.map((p, idx) => (
+                                                <div key={idx} className="group relative pl-8 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-gradient-to-b before:from-red-500 before:to-transparent before:rounded-full">
+                                                    <span className="font-black text-xl block text-red-800 mb-2 group-hover:text-red-600 transition-colors print:text-black">※ {p.name}</span>
+                                                    <p className="text-[15px] font-medium text-slate-600 leading-loose text-justify print:text-black">{p.desc}</p>
+                                                </div>
+                                            )) : (
+                                                <div className="flex flex-col items-center justify-center py-10 opacity-50">
+                                                    <i data-lucide="shield-check" className="w-16 h-16 text-emerald-500 mb-4" />
+                                                    <p className="text-sm font-black text-slate-400 tracking-widest uppercase">盤面格局中和 · 偵測平安</p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <footer className="text-center py-24 text-slate-400 font-black text-[11px] uppercase tracking-[1em] no-print">專業紫微斗數 · 天機命譜正宗</footer>
+                        <footer className="text-center py-24 text-slate-400 font-black text-[11px] uppercase tracking-[1em] no-print">專業紫微斗數 · 天機命譜正宗</footer>
 
-                    {/* Global Floating Stop Button */}
-                    <div className="fixed bottom-6 right-6 z-50 print:hidden">
-                        <button onClick={stopGlobalAudio} className="w-12 h-12 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 hover:scale-110 transition-all flex items-center justify-center ring-4 ring-white/50" title="強制停止所有語音">
-                            <Icon name="square" className="w-5 h-5 fill-current" />
-                        </button>
-                    </div>
+                        {/* Global Floating Stop Button */}
+                        <div className="fixed bottom-6 right-6 z-50 print:hidden">
+                            <button onClick={stopGlobalAudio} className="w-12 h-12 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 hover:scale-110 transition-all flex items-center justify-center ring-4 ring-white/50" title="強制停止所有語音">
+                                <Icon name="square" className="w-5 h-5 fill-current" />
+                            </button>
+                        </div>
 
-                    {showDonate && <DonateModal onClose={() => setShowDonate(false)} />}
-                </div >
+                        {showDonate && <DonateModal onClose={() => setShowDonate(false)} />}
+                        {wisdomText && <WisdomCardModal text={wisdomText} onClose={() => setWisdomText("")} />}
+                    </div>
+                </div>
             );
         };
 
