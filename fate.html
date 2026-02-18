@@ -2156,8 +2156,8 @@ ${getFullChartContext()}
 
                         <div className="xl:col-span-4 space-y-12 print:w-full print:mt-16">
                             <div className="grid grid-cols-3 gap-3">
-                                <button onClick={() => handleSimpleExec()} disabled={actionLoading === 'simple'} className={`bg-teal-600 text-white p-3 rounded-2xl shadow-lg hover:bg-teal-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-teal-200 ring-offset-2 ${actionLoading === 'simple' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                    {actionLoading === 'simple' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="message-circle" className="w-4 h-4" />} 白話精解
+                                <button onClick={() => { console.log('Clicked Simple Exec'); handleSimpleExec(); }} disabled={actionLoading === 'simple'} className={`bg-teal-600 text-white p-3 rounded-2xl shadow-lg hover:bg-teal-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-teal-200 ring-offset-2 ${actionLoading === 'simple' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                    {actionLoading === 'simple' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="message-circle" className="w-4 h-4" />} 白話精解 (V2)
                                 </button>
                                 <button onClick={() => fetchAiReport()} disabled={actionLoading === 'report'} className={`bg-indigo-900 text-white p-3 rounded-2xl shadow-lg hover:bg-indigo-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'report' ? 'opacity-75 cursor-not-allowed' : ''}`}>
                                     {actionLoading === 'report' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="feather" className="w-4 h-4" />} 命譜詳評

@@ -130,13 +130,14 @@
                             <div class="flex justify-between items-start mb-2">
                                 <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest" x-text="(() => {
                                         const m = c.model || '';
-                                        if(m.includes('simple')) return '【功能】白話精解';
-                                        if(m.includes('bazi')) return '【功能】八字論命';
-                                        if(m.includes('daily')) return '【功能】今日錦囊';
-                                        if(m.includes('love')) return '【功能】感情專題';
-                                        if(m.includes('finance')) return '【功能】財運專題';
-                                        if(m.includes('report')) return '【功能】命譜詳評';
-                                        return m;
+                                        const debug = ' (' + m + ')';
+                                        if(m.includes('simple')) return '【功能】白話精解' + debug;
+                                        if(m.includes('bazi')) return '【功能】八字論命' + debug;
+                                        if(m.includes('daily')) return '【功能】今日錦囊' + debug;
+                                        if(m.includes('love')) return '【功能】感情專題' + debug;
+                                        if(m.includes('finance')) return '【功能】財運專題' + debug;
+                                        if(m.includes('report')) return '【功能】命譜詳評' + debug;
+                                        return '【功能】' + m;
                                     })()">MODEL</span>
                                 <span class="text-[10px] font-mono text-slate-500"
                                     x-text="formatDate(c.timestamp)">TIME</span>
