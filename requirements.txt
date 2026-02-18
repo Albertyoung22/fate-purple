@@ -7,3 +7,5 @@ groq
 google-generativeai
 pymongo[srv]
 dnspython
+edge-tts
+asyncio
