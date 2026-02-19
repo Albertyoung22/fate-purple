@@ -57,11 +57,11 @@
                     <p class="text-slate-400 text-xs uppercase tracking-widest">AI 對話總數</p>
                     <p class="text-3xl font-black text-white mt-1" x-text="data.chats_count || 0">0</p>
                 </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 w-40 text-center">
-                    <p class="text-slate-400 text-xs uppercase tracking-widest">系統狀態</p>
-                    <p class="text-sm font-black mt-2 inline-block px-2 py-1 rounded-full"
-                        :class="(data.db_status && data.db_status.includes('MongoDB')) ? 'bg-emerald-900 text-emerald-400 border border-emerald-500/30' : 'bg-amber-900 text-amber-400 border border-amber-500/30'"
-                        x-text="data.db_status || 'Local JSON'"></p>
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 w-auto min-w-[10rem] text-center">
+                    <p class="text-slate-400 text-xs uppercase tracking-widest">資料庫與雲端狀態</p>
+                    <p class="text-sm font-black mt-2 inline-block px-3 py-1 rounded-full"
+                        :class="data.db_status && data.db_status.includes('試算表') ? 'bg-emerald-900 text-emerald-400 border border-emerald-500/30' : 'bg-amber-900 text-amber-400 border border-amber-500/30'"
+                        x-text="data.db_status || '連線檢查中...'"></p>
                 </div>
             </div>
         </header>

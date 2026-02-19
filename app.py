@@ -6,7 +6,6 @@ import sys
 import threading
 import webbrowser
 import logging
-import subprocess
 import time
 import asyncio
 import edge_tts
@@ -21,7 +20,7 @@ try:
 except ImportError:
     HAS_TK = False
     print("Tkinter not found (Headless environment detected). GUI will be disabled.")
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Flask, request, jsonify, make_response, send_file, Response, stream_with_context, send_from_directory
 from flask_cors import CORS
 import lunar_python
@@ -100,26 +99,15 @@ RECORD_FILE = 'user_records.json'
 
 # --- Persistence Layer (JSON vs MongoDB) ---
 MONGO_URI = os.environ.get("MONGO_URI") or CONFIG.get("mongo_uri")
+USE_MONGODB = CONFIG.get("use_mongodb", True) # Default to True, but allow disabling
 db = None
 users_collection = None
 chats_collection = None
+MONGO_AVAILABLE = False
 
-if MONGO_URI:
+if MONGO_URI and USE_MONGODB:
     print(f"DEBUG: Found MONGO_URI environment variable (Length: {len(MONGO_URI)})") # Debug check
-    # Explicitly install dnspython if missing (Render fix)
-    try:
-        import dns
-    except ImportError:
-        print("Installing dnspython...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "dnspython"])
-
-    # Explicitly install Google API Client if missing (Render fix)
-    try:
-        import googleapiclient
-    except ImportError:
-        print("正在安裝 google-api-python-client google-auth 套件...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "google-api-python-client", "google-auth", "google-auth-oauthlib"])
-
+    # MongoDB connection setup
     try:
         import pymongo
         from pymongo import MongoClient
@@ -160,14 +148,17 @@ def get_sheets_service():
     
     if os.path.exists(SHEETS_CREDENTIALS_FILE):
         try:
+            # Load credentials and ensure private_key is correctly formatted
+            with open(SHEETS_CREDENTIALS_FILE, 'r', encoding='utf-8') as f:
+                info = json.load(f)
+            
             from google.oauth2 import service_account
             from googleapiclient.discovery import build
             
             SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-            creds = service_account.Credentials.from_service_account_file(
-                SHEETS_CREDENTIALS_FILE, scopes=SCOPES)
+            creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
             sheets_service = build('sheets', 'v4', credentials=creds)
-            print("✅ Google 試算表服務已初始化")
+            print(f"✅ Google 試算表服務已初始化")
             return sheets_service
         except Exception as e:
             print(f"❌ Google 試算表初始化失敗: {e}")
@@ -185,7 +176,16 @@ def append_to_sheet(sheet_name, row_data):
             spreadsheetId=SPREADSHEET_ID, range=range_name,
             valueInputOption="USER_ENTERED", body=body).execute()
     except Exception as e:
-        print(f"⚠️ 試算表寫入錯誤 ({sheet_name}): {e}")
+        err_msg = str(e)
+        if "400" in err_msg and "not supported for this document" in err_msg:
+            print(f"❌ 試算表 ID 格式錯誤 (ID: {SPREADSHEET_ID})")
+            if len(SPREADSHEET_ID) == 33:
+                print("🚨 偵測到 ID 為 33 字元，極大機率是被截斷了！正確 ID 通常為 44 字元。")
+                print("請至 config.json 重新貼上完整的 Spreadsheet ID。")
+            else:
+                print("提示：請檢查 config.json 中的 spreadsheet_id 是否正確且為有效的試算表（非資料夾）。")
+        else:
+            print(f"⚠️ 試算表寫入錯誤 ({sheet_name}): {e}")
 
 
 def load_json_file(filename):
@@ -253,7 +253,7 @@ def save_hidden_insights(data):
 def log_chat(model, prompt, response, user_info=None):
     # In MongoDB mode, we don't need to load all logs just to append one.
     entry = {
-        "timestamp": (datetime.utcnow() + timedelta(hours=8)).strftime('%Y-%m-%dT%H:%M:%S'),
+        "timestamp": datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%dT%H:%M:%S'),
         "model": model,
         "prompt": prompt,
         "response": response
@@ -299,7 +299,8 @@ def get_location_from_ip(ip):
 
 def get_heavenly_timing():
     """Calculate current Chinese Zodiac Hour and Solar Term Context"""
-    now = datetime.utcnow() + timedelta(hours=8)
+    # Use timezone-aware datetime for UTC+8
+    now = datetime.now(timezone(timedelta(hours=8)))
     hour = now.hour
     
     # 1. 十二時辰判定
@@ -366,11 +367,12 @@ def call_ollama_api(prompt, system_prompt=""):
     return None
 
 def stream_groq_api(prompt, system_prompt=""):
-    if not GROQ_KEYS: return
-    for _ in range(3):
+    available_keys = list(GROQ_KEYS)
+    random.shuffle(available_keys)
+    
+    for current_key in available_keys:
         try:
             from groq import Groq
-            current_key = random.choice(GROQ_KEYS)
             client = Groq(api_key=current_key)
             completion = client.chat.completions.create(
                 model=GROQ_MODEL,
@@ -382,12 +384,17 @@ def stream_groq_api(prompt, system_prompt=""):
                 if content: yield content
             return
         except Exception as e:
-            if "429" in str(e):
-                print(">>> Groq API 繁忙，稍後重試...")
-                time.sleep(2)
+            err_str = str(e)
+            if "429" in err_str:
+                print(f">>> Groq API (Key: {current_key[:10]}...) 繁忙/限流，嘗試備援金鑰...")
                 continue
-            print(f"Groq API 錯誤: {e}")
-            break
+            elif "401" in err_str or "Invalid API Key" in err_str:
+                print(f"❌ Groq API 金鑰失效 ({current_key[:10]}...)，已從清單移除。")
+                if current_key in GROQ_KEYS:
+                    GROQ_KEYS.remove(current_key)
+            else:
+                print(f"Groq API 錯誤: {e}")
+                break
 
 def call_groq_api(prompt, system_prompt=""):
     full_response = ""
@@ -396,10 +403,11 @@ def call_groq_api(prompt, system_prompt=""):
     return full_response if full_response else None
 
 def stream_gemini_api(prompt, system_prompt=""):
-    if not GEMINI_KEYS: return
-    for _ in range(2):
+    available_keys = list(GEMINI_KEYS)
+    random.shuffle(available_keys)
+    
+    for current_key in available_keys:
         try:
-            current_key = random.choice(GEMINI_KEYS)
             genai.configure(api_key=current_key)
             model_instance = genai.GenerativeModel(GEMINI_MODEL)
             response = model_instance.generate_content(f"{system_prompt}\n\n{prompt}", stream=True)
@@ -407,11 +415,17 @@ def stream_gemini_api(prompt, system_prompt=""):
                 if chunk.text: yield chunk.text
             return
         except Exception as e:
-            if "429" in str(e):
-                time.sleep(2)
+            err_str = str(e)
+            if "429" in err_str:
+                print(f">>> Gemini API (Key: {current_key[:10]}...) 繁忙/限流，嘗試備援金鑰...")
                 continue
-            print(f"Gemini API 錯誤: {e}")
-            break
+            elif "401" in err_str or "Invalid API Key" in err_str or "API_KEY_INVALID" in err_str:
+                 print(f"❌ Gemini API 金鑰失效 ({current_key[:10]}...)，已從清單移除。")
+                 if current_key in GEMINI_KEYS:
+                     GEMINI_KEYS.remove(current_key)
+            else:
+                print(f"Gemini API 錯誤: {e}")
+                break
 
 def call_gemini_api(prompt, system_prompt=""):
     full_response = ""
@@ -486,6 +500,19 @@ class BackendApp(BaseClass):
         self.tab_ngrok = ttk.Frame(self.notebook, style="TFrame")
         self.notebook.add(self.tab_ngrok, text="  遠端連線 (Ngrok)  ")
         self.setup_ngrok_tab()
+
+        # Footer / Status Bar
+        self.status_bar = ttk.Frame(self, style="Panel.TFrame", padding=(10, 5))
+        self.status_bar.pack(fill="x", side="bottom")
+        
+        self.lbl_db_status = ttk.Label(self.status_bar, text="資料庫狀態: 檢查中...", foreground="#3498db")
+        self.lbl_db_status.pack(side="left", padx=10)
+        
+        self.lbl_sheets_status = ttk.Label(self.status_bar, text="Google 試算表: 檢查中...", foreground="#f1c40f")
+        self.lbl_sheets_status.pack(side="left", padx=10)
+        
+        # Start status update loop
+        self.update_system_status()
 
     def setup_monitor_tab(self):
         toolbar = ttk.Frame(self.tab_monitor, padding=10)
@@ -584,6 +611,41 @@ class BackendApp(BaseClass):
             url = res['tunnels'][0]['public_url']
             self.after(0, lambda: (self.ent_ngrok.delete(0, "end"), self.ent_ngrok.insert(0, url), self.lbl_ngrok.config(text="狀態: 在線 (Online)", foreground="#4ade80")))
         except: self.after(0, lambda: self.lbl_ngrok.config(text="狀態: 取得網址失敗"))
+
+    def update_system_status(self):
+        # Database Status
+        db_text = "本地 JSON 模式"
+        db_color = "#e67e22" # Orange
+        if MONGO_URI:
+            if db is not None:
+                db_text = f"🔥 MongoDB 在線 ({db.name})"
+                db_color = "#2ecc71" # Green
+            else:
+                db_text = "❌ MongoDB 連線失敗"
+                db_color = "#e74c3c" # Red
+        self.lbl_db_status.config(text=f"資料庫狀態: {db_text}", foreground=db_color)
+        
+        # Google Sheets Status
+        sheets_text = "未啟用"
+        sheets_color = "#95a5a6" # Gray
+        try:
+            if SPREADSHEET_ID:
+                if get_sheets_service():
+                    sheets_text = "✅ 雲端同步中 (Google Sheets)"
+                    sheets_color = "#2ecc71" # Green
+                else:
+                    sheets_text = "❌ 試算表 API 初始化失敗"
+                    sheets_color = "#e74c3c" # Red
+            else:
+                sheets_text = "⚠️ 尚未配置 Spreadsheet ID"
+                sheets_color = "#f1c40f" # Yellow
+        except Exception as e:
+            sheets_text = f"⚠️ 連線異常"
+            sheets_color = "#e74c3c"
+        self.lbl_sheets_status.config(text=f"Google 試算表: {sheets_text}", foreground=sheets_color)
+        
+        # Schedule next update in 60 seconds
+        self.after(60000, self.update_system_status)
 
     def setup_logging(self):
         class Redir:
@@ -692,7 +754,7 @@ def save_record():
         resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
     data = request.json or {}
     record = {
-        "timestamp": (datetime.utcnow() + timedelta(hours=8)).strftime('%Y-%m-%dT%H:%M:%S'), "name": data.get("name", "Unknown"),
+        "timestamp": datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%dT%H:%M:%S'), "name": data.get("name", "Unknown"),
         "gender": data.get("gender"), "birth_date": data.get("birth_date"),
         "birth_hour": data.get("birth_hour"), "lunar_date": data.get("lunar_date")
     }
@@ -701,6 +763,21 @@ def save_record():
         users_collection.insert_one(record)
     else:
         recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
+
+    # --- Local Excel Fallback ---
+    try:
+        import pandas as pd
+        df = pd.DataFrame(recs)
+        df.rename(columns={
+            "timestamp": "紀錄時間", "name": "姓名", "gender": "性別",
+            "birth_date": "國曆生日", "birth_hour": "時辰(支)", "lunar_date": "農曆日期"
+        }, inplace=True)
+        excel_path = 'user_records.xlsx'
+        df.to_excel(excel_path, index=False, engine='openpyxl')
+        print(f"💾 已同步備份至本地 Excel: {excel_path}")
+    except Exception as e:
+        if "pandas" not in str(e).lower(): 
+            print(f"⚠️ 本地 Excel 備份失敗: {e}")
 
     # --- Google Sheets Export ---
     try:
@@ -813,30 +890,41 @@ def chat():
         def stream_ai(p, s):
             print(f">>> AI 請求 (Prompt: {p[:15]}...)")
             
-            # Phase 1: Local Ollama (Not typically used in cloud)
+            # Phase 1: Local Ollama
             if not os.environ.get('RENDER'):
                 res = call_ollama_api(p, s)
                 if res and len(res.strip()) > 5: 
                     yield res
                     return
 
-            # Phase 2: Groq Streaming
-            print(">>> 嘗試 Groq (8B) 串流模式...")
-            try:
+            provider = CONFIG.get('gemini', {}).get('provider', 'gemini').lower()
+            
+            def try_groq_flow():
+                has_content = False
                 for chunk in stream_groq_api(p, s):
+                    has_content = True
                     yield chunk
-                return
-            except Exception:
-                pass
+                return has_content
 
-            # Phase 3: Gemini Streaming (Fallback)
-            print(">>> Groq 失敗，嘗試 Gemini 串流模式...")
-            try:
+            def try_gemini_flow():
+                has_content = False
                 for chunk in stream_gemini_api(p, s):
+                    has_content = True
                     yield chunk
-                return
-            except Exception:
-                yield "連線忙碌，請稍後再試。"
+                return has_content
+
+            if provider == 'groq':
+                print(">>> 優先嘗試 Groq 串流模式...")
+                if not (yield from try_groq_flow()):
+                    print(">>> Groq 失敗，嘗試 Gemini 備援...")
+                    if not (yield from try_gemini_flow()):
+                        yield "連線忙碌，請稍後再試。"
+            else:
+                print(">>> 優先嘗試 Gemini 串流模式...")
+                if not (yield from try_gemini_flow()):
+                    print(">>> Gemini 失敗，嘗試 Groq 備援...")
+                    if not (yield from try_groq_flow()):
+                        yield "連線忙碌，請稍後再試。"
 
         if matched and is_full:
             yield "【天機分析成功...】宗師正在為您詳批格局...\n\n"
@@ -936,7 +1024,7 @@ def keep_alive_pinger():
     while True:
         try:
             time.sleep(600)  # 每 10 分鐘 (600s) 發送一次
-            print(f"⏰ [保持連線] 探測時間：{datetime.now().strftime('%H:%M:%S')}...")
+            print(f"⏰ [保持連線] 探測時間：{datetime.now(timezone(timedelta(hours=8))).strftime('%H:%M:%S')}...")
             response = requests.get(url, timeout=10)
             print(f"✅ [保持連線] 探測成功，狀態碼：{response.status_code}")
         except Exception as e:
