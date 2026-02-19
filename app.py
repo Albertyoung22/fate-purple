@@ -117,7 +117,7 @@ if MONGO_URI:
         import pymongo
         from pymongo import MongoClient
         print(f"DEBUG: Pymongo Version: {pymongo.version}")
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=3000, connectTimeoutMS=3000, socketTimeoutMS=3000)
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=1000, connectTimeoutMS=1000, socketTimeoutMS=1000)
         
         # Try to get default database, if fails (e.g. URI has no path), use 'fate_purple'
         try:
