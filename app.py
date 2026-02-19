@@ -99,7 +99,7 @@ CHAT_LOG_FILE = 'chat_history.json'
 RECORD_FILE = 'user_records.json'
 
 # --- Persistence Layer (JSON vs MongoDB) ---
-MONGO_URI = os.environ.get("MONGO_URI")
+MONGO_URI = os.environ.get("MONGO_URI") or CONFIG.get("mongo_uri")
 db = None
 users_collection = None
 chats_collection = None
@@ -151,7 +151,7 @@ MONGO_AVAILABLE = True
 
 # --- Google Sheets Integration ---
 SHEETS_CREDENTIALS_FILE = 'credentials.json'
-SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID")
+SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID") or CONFIG.get("spreadsheet_id")
 sheets_service = None
 
 def get_sheets_service():
