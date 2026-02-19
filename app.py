@@ -300,10 +300,9 @@ def call_ollama_api(prompt, system_prompt=""):
         if CONFIG['server'].get('debug'): print(f"Ollama API offline: {e}")
     return None
 
-def call_groq_api(prompt, system_prompt=""):
-    if not GROQ_KEYS: return None
-    # 隨機挑選金鑰進行負載平衡
-    for _ in range(3): # 最多嘗試 3 次重試
+def stream_groq_api(prompt, system_prompt=""):
+    if not GROQ_KEYS: return
+    for _ in range(3):
         try:
             from groq import Groq
             current_key = random.choice(GROQ_KEYS)
@@ -311,9 +310,12 @@ def call_groq_api(prompt, system_prompt=""):
             completion = client.chat.completions.create(
                 model=GROQ_MODEL,
                 messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
-                temperature=0.7, max_completion_tokens=3000
+                temperature=0.7, max_tokens=3000, stream=True
             )
-            return completion.choices[0].message.content
+            for chunk in completion:
+                content = chunk.choices[0].delta.content
+                if content: yield content
+            return
         except Exception as e:
             if "429" in str(e):
                 print(">>> Groq 擁擠中，稍後重試...")
@@ -321,24 +323,36 @@ def call_groq_api(prompt, system_prompt=""):
                 continue
             print(f"Groq API Error: {e}")
             break
-    return None
 
-def call_gemini_api(prompt, system_prompt=""):
-    if not GEMINI_KEYS: return None
+def call_groq_api(prompt, system_prompt=""):
+    full_response = ""
+    for chunk in stream_groq_api(prompt, system_prompt):
+        full_response += chunk
+    return full_response if full_response else None
+
+def stream_gemini_api(prompt, system_prompt=""):
+    if not GEMINI_KEYS: return
     for _ in range(2):
         try:
             current_key = random.choice(GEMINI_KEYS)
             genai.configure(api_key=current_key)
             model_instance = genai.GenerativeModel(GEMINI_MODEL)
-            response = model_instance.generate_content(f"{system_prompt}\n\n{prompt}")
-            return response.text
+            response = model_instance.generate_content(f"{system_prompt}\n\n{prompt}", stream=True)
+            for chunk in response:
+                if chunk.text: yield chunk.text
+            return
         except Exception as e:
             if "429" in str(e):
                 time.sleep(2)
                 continue
             print(f"Gemini API Error: {e}")
             break
-    return None
+
+def call_gemini_api(prompt, system_prompt=""):
+    full_response = ""
+    for chunk in stream_gemini_api(prompt, system_prompt):
+        full_response += chunk
+    return full_response if full_response else None
 
 # --- UI Application Class ---
 # --- UI Application Class ---
@@ -687,35 +701,40 @@ def chat():
         else:
             final_system_prompt = f"你是【紫微天機道長】，語氣優雅慈悲。\n{geo_msg}\n{hidden_msg}{priority_tag}{client_sys}"
 
-        def call_ai(p, s):
-            # 優先順序：1. 本地 Ollama -> 2. Groq -> 3. Gemini
+        # Updated AI Caller with Streaming Support
+        def stream_ai(p, s):
             print(f">>> AI 請求 (Prompt: {p[:15]}...)")
             
-            # Phase 1: Local
-            # 如果是 Render 部署，Ollama 應該在 setup 時被禁用或跳過，這裡再做一次保險
+            # Phase 1: Local Ollama (Not typically used in cloud)
             if not os.environ.get('RENDER'):
                 res = call_ollama_api(p, s)
-                if res and len(res.strip()) > 5: return res
+                if res and len(res.strip()) > 5: 
+                    yield res
+                    return
 
-            # Phase 2: Groq
-            print(">>> 嘗試 Groq (8B)...")
-            res = call_groq_api(p, s)
-            if res and len(res.strip()) > 5: return res
-            
-            # Phase 3: Gemini (Fallback)
-            print(f">>> Groq 失敗或無回應 (res={res})，啟動 Gemini 備援...")
-            res = call_gemini_api(p, s)
-            if res and len(res.strip()) > 5: return res
-            
-            return None
+            # Phase 2: Groq Streaming
+            print(">>> 嘗試 Groq (8B) Streaming...")
+            try:
+                for chunk in stream_groq_api(p, s):
+                    yield chunk
+                return
+            except Exception:
+                pass
+
+            # Phase 3: Gemini Streaming (Fallback)
+            print(">>> Groq 失敗，嘗試 Gemini Streaming...")
+            try:
+                for chunk in stream_gemini_api(p, s):
+                    yield chunk
+                return
+            except Exception:
+                yield "連線忙碌，請稍後再試。"
 
         if matched and is_full:
             yield "【天機分析成功...】宗師正在為您詳批格局...\n\n"
             titles = {"A": "【第一章：星曜坐守與神煞特徵】", "B": "【第二章：命宮宮干飛化】", "C": "【第三章：宮位間的交互飛化】"}
             
             all_chapter_summaries = "" 
-            
-            # 章節式解讀 (語氣優化：禁止使用學術或說明書用語)
             chapter_sys = "你是【紫微天機道長】，命理宗師。請針對此命盤格局，直接給予緣主白話且深入的命理分析。語氣要權威且慈悲，切勿包含「本章節」、「綜上所述」、「規則」等生硬詞彙。請直接切入重點，分析吉凶。"
 
             for g_code, g_title in titles.items():
@@ -723,25 +742,24 @@ def chat():
                 if items:
                     yield f"\n{g_title}\n" + "-"*35 + "\n"
                     
-                    # 1. 先列出該章節所有規則
                     chapter_content = ""
                     for r in items[:15]: 
                         rule_txt = f"● 【{r.get('detected_palace_names','全盤')}】{r.get('description')}：{r.get('text')}"
                         yield rule_txt + "\n"
                         chapter_content += rule_txt + "\n"
                     
-                    # 2. 針對該章節進行一次性 AI 總評
                     yield f"\n💡 大師章節批註：\n"
                     explain_prompt = f"章節：{g_title}\n包含規則：\n{chapter_content}\n請給予本章節的綜合命理解讀。"
-                    explanation = call_ai(explain_prompt, chapter_sys)
                     
-                    if explanation:
-                        yield f"{explanation.strip()}\n\n"
-                        
-                        summary_snapshot = explanation[:250] + "..." if len(explanation) > 250 else explanation
-                        all_chapter_summaries += f"### {g_title} 重點摘要：\n{summary_snapshot}\n\n"
-                    else:
-                        yield "(大師沈默中...)\n\n"
+                    # Use streaming for chapter explanations too
+                    explanation_accum = ""
+                    for chunk in stream_ai(explain_prompt, chapter_sys):
+                        yield chunk
+                        explanation_accum += chunk
+                    yield "\n\n"
+                    
+                    summary_snapshot = explanation_accum[:250] + "..." if len(explanation_accum) > 250 else explanation_accum
+                    all_chapter_summaries += f"### {g_title} 重點摘要：\n{summary_snapshot}\n\n"
             
             if all_chapter_summaries:
                 yield "="*45 + "\n【天機判語 · 命理終極總結】\n"
@@ -749,24 +767,23 @@ def chat():
                 mini_final_sys = "你是【紫微天機道長】，命理宗師。請根據命盤摘要給予緣主最後的建議（300字）。請用白話文，語氣慈悲，直接給予人生指引。"
                 final_prompt = f"以下是緣主的命盤章節摘要：\n{all_chapter_summaries}\n\n用戶提問：{user_prompt}\n\n請做最後的總結與建議，每遇到句號請換行。"
                 
-                final_advice = call_ai(final_prompt, mini_final_sys)
-                if final_advice and len(final_advice.strip()) > 10:
-                     yield final_advice.strip()
-                else:
-                     yield "連線不穩定，無法取得最終建議。"
+                final_accum = ""
+                for chunk in stream_ai(final_prompt, mini_final_sys):
+                     yield chunk
+                     final_accum += chunk
             else:
                 yield "無法生成足夠資訊以進行總結。"
             
-                yield "連線斷開，請檢查後端日誌。"
-            log_chat("Hybrid-Report-Chapter", user_prompt, "Successfully generated detailed report.", user_info)
+            log_chat("Hybrid-Report-Chapter", user_prompt, "Detailed report generated.", user_info)
         else:
-            # 一般對話也優化排版
-            final = call_ai(user_prompt, final_system_prompt)
-            if final:
-                yield final.strip()
-            else:
-                yield "連線斷開，請檢查後端日誌。"
-            log_chat(data.get("model", "Hybrid-Fallback"), user_prompt, final or "ERR", user_info)
+            # Standard Streaming Chat
+            full_response = ""
+            for chunk in stream_ai(user_prompt, final_system_prompt):
+                if chunk:
+                    yield chunk
+                    full_response += chunk
+            
+            log_chat(data.get("model", "Hybrid-Stream"), user_prompt, full_response, user_info)
 
     return Response(stream_with_context(generate()), content_type='text/plain; charset=utf-8', headers={"Access-Control-Allow-Origin": "*"})
 
