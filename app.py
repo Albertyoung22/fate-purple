@@ -142,7 +142,7 @@ if MONGO_URI:
 
 def load_json_file(filename):
     # MongoDB Mode (with fallback)
-    if users_collection:
+    if users_collection is not None:
         try:
             if filename == RECORD_FILE:
                 return list(users_collection.find({}, {'_id': 0}))
@@ -163,7 +163,7 @@ def load_json_file(filename):
 
 def save_json_file(filename, data):
     # MongoDB Mode (with fallback)
-    if users_collection:
+    if users_collection is not None:
         try:
             if filename == RECORD_FILE and data:
                 # Naive implementation: assume the last item is the new one
