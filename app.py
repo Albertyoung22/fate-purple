@@ -820,6 +820,25 @@ def tts_handler():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# --- Keep-Alive Mechanism (Render Free Tier) ---
+def keep_alive_pinger():
+    """Periodically ping the server itself to prevent spin-down."""
+    url = "https://fate-purple.onrender.com"  # Self-URL
+    print(f"🚀 [Keep-Alive] Starting background pinger for {url}")
+    while True:
+        try:
+            time.sleep(600)  # Ping every 10 minutes (600s)
+            print(f"⏰ [Keep-Alive] Pinging self at {datetime.now().strftime('%H:%M:%S')}...")
+            response = requests.get(url, timeout=10)
+            print(f"✅ [Keep-Alive] Ping success: {response.status_code}")
+        except Exception as e:
+            print(f"⚠️ [Keep-Alive] Ping failed: {e}")
+            time.sleep(60)
+
+# Start pinger only on Render
+if os.environ.get('RENDER'):
+    threading.Thread(target=keep_alive_pinger, daemon=True).start()
+
 if __name__ == '__main__':
     # Check for Headless mode (e.g. Render, Docker, or GitHub Codespaces)
     if os.environ.get('HEADLESS') or os.environ.get('RENDER') or not HAS_TK:
