@@ -117,7 +117,7 @@ if MONGO_URI:
         import pymongo
         from pymongo import MongoClient
         print(f"DEBUG: Pymongo Version: {pymongo.version}")
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000) # 5s timeout
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=3000, connectTimeoutMS=3000, socketTimeoutMS=3000)
         
         # Try to get default database, if fails (e.g. URI has no path), use 'fate_purple'
         try:
@@ -126,12 +126,10 @@ if MONGO_URI:
             db = client["fate_purple"]
         users_collection = db["user_records"]
         chats_collection = db["chat_history"]
-        print(f"✅ MongoDB connected: {db.name}")
+        print(f"✅ MongoDB client initialized for: {db.name}")
         
-        # FORCE CHECK: The client is lazy, so we must command it to check connectivity now
-        print("DEBUG: Pinging MongoDB...")
-        client.admin.command('ping')
-        print("DEBUG: Ping successful!")
+        # REMOVED synchronous ping check to avoid blocking startup
+        # client.admin.command('ping') 
 
         if "test" in db.name and not "?" in MONGO_URI: # Heuristic check
              print("WARNING: Default database is 'test'. You may want to specify a DB name in URI.")
