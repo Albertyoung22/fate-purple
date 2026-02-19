@@ -141,49 +141,46 @@ if MONGO_URI:
         chats_collection = None
 
 def load_json_file(filename):
-    # MongoDB Mode
-    if db is not None:
-        if filename == RECORD_FILE and users_collection is not None:
-            return list(users_collection.find({}, {'_id': 0}))
-        elif filename == CHAT_LOG_FILE and chats_collection is not None:
-            return list(chats_collection.find({}, {'_id': 0}).sort("timestamp", 1))
+    # MongoDB Mode (with fallback)
+    if users_collection:
+        try:
+            if filename == RECORD_FILE:
+                return list(users_collection.find({}, {'_id': 0}))
+            elif filename == CHAT_LOG_FILE:
+                return list(chats_collection.find({}, {'_id': 0}).sort("timestamp", 1))
+        except Exception as e:
+            print(f"⚠️ Mongo Read Error ({e}), falling back to local JSON...")
+            # Fall through to local file read
     
-    # File Mode
-    if not os.path.exists(filename): return []
-    try:
-        with open(filename, 'r', encoding='utf-8') as f: return json.load(f)
-    except: return []
+    # Local File Mode
+    if os.path.exists(filename):
+        try:
+            with open(filename, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading {filename}: {e}")
+    return []
 
 def save_json_file(filename, data):
-    # MongoDB Mode
-    if db is not None:
-        # For bulk save, we might want to just insert the new item, but the current logic passes the WHOLE list.
-        # To adapt without rewriting everything, we'll check if it's an append operation.
-        # But here 'data' is the full list.
-        # OPTIMIZATION: In a real app, we shouldn't pass the full list. 
-        # However, for compatibility with existing code structure:
-        if filename == RECORD_FILE and users_collection is not None:
-            # Dangerous: Replacing all data? No, let's just insert the LAST item if it's new.
-            # But the caller (log_chat/save_record) usually appends and passes the full list.
-            # Let's change the caller to pass only the NEW item? No, that requires changing callers.
-            # Let's just grab the last item from `data` assuming it's an append.
-            if data:
-                last_item = data[-1]
-                # Simple check to avoid duplicates if possible, or just insert.
-                # Timestamps are unique enough.
-                if users_collection.count_documents({"timestamp": last_item.get("timestamp")}, limit=1) == 0:
-                    users_collection.insert_one(last_item)
-            return
-        elif filename == CHAT_LOG_FILE and chats_collection is not None:
-            if data:
-                last_item = data[-1]
-                if chats_collection.count_documents({"timestamp": last_item.get("timestamp")}, limit=1) == 0:
-                    chats_collection.insert_one(last_item)
-            return
-
-    # File Mode
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    # MongoDB Mode (with fallback)
+    if users_collection:
+        try:
+            if filename == RECORD_FILE and data:
+                # Naive implementation: assume the last item is the new one
+                users_collection.insert_one(data[-1])
+                return # Skip saving to local file to avoid double persistence? Or save both? Let's save both for backup.
+            elif filename == CHAT_LOG_FILE and data:
+                 chats_collection.insert_one(data[-1])
+                 return
+        except Exception as e:
+            print(f"⚠️ Mongo Write Error ({e}), falling back to local JSON...")
+    
+    # Local File Mode (Always save or fallback)
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving {filename}: {e}")
 
 HIDDEN_INSIGHTS_FILE = 'hidden_insights.json'
 def load_hidden_insights():
