@@ -124,7 +124,7 @@ if MONGO_URI:
         import pymongo
         from pymongo import MongoClient
         print(f"DEBUG: Pymongo 版本: {pymongo.version}")
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000, connectTimeoutMS=10000, socketTimeoutMS=10000)
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000, connectTimeoutMS=10000, socketTimeoutMS=15000)
         
         # Try to get default database, if fails (e.g. URI has no path), use 'fate_purple'
         try:
@@ -626,8 +626,27 @@ def db_check():
 
 @app.route('/api/admin/data')
 def get_admin_data():
-    records = load_json_file(RECORD_FILE)
-    chats = load_json_file(CHAT_LOG_FILE)
+    # Detect if we should use Mongo directly for counts/recent to avoid timeouts
+    if users_collection is not None and MONGO_AVAILABLE:
+        try:
+            records_count = users_collection.count_documents({})
+            chats_count = chats_collection.count_documents({})
+            records = list(users_collection.find({}, {'_id': 0}).sort("timestamp", -1).limit(50))
+            chats = list(chats_collection.find({}, {'_id': 0}).sort("timestamp", -1).limit(50))
+        except Exception as e:
+            print(f"⚠️ Mongo Admin Data 讀取失敗: {e}")
+            records_count = 0
+            chats_count = 0
+            records = []
+            chats = []
+    else:
+        # Local JSON Fallback (only for small files)
+        full_records = load_json_file(RECORD_FILE)
+        full_chats = load_json_file(CHAT_LOG_FILE)
+        records_count = len(full_records)
+        chats_count = len(full_chats)
+        records = list(reversed(full_records[-50:]))
+        chats = list(reversed(full_chats[-50:]))
     
     # Determine DB Status text
     status_text = "本地 JSON"
@@ -641,10 +660,10 @@ def get_admin_data():
         status_text += " + Google 試算表"
     
     return jsonify({
-        "records_count": len(records),
-        "chats_count": len(chats),
-        "records": list(reversed(records[-50:])), # Last 50 records
-        "chats": list(reversed(chats[-50:])),    # Last 50 chats
+        "records_count": records_count,
+        "chats_count": chats_count,
+        "records": records,
+        "chats": chats,
         "status": "Online",
         "uptime": "Running",
         "db_status": status_text
