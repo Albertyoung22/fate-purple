@@ -501,19 +501,6 @@ class BackendApp(BaseClass):
         self.notebook.add(self.tab_ngrok, text="  遠端連線 (Ngrok)  ")
         self.setup_ngrok_tab()
 
-        # Footer / Status Bar
-        self.status_bar = ttk.Frame(self, style="Panel.TFrame", padding=(10, 5))
-        self.status_bar.pack(fill="x", side="bottom")
-        
-        self.lbl_db_status = ttk.Label(self.status_bar, text="資料庫狀態: 檢查中...", foreground="#3498db")
-        self.lbl_db_status.pack(side="left", padx=10)
-        
-        self.lbl_sheets_status = ttk.Label(self.status_bar, text="Google 試算表: 檢查中...", foreground="#f1c40f")
-        self.lbl_sheets_status.pack(side="left", padx=10)
-        
-        # Start status update loop
-        self.update_system_status()
-
     def setup_monitor_tab(self):
         toolbar = ttk.Frame(self.tab_monitor, padding=10)
         toolbar.pack(fill="x")
@@ -611,41 +598,6 @@ class BackendApp(BaseClass):
             url = res['tunnels'][0]['public_url']
             self.after(0, lambda: (self.ent_ngrok.delete(0, "end"), self.ent_ngrok.insert(0, url), self.lbl_ngrok.config(text="狀態: 在線 (Online)", foreground="#4ade80")))
         except: self.after(0, lambda: self.lbl_ngrok.config(text="狀態: 取得網址失敗"))
-
-    def update_system_status(self):
-        # Database Status
-        db_text = "本地 JSON 模式"
-        db_color = "#e67e22" # Orange
-        if MONGO_URI:
-            if db is not None:
-                db_text = f"🔥 MongoDB 在線 ({db.name})"
-                db_color = "#2ecc71" # Green
-            else:
-                db_text = "❌ MongoDB 連線失敗"
-                db_color = "#e74c3c" # Red
-        self.lbl_db_status.config(text=f"資料庫狀態: {db_text}", foreground=db_color)
-        
-        # Google Sheets Status
-        sheets_text = "未啟用"
-        sheets_color = "#95a5a6" # Gray
-        try:
-            if SPREADSHEET_ID:
-                if get_sheets_service():
-                    sheets_text = "✅ 雲端同步中 (Google Sheets)"
-                    sheets_color = "#2ecc71" # Green
-                else:
-                    sheets_text = "❌ 試算表 API 初始化失敗"
-                    sheets_color = "#e74c3c" # Red
-            else:
-                sheets_text = "⚠️ 尚未配置 Spreadsheet ID"
-                sheets_color = "#f1c40f" # Yellow
-        except Exception as e:
-            sheets_text = f"⚠️ 連線異常"
-            sheets_color = "#e74c3c"
-        self.lbl_sheets_status.config(text=f"Google 試算表: {sheets_text}", foreground=sheets_color)
-        
-        # Schedule next update in 60 seconds
-        self.after(60000, self.update_system_status)
 
     def setup_logging(self):
         class Redir:
