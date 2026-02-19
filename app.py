@@ -52,7 +52,7 @@ def load_config():
             "groq_key": "",
             "model": "llama-3.1-8b-instant", 
             "temperature": 0.7, 
-            "max_output_tokens": 1024
+            "max_output_tokens": 3000
         },
         "ollama": {
             "enable": True,
@@ -311,7 +311,7 @@ def call_groq_api(prompt, system_prompt=""):
             completion = client.chat.completions.create(
                 model=GROQ_MODEL,
                 messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
-                temperature=0.7, max_completion_tokens=1024
+                temperature=0.7, max_completion_tokens=3000
             )
             return completion.choices[0].message.content
         except Exception as e:
@@ -662,17 +662,30 @@ def chat():
         }
         
         target_key = target_type.lower()
-        # 尋找對應的推薦類型，若沒對應則給予綜合大廟
         target_recommend = temple_map.get(target_key, "周邊具備正能量氣場、香火鼎盛的名門大廟")
         
-        geo_msg += f"在分析與指引中，請結合你的知識庫，針對「{location}」周邊，精準推薦相關的『{target_recommend}』。"
-        geo_msg += "【極重要指令】：絕對禁止提及任何具體的地點名稱（如：『台北』、『台中』、城市名或國家名），這會讓緣主覺得被追蹤。請以宗師『感應到你周遭氣息』或『所在之處附近』的擬人化語氣，直接說出廟宇名稱（例如：『在你目前定身之處附近，有一座○○廟與你命盤磁場相合...』）。要讓推薦顯得像是天機點撥，而非數據搜尋。"
+        is_concise_mode = target_type in ["daily", "ritual", "pastLife", "love", "finance"]
+        
+        # 注入地理位置與天時指令
+        geo_msg = f"注意：緣主目前位於「{location}」。{heavenly_timing}"
+        
+        if not is_concise_mode:
+            # 注入隨喜贊助指令 (不露痕跡)
+            geo_msg += " 【隱藏點撥】：若你覺得這次的解盤對緣主非常有幫助，請在回話結尾（或適當處）提到：若緣主覺得指引有益，可隨喜護持本壇香火（贊助）。"
+            geo_msg += f" \n在分析與指引中，請針對「{location}」周邊，精準推薦相關的『{target_recommend}』。"
+            geo_msg += " \n【極重要指令】：絕對禁止提及具體城市名。請以宗師語氣，直接說出廟宇名稱，顯得像是天機點撥。"
+        else:
+            # 極簡模式：僅提供地點參考，不要求擬人化語氣
+            geo_msg += f" (推薦周邊『{target_recommend}』)"
 
         # 動態系統提示詞：平常對話不帶秘卷以節省 Token
+        # 重要：將前端指定的 client_sys 放在最後，並加上最高指令標籤，確保 AI 嚴格執行格式要求
+        priority_tag = "\n【最高優先權指令：請直接執行以下格式與內容要求，禁止多餘描述】\n"
+        
         if is_full:
-            final_system_prompt = f"你是【紫微天機道長】，命理宗師。請針對緣主的命盤數據給予深度的格局批註。\n{client_sys}\n{geo_msg}\n{hidden_msg}\n【紫微心法秘卷】\n{MASTER_BOOK}"
+            final_system_prompt = f"你是【紫微天機道長】，命理宗師。\n{geo_msg}\n{hidden_msg}{priority_tag}{client_sys}\n\n【紫微心法秘卷】\n{MASTER_BOOK}"
         else:
-            final_system_prompt = f"你是【紫微天機道長】，語氣優雅慈悲。{geo_msg} {hidden_msg} 請直接回應該問題。"
+            final_system_prompt = f"你是【紫微天機道長】，語氣優雅慈悲。\n{geo_msg}\n{hidden_msg}{priority_tag}{client_sys}"
 
         def call_ai(p, s):
             # 優先順序：1. 本地 Ollama -> 2. Groq -> 3. Gemini
@@ -723,12 +736,9 @@ def chat():
                     explanation = call_ai(explain_prompt, chapter_sys)
                     
                     if explanation:
-                        # 排版優化：還原為標準換行符號，交由前端 CSS 處理
-                        clean_exp = explanation.replace("\n", "")
-                        formatted_exp = clean_exp.replace("。", "。\n").strip()
-                        yield f"{formatted_exp}\n\n"
+                        yield f"{explanation.strip()}\n\n"
                         
-                        summary_snapshot = clean_exp[:250] + "..." if len(clean_exp) > 250 else clean_exp
+                        summary_snapshot = explanation[:250] + "..." if len(explanation) > 250 else explanation
                         all_chapter_summaries += f"### {g_title} 重點摘要：\n{summary_snapshot}\n\n"
                     else:
                         yield "(大師沈默中...)\n\n"
@@ -741,9 +751,7 @@ def chat():
                 
                 final_advice = call_ai(final_prompt, mini_final_sys)
                 if final_advice and len(final_advice.strip()) > 10:
-                     clean_final = final_advice.replace("\n", "")
-                     formatted_final = clean_final.replace("。", "。\n").strip()
-                     yield formatted_final
+                     yield final_advice.strip()
                 else:
                      yield "連線不穩定，無法取得最終建議。"
             else:
@@ -755,9 +763,7 @@ def chat():
             # 一般對話也優化排版
             final = call_ai(user_prompt, final_system_prompt)
             if final:
-                clean_final = final.replace("\n", "") 
-                formatted_final = clean_final.replace("。", "。\n").strip()
-                yield formatted_final
+                yield final.strip()
             else:
                 yield "連線斷開，請檢查後端日誌。"
             log_chat(data.get("model", "Hybrid-Fallback"), user_prompt, final or "ERR", user_info)

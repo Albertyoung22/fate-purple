@@ -195,6 +195,9 @@
         .wisdom-card-vertical {
             writing-mode: vertical-rl;
             text-orientation: mixed;
+            white-space: pre-wrap;
+            line-height: 1.8;
+            letter-spacing: 0.15em;
         }
 
         .ink-bg {
@@ -1344,12 +1347,18 @@
                             {/* Header */}
                             <div className="w-full text-center border-b border-amber-900/10 pb-6 mb-8">
                                 <h4 className="text-amber-900/40 text-xs font-black tracking-[0.5em] uppercase mb-2">Destiny Secrets</h4>
-                                <h1 className="text-3xl font-black text-amber-950 tracking-[0.2em]">天機命譜 · 今日錦囊</h1>
+                                <h1 className="text-3xl font-black text-amber-950 tracking-[0.2em] whitespace-nowrap">天機命譜 · 今日錦囊</h1>
                             </div>
 
                             {/* Content Middle Section */}
-                            <div className="flex-1 flex items-center justify-center w-full py-8">
-                                <div className="wisdom-card-vertical max-h-[400px] text-2xl font-bold text-amber-950 leading-[2] tracking-[0.1em] text-justify opacity-90 mx-auto px-4">
+                            <div className="flex-1 flex items-center justify-center w-full py-8 overflow-hidden">
+                                <div
+                                    className="wisdom-card-vertical font-bold text-amber-950 leading-[1.8] tracking-[0.15em] text-justify opacity-90 mx-auto px-4 transition-all duration-500"
+                                    style={{
+                                        maxHeight: '420px',
+                                        fontSize: text.length > 100 ? '1.1rem' : text.length > 60 ? '1.3rem' : '1.6rem'
+                                    }}
+                                >
                                     {text}
                                 </div>
                             </div>
@@ -1432,7 +1441,40 @@
             const reportRef = useRef(null);
             const chatCardRef = useRef(null);
             const chatInputRef = useRef(null);
-            const currentTtsIdRef = useRef(null); // Ref to track active TTS request
+            const currentTtsIdRef = useRef(null);
+
+            // 開運卡內容蒸餾系統 (Extracts Key Points)
+            const distillForCard = (rawText) => {
+                if (!rawText) return "";
+                // 1. 移除 Markdown 與雜質
+                let text = rawText.replace(/[#*`]/g, '').trim();
+
+                // 2. 尋找有沒有已經標記好的「重點」區塊
+                const markers = ["開運重點", "錦囊重點", "夢境啟示", "桃花攻略", "財運佈局", "行動重點"];
+                for (const marker of markers) {
+                    if (text.includes(marker)) {
+                        const parts = text.split(marker);
+                        text = parts[parts.length - 1]; // 取標記後的部分
+                    }
+                }
+
+                // 3. 提取具備重點特徵的行 (條列式、數字開頭或✦開頭)
+                const lines = text.split('\n')
+                    .map(l => l.trim())
+                    .filter(l => l.length > 4);
+
+                const points = lines.filter(l => /^([0-9]|✦|[\-\*])/.test(l));
+
+                if (points.length >= 2) {
+                    return points.slice(0, 3).join('\n'); // 嚴格 3 點
+                }
+
+                // 4. 若無明顯條列，則抓取前 2 個精簡段落
+                return lines.slice(0, 2)
+                    .map(l => l.length > 30 ? l.substring(0, 28) + "..." : l)
+                    .map(l => l.startsWith('✦') ? l : `✦ ${l}`)
+                    .join('\n');
+            };
 
             // 持久化儲存邏輯
             useEffect(() => {
@@ -2013,13 +2055,12 @@
 `;
 
                 let systemPrompt = `你是一位精通《紫微心法》與《四柱八字》的雙盤命理大師。嚴格指令：1. **核心原則**：你的所有回答必須建立在《紫微心法》與《子平八字》的規則之上，禁止使用其他流派或通用廢話。2. **深度分析**：遇到星曜組合必須查閱心法口訣，遇到八字五行必須分析日主強弱與喜用神，進行「合參」推演。3. **風格要求**：純文字回答，不使用Markdown，並強制使用繁體中文 (Traditional Chinese)。${MASTER_BOOK}`;
-                if (type === 'daily') systemPrompt = "你是一位精通紫微斗數的決策大師。請嚴格根據命譜中的【流日命宮】星曜配置、三方四正以及自化情況，為緣主提供一條決定性的【今日錦囊妙計】。語氣需果斷，結合時空運勢給予具體建議。強制使用繁體中文回答。";
-                if (type === 'pastLife') systemPrompt = "你是一位能看透三世因果的玄學大師。請根據命盤中的【福德宮】與【命宮】，發揮想像力，撰寫一段關於這位緣主【前世因果】的短篇故事。請強制使用繁體中文 (Traditional Chinese) 回答。";
-                if (type === 'ritual') systemPrompt = "你是一位精通風水與命理改運的大師。請根據命盤中的煞星與化忌，提供一套具體可行的【現代轉運儀式】。請強制使用繁體中文 (Traditional Chinese) 回答。";
-                if (type === 'glyph') systemPrompt = "你是一位精通測字的神算。用戶提供了一個字，請結合該字與用戶的紫微命盤氣場，針對用戶想問的事情進行占卜。請強制使用繁體中文 (Traditional Chinese) 回答。";
-                if (type === 'dream') systemPrompt = "你是一位精通心理學與紫微斗數的解夢大師。請根據緣主【福德宮】的星曜，來解析緣主提供的【夢境】。請強制使用繁體中文 (Traditional Chinese) 回答。";
-                if (type === 'love') systemPrompt = "你是一位精通紫微斗數的感情教父。請根據緣主【夫妻宮】與【命宮】的星曜特性與化星流向，提供深度且專業的【桃花攻略】或【關係預測】。語氣要權威，切中要害。強制使用繁體中文回答。";
-                if (type === 'finance') systemPrompt = "你是一位精通紫微斗數的財富管理大師。請重點分析緣主的【財帛宮】（理財能力）、【官祿宮】（事業正財）與【田宅宮】（不動產與庫存）。請提供針對性的【投資建議】（如適合股票、房產或保守定存）以及【流年財運】分析。語氣需專業、務實且具前瞻性。強制使用繁體中文回答。";
+                if (type === 'daily') systemPrompt = "你是一位精通紫微斗數的決策大師。\n\n【絕不允許】：禁止開場問候、廢話解釋、故事描述。不要提到用戶名字。\n\n【格式】：直接輸出 3 個錦囊重點，嚴禁任何標題以外的文字。每點不超過 35 字：\n✦ 錦囊一：(內容)\n✦ 錦囊二：(內容)\n✦ 錦囊三：(內容)\n強制繁體。";
+                if (type === 'pastLife') systemPrompt = "你是一位大師。禁止敘事鋪陳、開場白。\n\n【格式】：直接輸出 3 個極短重點：\n✦ 前世：(身分)\n✦ 因果：(摘要)\n✦ 今生：(建議)\n每點不超過 35 字。強制繁體。";
+                if (type === 'ritual') systemPrompt = "你是一位大師。禁止原理說明、問候。\n\n【格式】：直接列出 3 個最具威力的轉運行動：\n✦ 錦囊一：(內容)\n✦ 錦囊二：(內容)\n✦ 錦囊三：(內容)\n每點不超過 35 字。強制繁體。";
+                if (type === 'love') systemPrompt = "你是一位感情教父。禁說廢話。直接給予 3 個桃花攻略：\n✦ 攻略一：(內容)\n✦ 攻略二：(內容)\n✦ 攻略三：(內容)\n每點不超過 35 字。強制繁體。";
+                if (type === 'finance') systemPrompt = "你是一位財運大師。禁說廢話。直接給予 3 個財運重點：\n✦ 佈局一：(內容)\n✦ 佈局二：(內容)\n✦ 佈局三：(內容)\n每點不超過 35 字。強制繁體。";
+                if (type === 'chat') systemPrompt = "你是一位精通紫微斗數的命理宗師。\n\n【指令】：\n1. 請務必分段清晰，不要全部文字連在一起。\n2. 靈活運用「✦」或條列式來呈現重點。\n3. 每段文字不宜過長，適當換行以利閱讀。\n4. 請務必使用繁體中文。";
                 if (type === 'bazi') systemPrompt = "你是一位精通《子平八字》的命理宗師。請略過紫微斗數，專注分析緣主的四柱八字。請撰寫一份結構清晰的【八字命書】，必須包含以下章節：\n\n### 1. 八字排盤與格局\n(分析日主強弱、五行喜忌、定格局)\n\n### 2. 性格特質分析\n(依據十神與五行生剋論斷)\n\n### 3. 事業與財運\n(分析喜用神對事業財運的影響)\n\n### 4. 感情與婚姻\n(男命看財，女命看官殺，論斷姻緣)\n\n### 5. 流年運勢提點\n(簡述近期流年吉凶)\n\n【排版要求】：\n- 請務必使用 Markdown 格式。\n- 每個章節必須換行分段。\n- 內容不要擠成一團，請適當分段以利閱讀。\n- 強制使用繁體中文。";
                 if (type === 'report') systemPrompt = `你是一位精通《紫微斗數全書》與《子平八字》的雙盤整合宗師。請為這位緣主(性別:${gender})撰寫一份【命譜詳評】。
 **核心指令（必須嚴格遵守）**：
@@ -2260,7 +2301,7 @@ ${getFullChartContext()}
                 playRitualSound('end');
                 setIsLoading(false);
             };
-            const handleDailyTip = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('daily'); setDailyTip(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n查詢日期：${targetYear}年${targetMonth}月${targetDay}日。\n請務必依據上述命盤的【流日】與【本命】星曜互動，給予緣主一條該日錦囊妙計。\n\n【特別要求】：請使用「繁體中文」。`, 'daily', (c) => setDailyTip(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
+            const handleDailyTip = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('daily'); setDailyTip(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n查詢日期：${targetYear}年${targetMonth}月${targetDay}日。\n\n【指令】：請直接輸出給予緣主的 3 個「錦囊妙計」重點，禁止任何開場白或解釋。`, 'daily', (c) => setDailyTip(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
             const handlePastLife = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('pastLife'); setPastLife(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請專注分析上述命盤中的【福德宮】（精神位）與【命宮】星曜，發揮想像力，講述一段關於緣主的前世因果故事。\n\n【特別要求】：故事請用「繁體中文」撰寫。`, 'pastLife', (c) => setPastLife(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
             const handleRitual = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('ritual'); setRitual(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請檢視上述命盤中目前的【化忌】與【煞星】位置，提供一套具體可行的現代轉運儀式。\n\n【特別要求】：請使用「繁體中文」。`, 'ritual', (c) => setRitual(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
             const handleGlyph = async () => { if (!input.trim()) { alert("請先輸入一個字！"); return; } if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); const char = input.trim().charAt(0); const q = input.trim(); setInput(""); setChat(prev => [...prev, { role: 'user', text: `測字：「${char}」 - ${q}` }, { role: 'assistant', text: "" }]); setIsChatLoading(true); setActionLoading('glyph'); await callAiApi(`${getFullChartContext()}\n\n用戶測字：「${char}」。\n用戶提問：「${q}」。\n\n請務必結合上述【緣主目前命盤資訊】（特別是命宮、福德宮氣場）與這個漢字，進行綜合測字占卜。\n\n【特別要求】：請使用「繁體中文」。`, 'glyph', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
@@ -2651,7 +2692,7 @@ ${getFullChartContext()}
                                             今日錦囊妙計
                                         </button>
                                         {dailyTip && (
-                                            <button onClick={() => setWisdomText(dailyTip)} className="bg-white border-2 border-amber-200 text-amber-600 px-4 rounded-2xl font-black hover:bg-amber-50 transition-all flex items-center gap-2">
+                                            <button onClick={() => setWisdomText(distillForCard(dailyTip))} className="bg-white border-2 border-amber-200 text-amber-600 px-4 rounded-2xl font-black hover:bg-amber-50 transition-all flex items-center gap-2">
                                                 <Icon name="image" className="w-5 h-5" />
                                                 製成開運卡
                                             </button>
@@ -2773,7 +2814,7 @@ ${getFullChartContext()}
                                                             <button onClick={() => isTTSActive(`chat-${i}`) ? stopGlobalAudio() : playTTS(m.text, `chat-${i}`)} className={`flex items-center gap-1 text-[10px] transition-colors bg-indigo-50 px-2 py-1 rounded-full hover:bg-indigo-100 ${isTTSActive(`chat-${i}`) ? 'bg-red-500 text-white hover:bg-red-600' : 'text-indigo-400 hover:text-indigo-600'}`} title="朗讀">
                                                                 {isTTSLoading(`chat-${i}`) ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive(`chat-${i}`) ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying(`chat-${i}`) ? 'animate-pulse' : ''}`} />} <span>{isTTSActive(`chat-${i}`) ? '停止' : '朗讀'}</span>
                                                             </button>
-                                                            <button onClick={() => setWisdomText(m.text)} className="flex items-center gap-1 text-[10px] bg-amber-50 text-amber-600 px-2 py-1 rounded-full hover:bg-amber-500 hover:text-white transition-all font-bold">
+                                                            <button onClick={() => setWisdomText(distillForCard(m.text))} className="flex items-center gap-1 text-[10px] bg-amber-50 text-amber-600 px-2 py-1 rounded-full hover:bg-amber-500 hover:text-white transition-all font-bold">
                                                                 <Icon name="image" className="w-3 h-3" /> 開運卡
                                                             </button>
                                                         </div>
