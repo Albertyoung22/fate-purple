@@ -140,9 +140,12 @@ if MONGO_URI:
         users_collection = None
         chats_collection = None
 
+MONGO_AVAILABLE = True
+
 def load_json_file(filename):
+    global MONGO_AVAILABLE
     # MongoDB Mode (with fallback)
-    if users_collection is not None:
+    if users_collection is not None and MONGO_AVAILABLE:
         try:
             if filename == RECORD_FILE:
                 return list(users_collection.find({}, {'_id': 0}))
@@ -150,8 +153,12 @@ def load_json_file(filename):
                 return list(chats_collection.find({}, {'_id': 0}).sort("timestamp", 1))
         except Exception as e:
             print(f"⚠️ Mongo Read Error ({e}), falling back to local JSON...")
-            # Fall through to local file read
-    
+            # If we hit a timeout, maybe disable Mongo for a while? 
+            # For now, let's keep trying but logging is annoying if it happens every time.
+            # Let's simple disable it for this session if it fails once to ensure speed.
+            # MONGO_AVAILABLE = False # Uncomment to permanent disable after split failure
+            pass
+
     # Local File Mode
     if os.path.exists(filename):
         try:
@@ -162,18 +169,19 @@ def load_json_file(filename):
     return []
 
 def save_json_file(filename, data):
+    global MONGO_AVAILABLE
     # MongoDB Mode (with fallback)
-    if users_collection is not None:
+    if users_collection is not None and MONGO_AVAILABLE:
         try:
             if filename == RECORD_FILE and data:
                 # Naive implementation: assume the last item is the new one
                 users_collection.insert_one(data[-1])
-                return # Skip saving to local file to avoid double persistence? Or save both? Let's save both for backup.
+                # Also save to local file for backup? Yes.
             elif filename == CHAT_LOG_FILE and data:
                  chats_collection.insert_one(data[-1])
-                 return
         except Exception as e:
             print(f"⚠️ Mongo Write Error ({e}), falling back to local JSON...")
+            # MONGO_AVAILABLE = False # Uncomment to disable after failure
     
     # Local File Mode (Always save or fallback)
     try:

@@ -1356,7 +1356,7 @@
                                     className="wisdom-card-vertical font-bold text-amber-950 leading-[1.8] tracking-[0.15em] text-justify opacity-90 mx-auto px-4 transition-all duration-500"
                                     style={{
                                         maxHeight: '420px',
-                                        fontSize: text.length > 100 ? '1.1rem' : text.length > 60 ? '1.3rem' : '1.6rem'
+                                        fontSize: text.length > 100 ? '0.9rem' : text.length > 60 ? '1.1rem' : '1.3rem'
                                     }}
                                 >
                                     {text}
@@ -1466,7 +1466,7 @@
                 const points = lines.filter(l => /^([0-9]|✦|[\-\*])/.test(l));
 
                 if (points.length >= 2) {
-                    return points.slice(0, 3).join('\n'); // 嚴格 3 點
+                    return points.slice(0, 3).map(p => p.length > 32 ? p.substring(0, 30) + "..." : p).join('\n'); // 嚴格 3 點，並限制字數
                 }
 
                 // 4. 若無明顯條列，則抓取前 2 個精簡段落
@@ -2687,13 +2687,13 @@ ${getFullChartContext()}
                                         {actionLoading === 'report' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="feather" className="w-4 h-4" />} 命譜詳評
                                     </button>
                                     <div className="flex gap-2">
-                                        <button onClick={handleDailyTip} disabled={actionLoading === 'daily'} className="flex-1 bg-gradient-to-tr from-amber-500 to-orange-500 text-white rounded-2xl py-4 font-black shadow-lg shadow-amber-200 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group disabled:opacity-50">
-                                            {actionLoading === 'daily' ? <Icon name="loader" className="w-5 h-5 animate-spin" /> : <Icon name="sparkles" className="w-5 h-5 group-hover:rotate-12 transition-transform" />}
+                                        <button onClick={handleDailyTip} disabled={actionLoading === 'daily'} className="flex-1 bg-gradient-to-tr from-amber-500 to-orange-500 text-white rounded-2xl py-3 font-black shadow-lg shadow-amber-200 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group disabled:opacity-50 text-sm">
+                                            {actionLoading === 'daily' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkles" className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
                                             今日錦囊妙計
                                         </button>
                                         {dailyTip && (
-                                            <button onClick={() => setWisdomText(distillForCard(dailyTip))} className="bg-white border-2 border-amber-200 text-amber-600 px-4 rounded-2xl font-black hover:bg-amber-50 transition-all flex items-center gap-2">
-                                                <Icon name="image" className="w-5 h-5" />
+                                            <button onClick={() => setWisdomText(distillForCard(dailyTip))} className="bg-white border-2 border-amber-200 text-amber-600 px-3 py-2 rounded-2xl font-black hover:bg-amber-50 transition-all flex items-center gap-1 text-xs">
+                                                <Icon name="image" className="w-4 h-4" />
                                                 製成開運卡
                                             </button>
                                         )}
