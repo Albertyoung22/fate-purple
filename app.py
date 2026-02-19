@@ -113,11 +113,18 @@ if MONGO_URI:
         print("Installing dnspython...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "dnspython"])
 
+    # Explicitly install Google API Client if missing (Render fix)
+    try:
+        import googleapiclient
+    except ImportError:
+        print("正在安裝 google-api-python-client google-auth 套件...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "google-api-python-client", "google-auth", "google-auth-oauthlib"])
+
     try:
         import pymongo
         from pymongo import MongoClient
-        print(f"DEBUG: Pymongo Version: {pymongo.version}")
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=1000, connectTimeoutMS=1000, socketTimeoutMS=1000)
+        print(f"DEBUG: Pymongo 版本: {pymongo.version}")
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000, connectTimeoutMS=10000, socketTimeoutMS=10000)
         
         # Try to get default database, if fails (e.g. URI has no path), use 'fate_purple'
         try:
@@ -126,21 +133,60 @@ if MONGO_URI:
             db = client["fate_purple"]
         users_collection = db["user_records"]
         chats_collection = db["chat_history"]
-        print(f"✅ MongoDB client initialized for: {db.name}")
+        print(f"✅ MongoDB 客戶端已連接資料庫: {db.name}")
         
         # REMOVED synchronous ping check to avoid blocking startup
         # client.admin.command('ping') 
 
         if "test" in db.name and not "?" in MONGO_URI: # Heuristic check
-             print("WARNING: Default database is 'test'. You may want to specify a DB name in URI.")
+             print("警告: 預設資料庫為 'test'。您可能需要在 URI 中指定資料庫名稱。")
     except Exception as e:
         import traceback
-        print(f"❌ MongoDB connection failed. Detailed Error:\n{traceback.format_exc()}")
+        print(f"❌ MongoDB 連線失敗。詳細錯誤:\n{traceback.format_exc()}")
         db = None
         users_collection = None
         chats_collection = None
 
 MONGO_AVAILABLE = True
+
+# --- Google Sheets Integration ---
+SHEETS_CREDENTIALS_FILE = 'credentials.json'
+SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID")
+sheets_service = None
+
+def get_sheets_service():
+    global sheets_service
+    if sheets_service: return sheets_service
+    
+    if os.path.exists(SHEETS_CREDENTIALS_FILE):
+        try:
+            from google.oauth2 import service_account
+            from googleapiclient.discovery import build
+            
+            SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+            creds = service_account.Credentials.from_service_account_file(
+                SHEETS_CREDENTIALS_FILE, scopes=SCOPES)
+            sheets_service = build('sheets', 'v4', credentials=creds)
+            print("✅ Google 試算表服務已初始化")
+            return sheets_service
+        except Exception as e:
+            print(f"❌ Google 試算表初始化失敗: {e}")
+            return None
+    return None
+
+def append_to_sheet(sheet_name, row_data):
+    service = get_sheets_service()
+    if not service or not SPREADSHEET_ID: return
+    
+    try:
+        range_name = f"{sheet_name}!A1"
+        body = {'values': [row_data]}
+        service.spreadsheets().values().append(
+            spreadsheetId=SPREADSHEET_ID, range=range_name,
+            valueInputOption="USER_ENTERED", body=body).execute()
+    except Exception as e:
+        print(f"⚠️ 試算表寫入錯誤 ({sheet_name}): {e}")
+
 
 def load_json_file(filename):
     global MONGO_AVAILABLE
@@ -152,7 +198,7 @@ def load_json_file(filename):
             elif filename == CHAT_LOG_FILE:
                 return list(chats_collection.find({}, {'_id': 0}).sort("timestamp", 1))
         except Exception as e:
-            print(f"⚠️ Mongo Read Error ({e}), falling back to local JSON...")
+            print(f"⚠️ Mongo 讀取錯誤 ({e})，切換至本地 JSON...")
             # If we hit a timeout, maybe disable Mongo for a while? 
             # For now, let's keep trying but logging is annoying if it happens every time.
             # Let's simple disable it for this session if it fails once to ensure speed.
@@ -165,7 +211,7 @@ def load_json_file(filename):
             with open(filename, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
-            print(f"Error loading {filename}: {e}")
+            print(f"載入 {filename} 錯誤: {e}")
     return []
 
 def save_json_file(filename, data):
@@ -180,7 +226,7 @@ def save_json_file(filename, data):
             elif filename == CHAT_LOG_FILE and data:
                  chats_collection.insert_one(data[-1])
         except Exception as e:
-            print(f"⚠️ Mongo Write Error ({e}), falling back to local JSON...")
+            print(f"⚠️ Mongo 寫入錯誤 ({e})，切換至本地 JSON...")
             # MONGO_AVAILABLE = False # Uncomment to disable after failure
     
     # Local File Mode (Always save or fallback)
@@ -188,7 +234,7 @@ def save_json_file(filename, data):
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        print(f"Error saving {filename}: {e}")
+        print(f"儲存 {filename} 錯誤: {e}")
 
 HIDDEN_INSIGHTS_FILE = 'hidden_insights.json'
 def load_hidden_insights():
@@ -207,7 +253,7 @@ def save_hidden_insights(data):
 def log_chat(model, prompt, response, user_info=None):
     # In MongoDB mode, we don't need to load all logs just to append one.
     entry = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": (datetime.utcnow() + timedelta(hours=8)).strftime('%Y-%m-%dT%H:%M:%S'),
         "model": model,
         "prompt": prompt,
         "response": response
@@ -221,6 +267,22 @@ def log_chat(model, prompt, response, user_info=None):
         logs = load_json_file(CHAT_LOG_FILE)
         logs.append(entry)
         save_json_file(CHAT_LOG_FILE, logs[-1000:]) # Keep last 1000
+
+    # --- Google Sheets Export ---
+    try:
+        row = [
+            entry.get("timestamp"),
+            entry.get("user_name", ""),
+            entry.get("gender", ""),
+            entry.get("birth_date", ""),
+            entry.get("birth_hour", ""),
+            entry.get("lunar_date", ""),
+            model,
+            prompt,
+            response
+        ]
+        threading.Thread(target=append_to_sheet, args=("Chats", row), daemon=True).start()
+    except: pass
 
 def get_location_from_ip(ip):
     """Resolve IP address to City/Region using ip-api.com"""
@@ -237,7 +299,7 @@ def get_location_from_ip(ip):
 
 def get_heavenly_timing():
     """Calculate current Chinese Zodiac Hour and Solar Term Context"""
-    now = datetime.now()
+    now = datetime.utcnow() + timedelta(hours=8)
     hour = now.hour
     
     # 1. 十二時辰判定
@@ -300,7 +362,7 @@ def call_ollama_api(prompt, system_prompt=""):
             return res.json().get("response")
     except Exception as e:
         # 僅在偵錯模式顯示，避免干擾主日誌
-        if CONFIG['server'].get('debug'): print(f"Ollama API offline: {e}")
+        if CONFIG['server'].get('debug'): print(f"Ollama API 離線: {e}")
     return None
 
 def stream_groq_api(prompt, system_prompt=""):
@@ -321,10 +383,10 @@ def stream_groq_api(prompt, system_prompt=""):
             return
         except Exception as e:
             if "429" in str(e):
-                print(">>> Groq 擁擠中，稍後重試...")
+                print(">>> Groq API 繁忙，稍後重試...")
                 time.sleep(2)
                 continue
-            print(f"Groq API Error: {e}")
+            print(f"Groq API 錯誤: {e}")
             break
 
 def call_groq_api(prompt, system_prompt=""):
@@ -348,7 +410,7 @@ def stream_gemini_api(prompt, system_prompt=""):
             if "429" in str(e):
                 time.sleep(2)
                 continue
-            print(f"Gemini API Error: {e}")
+            print(f"Gemini API 錯誤: {e}")
             break
 
 def call_gemini_api(prompt, system_prompt=""):
@@ -444,8 +506,9 @@ class BackendApp(BaseClass):
         tk.Button(toolbar, text="重新整理名冊", command=self.refresh_records, bg="#3b82f6", fg="white").pack(side="left")
 
         cols = ("time", "name", "gender", "birth", "lunar")
+        titles = ("錄入時間", "姓名", "性別", "生日", "農曆")
         self.tree_records = ttk.Treeview(self.tab_records, columns=cols, show='headings')
-        for c in cols: self.tree_records.heading(c, text=c.capitalize())
+        for i, c in enumerate(cols): self.tree_records.heading(c, text=titles[i])
         self.tree_records.pack(fill="both", expand=True, padx=10, pady=10)
 
     def setup_chats_tab(self):
@@ -457,8 +520,9 @@ class BackendApp(BaseClass):
         tk.Button(top, text="重新整理對話", command=self.refresh_chats, bg="#3b82f6", fg="white").pack(anchor="w", pady=5)
         
         cols = ("time", "model", "prompt")
+        titles = ("對話時間", "AI 模型", "提問內容摘要")
         self.tree_chats = ttk.Treeview(top, columns=cols, show='headings')
-        for c in cols: self.tree_chats.heading(c, text=c.capitalize())
+        for i, c in enumerate(cols): self.tree_chats.heading(c, text=titles[i])
         self.tree_chats.pack(fill="both", expand=True)
         self.tree_chats.bind("<<TreeviewSelect>>", self.on_chat_select)
 
@@ -546,11 +610,17 @@ def admin_page(): return send_file('admin.html')
 
 @app.route('/api/db_check')
 def db_check():
+    sheets_ok = False
+    try:
+        if get_sheets_service() and SPREADSHEET_ID: sheets_ok = True
+    except: pass
+
     status = {
         "mongo_uri_set": bool(MONGO_URI),
         "db_connected": db is not None,
         "users_collection": users_collection is not None,
-        "db_name": db.name if db is not None else None
+        "db_name": db.name if db is not None else None,
+        "google_sheets_connected": sheets_ok
     }
     return jsonify(status)
 
@@ -560,12 +630,15 @@ def get_admin_data():
     chats = load_json_file(CHAT_LOG_FILE)
     
     # Determine DB Status text
-    status_text = "Local JSON"
+    status_text = "本地 JSON"
     if MONGO_URI:
         if db is not None:
              status_text = f"MongoDB ({db.name})"
         else:
-             status_text = "MongoDB Connect Failed"
+             status_text = "MongoDB 連線失敗"
+    
+    if get_sheets_service() and SPREADSHEET_ID:
+        status_text += " + Google 試算表"
     
     return jsonify({
         "records_count": len(records),
@@ -600,7 +673,7 @@ def save_record():
         resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
     data = request.json or {}
     record = {
-        "timestamp": datetime.now().isoformat(), "name": data.get("name", "Unknown"),
+        "timestamp": (datetime.utcnow() + timedelta(hours=8)).strftime('%Y-%m-%dT%H:%M:%S'), "name": data.get("name", "Unknown"),
         "gender": data.get("gender"), "birth_date": data.get("birth_date"),
         "birth_hour": data.get("birth_hour"), "lunar_date": data.get("lunar_date")
     }
@@ -609,6 +682,19 @@ def save_record():
         users_collection.insert_one(record)
     else:
         recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
+
+    # --- Google Sheets Export ---
+    try:
+        row = [
+            record.get("timestamp"),
+            record.get("name"),
+            record.get("gender"),
+            record.get("birth_date"),
+            record.get("birth_hour"),
+            str(record.get("lunar_date"))
+        ]
+        threading.Thread(target=append_to_sheet, args=("Users", row), daemon=True).start()
+    except: pass
         
     return make_response(jsonify({"success": True}), 200, {"Access-Control-Allow-Origin": "*"})
 
@@ -716,7 +802,7 @@ def chat():
                     return
 
             # Phase 2: Groq Streaming
-            print(">>> 嘗試 Groq (8B) Streaming...")
+            print(">>> 嘗試 Groq (8B) 串流模式...")
             try:
                 for chunk in stream_groq_api(p, s):
                     yield chunk
@@ -725,7 +811,7 @@ def chat():
                 pass
 
             # Phase 3: Gemini Streaming (Fallback)
-            print(">>> Groq 失敗，嘗試 Gemini Streaming...")
+            print(">>> Groq 失敗，嘗試 Gemini 串流模式...")
             try:
                 for chunk in stream_gemini_api(p, s):
                     yield chunk
@@ -823,36 +909,36 @@ def tts_handler():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# --- Keep-Alive Mechanism (Render Free Tier) ---
+# --- Keep-Alive 保持連線機制 (針對 Render 免費版) ---
 def keep_alive_pinger():
-    """Periodically ping the server itself to prevent spin-down."""
-    url = "https://fate-purple.onrender.com"  # Self-URL
-    print(f"🚀 [Keep-Alive] Starting background pinger for {url}")
+    """定期對伺服器發送請求，防止免費版進入休眠。"""
+    url = "https://fate-purple.onrender.com"  # 自身 URL
+    print(f"🚀 [保持連線] 啟動背景探測器：{url}")
     while True:
         try:
-            time.sleep(600)  # Ping every 10 minutes (600s)
-            print(f"⏰ [Keep-Alive] Pinging self at {datetime.now().strftime('%H:%M:%S')}...")
+            time.sleep(600)  # 每 10 分鐘 (600s) 發送一次
+            print(f"⏰ [保持連線] 探測時間：{datetime.now().strftime('%H:%M:%S')}...")
             response = requests.get(url, timeout=10)
-            print(f"✅ [Keep-Alive] Ping success: {response.status_code}")
+            print(f"✅ [保持連線] 探測成功，狀態碼：{response.status_code}")
         except Exception as e:
-            print(f"⚠️ [Keep-Alive] Ping failed: {e}")
+            print(f"⚠️ [保持連線] 探測失敗：{e}")
             time.sleep(60)
 
-# Start pinger only on Render
+# 僅在 Render 環境啟動背景探測器
 if os.environ.get('RENDER'):
     threading.Thread(target=keep_alive_pinger, daemon=True).start()
 
 if __name__ == '__main__':
-    # Check for Headless mode (e.g. Render, Docker, or GitHub Codespaces)
+    # 檢查是否為無介面模式 (例如 Render, Docker, 或 GitHub Codespaces)
     if os.environ.get('HEADLESS') or os.environ.get('RENDER') or not HAS_TK:
-        print("Starting in HEADLESS mode (Web Server Only)...")
+        print("系統正以【無介面模式】啟動 (僅網頁伺服器)...")
         app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
     else:
-        # Local Desktop Mode with Tkinter Dashboard
+        # 本地桌面模式，包含 Tkinter 中控台
         try:
             ui = BackendApp(app)
             ui.mainloop()
         except Exception as e:
-            # Fallback if no display found (linux server etc)
-            print(f"GUI launch failed ({e}), falling back to HEADLESS mode...")
+            # 如果找不到顯示設備則降級運行
+            print(f"GUI 啟動失敗 ({e})，正在切換為【無介面模式】...")
             app.run(host="0.0.0.0", port=5000, debug=False)
