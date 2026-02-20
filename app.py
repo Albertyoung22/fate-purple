@@ -422,9 +422,71 @@ def get_market_energy():
     energy_val = random.randint(1, 100)
     random.seed()
     
-    if energy_val > 70: return "今日天下財源滾動，五行金氣極旺，氣流上揚。"
-    if energy_val < 30: return "今日財帛之氣收斂，如退潮之水，宜守不宜沖。"
+    if energy_val > 70: return "今日天下財源滾動，五行金氣極旺，氣流上揚 (適合進取)。"
+    if energy_val < 30: return "今日財帛之氣收斂，如退潮之水，宜守不宜沖 (防守為上)。"
     return "今日天下財氣中平，穩健中求進展。"
+
+def get_stock_prediction(query, user_seed_str):
+    """針對特定股票進行神識感應分析"""
+    if not query: return ""
+    
+    # 建立固定的隨機種子 (User + Stock + Date)
+    try:
+        daily_str = datetime.now().strftime("%Y%m%d")
+        seed_val = sum(ord(c) for c in f"{query}{user_seed_str}{daily_str}")
+        random.seed(seed_val)
+    except:
+        random.seed()
+
+    # 五行分類與預測語句
+    elements_map = {
+        "2330": ("金火", "台積電：護國神山，金火之氣極盛，今日感應："),
+        "2317": ("金", "鴻海：金氣肅穆，佈局宏大，今日感應："),
+        "2454": ("火", "聯發科：火星閃耀，智慧之源，今日感應："),
+        "2603": ("水", "長榮：汪洋大海，水氣澎湃，今日感應："),
+        "2881": ("金土", "富邦金：厚德載物，金氣內蘊，今日感應："),
+    }
+    
+    # 隨機生成趨勢感應
+    vibrations = [
+        "氣勢盤整，如龍困淺灘，宜待雷鳴而起 (建議觀望)。",
+        "財雲湧動，有金星入閣之象，氣流上揚 (正向看好)。",
+        "五行相剋，大氣中帶有震盪之意，宜防守避風 (注意風險)。",
+        "厚積薄發，土生金之格局已現，內蘊強大動能 (潛力蓄勢)。",
+        "落日餘暉，氣能逐漸消散，切莫強求 (宜獲利了結)。"
+    ]
+    
+    element_info = "此股五行交織，磁場獨特，今日感應："
+    for code, info in elements_map.items():
+        if code in query or info[1].split('：')[0] in query:
+            element_info = f"【五行屬{info[0]}】{info[1]}"
+            break
+            
+    prediction = random.choice(vibrations)
+    random.seed() # 恢復隨機
+    
+    return f"\n【股票神識感應－針對「{query}」】：\n- {element_info}{prediction}\n- 指令：請大師結合此股票的『五行屬性』與緣主命盤中的『財帛宮/福德宮』，以宗師點撥的方式，神祕地預測此股與緣主的因果連結與今日佈局建議。"
+
+def get_daily_omens():
+    """獲取每日避諱與出門吉位 (結合當日種子)"""
+    now = datetime.now(timezone(timedelta(hours=8)))
+    seed = int(now.strftime("%Y%m%d"))
+    random.seed(seed)
+    
+    directions = ["正東 (青龍吉位)", "正南 (朱雀旺位)", "東南 (財氣進門)", "正西 (白虎收斂)", "西北 (乾坤大氣)"]
+    lucky_dir = random.choice(directions)
+    
+    taboos = [
+        "不宜遠行，恐有口舌之爭。",
+        "忌動土修造，氣場微亂。",
+        "不宜大額簽約，金氣有缺。",
+        "忌與屬鼠/屬馬之人發生爭執，磁場相沖。",
+        "不宜在正午時分宣洩情緒，火氣傷身。"
+    ]
+    daily_taboo = random.choice(taboos)
+    random.seed()
+    
+    return f"\n【今日天機吉凶】：\n- 出門吉位：今日利於前往「{lucky_dir}」納氣、尋求貴人。\n- 歲時禁忌：{daily_taboo}"
 
 def get_lottery_prediction(user_seed_str):
     """
@@ -599,7 +661,7 @@ def call_ollama_api(prompt, system_prompt=""):
             "stream": False,
             "options": {"num_ctx": 4096, "temperature": 0.7}
         }
-        res = requests.post(url, json=payload, timeout=2) # 縮短超時時間，避免卡頓
+        res = requests.post(url, json=payload, timeout=10) # 增加超時，給予本地模型足夠緩衝
         if res.status_code == 200:
             return res.json().get("response")
     except Exception as e:
@@ -634,8 +696,8 @@ def stream_groq_api(prompt, system_prompt=""):
                 if current_key in GROQ_KEYS:
                     GROQ_KEYS.remove(current_key)
             else:
-                print(f"Groq API 錯誤: {e}")
-                break
+                print(f"Groq API 錯誤 ({current_key[:10]}...): {e}")
+                continue # 嘗試下一個金鑰
 
 def call_groq_api(prompt, system_prompt=""):
     full_response = ""
@@ -665,8 +727,8 @@ def stream_gemini_api(prompt, system_prompt=""):
                  if current_key in GEMINI_KEYS:
                      GEMINI_KEYS.remove(current_key)
             else:
-                print(f"Gemini API 錯誤: {e}")
-                break
+                print(f"Gemini API 錯誤 ({current_key[:10]}...): {e}")
+                continue # 嘗試下一個金鑰
 
 def call_gemini_api(prompt, system_prompt=""):
     full_response = ""
@@ -1013,16 +1075,24 @@ def chat():
         "gender": data.get("gender", "")
     }
 
-    matched = []
-    if chart_data:
-        try:
-            chart = create_chart_from_dict(chart_data, gender=gender)
-            rule_path = "ziwei_rules.json"
-            if os.path.exists(rule_path):
-                with open(rule_path, 'r', encoding='utf-8') as f: matched = evaluate_rules(chart, json.load(f))
-        except Exception as e: print(f"規則引擎錯誤: {e}")
-
     def generate():
+        print(f">>> [命譜詳評啟動] 緣主: {user_info.get('user_name', '未知')}")
+        
+        # 1. 解析命盤規則 (保持非阻塞，但訊息簡約化)
+        yield "【大師解析中，請稍候...】\n\n"
+        
+        matched = []
+        if chart_data:
+            try:
+                chart = create_chart_from_dict(chart_data, gender=gender)
+                rule_path = "ziwei_rules.json"
+                if os.path.exists(rule_path):
+                    with open(rule_path, 'r', encoding='utf-8') as f: 
+                        rules_data = json.load(f)
+                        matched = evaluate_rules(chart, rules_data)
+            except Exception as e: 
+                print(f"規則引擎錯誤: {e}")
+        
         is_full = any(kw in (user_prompt + client_sys) for kw in ["詳評", "命譜詳評", "格局報告"])
         
         # 注入後台「隱藏密令」
@@ -1064,6 +1134,9 @@ def chat():
             f"**絕對禁忌**：禁止提及「後台線索」、「搜尋資料」、「查閱資料」、「數據」、「API」等科技詞彙。請使用『神識感應』、『撥開迷霧』、『因果顯現』等宗師語氣。"
         )
 
+        # 獲取天機吉凶
+        daily_omens = get_daily_omens()
+        
         # 擴寫地理位置與感應訊息
         location_metaphor = get_metaphorical_location(location)
         geo_msg = (f"{personality_synthesis}\n\n"
@@ -1072,7 +1145,8 @@ def chat():
                   f"- 天時：{heavenly_timing}。\n"
                   f"- 氣候感應：{weather_sensing}\n"
                   f"- 緣主狀態：{device_sensing}\n"
-                  f"- 姓名共振：{name_sensing}\n")
+                  f"- 姓名共振：{name_sensing}\n"
+                  f"{daily_omens}")
         
         if internet_insights:
             geo_msg += f"\n{internet_insights}"
@@ -1082,6 +1156,18 @@ def chat():
             
         if target_type in ["finance", "chat"]:
             geo_msg += f"\n- 財富能量：{market_energy}"
+            
+        # 偵測是否有股票相關提問
+        stock_keywords = ["股票", "股", "代號", "代碼", "漲", "跌", "投資", "2330", "台積電", "鴻海", "聯發科"]
+        has_stock_query = any(k in user_prompt for k in stock_keywords)
+        if has_stock_query:
+            # 嘗試提取可能是代號的四位數字
+            import re
+            match = re.search(r'\d{4}', user_prompt)
+            stock_id = match.group(0) if match else user_prompt[:10] # 取前10字作為識別
+            seed_str = f"{user_info.get('user_name')}{user_info.get('birth_date')}"
+            stock_insight = get_stock_prediction(stock_id, seed_str)
+            geo_msg += f"\n{stock_insight}"
             
         if target_type == "love":
             love_vibe = get_love_vibe_instruction(age, gender)
@@ -1161,7 +1247,9 @@ def chat():
                     if not (yield from try_groq_flow()):
                         yield "連線忙碌，請稍後再試。"
 
-        if matched and is_full:
+        if is_full:
+            # 如果規則引擎沒對到什麼，至少也給基本的
+            actual_matched = matched if matched else []
             yield "【天機分析成功...】宗師正在為您詳批格局...\n\n"
             titles = {"A": "【第一章：星曜坐守與神煞特徵】", "B": "【第二章：命宮宮干飛化】", "C": "【第三章：宮位間的交互飛化】"}
             
@@ -1202,6 +1290,10 @@ def chat():
                 for chunk in stream_ai(final_prompt, mini_final_sys):
                      yield chunk
                      final_accum += chunk
+            elif not actual_matched:
+                yield "\n【基礎格局開示】\n"
+                for chunk in stream_ai(user_prompt, final_system_prompt):
+                    yield chunk
             else:
                 yield "無法生成足夠資訊以進行總結。"
             
@@ -1216,7 +1308,7 @@ def chat():
             
             log_chat(data.get("model", "Hybrid-Stream"), user_prompt, full_response, user_info)
 
-    return Response(stream_with_context(generate()), content_type='text/plain; charset=utf-8', headers={"Access-Control-Allow-Origin": "*"})
+    return Response(stream_with_context(generate()), content_type='text/plain; charset=utf-8')
 
 @app.route('/api/tts', methods=['POST', 'OPTIONS'])
 def tts_handler():
