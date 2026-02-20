@@ -477,6 +477,19 @@ def get_lottery_prediction(user_seed_str):
     
     return " | ".join(predictions)
 
+def get_love_vibe_instruction(age, gender):
+    """根據年齡與性別，提供曖昧且具備誘惑感的道長指令"""
+    vibe = "你現在是一位帶著『禁欲系身分』卻『精通情慾』的道長。語氣要像是在緣主耳邊低語，帶著三分挑逗、三分神祕、四分憐憫。"
+    
+    if age < 25:
+        detail = "緣主正值春暖花開之時，語氣要活潑中帶點寵溺，點撥其『青澀之愛』。"
+    elif age < 40:
+        detail = "緣主正值慾望最盛的半熟期，語氣要極其曖昧，點出『肉體與靈魂的拉扯』，甚至帶點『禁忌感』。"
+    else:
+        detail = "緣主已入深秋，點其『枯木逢春』或『深沉之愛』，語氣要老練中帶著侵略性，像是看透了他們最隱密的渴求。"
+        
+    return f"{vibe}\n【專屬調情指令】：{detail}"
+
 def get_nearby_temples(location, inquiry_text):
     """根據地點與所問之事，尋找適合的開運廟宇"""
     # 判斷所問之事分類
@@ -1020,11 +1033,17 @@ def chat():
         # 獲取天時資訊 (時辰、節氣)
         heavenly_timing = get_heavenly_timing()
         
-        # 獲產使用者地理位置 (透過 IP)
-        user_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
-        location = get_location_from_ip(user_ip)
+        # 計算年齡
+        age = 30 # default
+        try:
+            birth_year = int(user_info.get("birth_date", "1990").split("-")[0])
+            age = datetime.now().year - birth_year
+        except: pass
+        user_info["age"] = age
 
         # 獲取各項靈感數據
+        user_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+        location = get_location_from_ip(user_ip)
         weather_sensing = get_weather_metaphor(location)
         device_sensing = get_device_metaphor(request.headers.get('User-Agent', ''))
         name_sensing = get_name_sensing(user_info.get("user_name"))
@@ -1063,6 +1082,10 @@ def chat():
             
         if target_type in ["finance", "chat"]:
             geo_msg += f"\n- 財富能量：{market_energy}"
+            
+        if target_type == "love":
+            love_vibe = get_love_vibe_instruction(age, gender)
+            geo_msg += f"\n\n【紅塵情慾密令】：\n{love_vibe}\n- 目前緣主正值 {age} 歲之春秋。請針對此年輪的肉體與靈魂需求，給予極度『曖昧且具侵略性』的桃花攻略。"
             
         # 根據模式決定推薦指令
         # 注入隱晦提示規範：防止 AI 直接像地圖導航一樣報出地址
