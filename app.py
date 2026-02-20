@@ -128,14 +128,14 @@ if MONGO_URI and USE_MONGODB:
 
         if "test" in db.name and not "?" in MONGO_URI: # Heuristic check
              print("警告: 預設資料庫為 'test'。您可能需要在 URI 中指定資料庫名稱。")
+        MONGO_AVAILABLE = True
     except Exception as e:
         import traceback
         print(f"❌ MongoDB 連線失敗。詳細錯誤:\n{traceback.format_exc()}")
         db = None
         users_collection = None
         chats_collection = None
-
-MONGO_AVAILABLE = True
+        MONGO_AVAILABLE = False
 
 # --- Google Sheets Integration ---
 SHEETS_CREDENTIALS_FILE = 'credentials.json'
@@ -663,15 +663,22 @@ def get_admin_data():
         chats = list(reversed(full_chats[-50:]))
     
     # Determine DB Status text
-    status_text = "本地 JSON"
-    if MONGO_URI:
+    # Determine DB Status text
+    status_parts = []
+    
+    if USE_MONGODB and MONGO_URI:
         if db is not None:
-             status_text = f"MongoDB ({db.name})"
+             status_parts.append(f"MongoDB ({db.name})")
         else:
-             status_text = "MongoDB 連線失敗"
+             status_parts.append("MongoDB (連線失敗)")
     
     if get_sheets_service() and SPREADSHEET_ID:
-        status_text += " + Google 試算表"
+        status_parts.append("Google 試算表")
+        
+    if not status_parts:
+        status_parts.append("本地 JSON")
+        
+    status_text = " + ".join(status_parts)
     
     return jsonify({
         "records_count": records_count,
