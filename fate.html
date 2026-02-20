@@ -194,7 +194,7 @@
         /* 萬德開運卡特定樣式 */
         .wisdom-card-vertical {
             writing-mode: vertical-rl;
-            text-orientation: mixed;
+            text-orientation: upright;
             white-space: pre-wrap;
             line-height: 1.8;
             letter-spacing: 0.15em;
@@ -1384,6 +1384,144 @@
             );
         };
 
+        const DestinyShareModal = ({ userName, gender, destiny, chartData, onClose }) => {
+            const cardRef = useRef(null);
+            const [isGenerating, setIsGenerating] = useState(false);
+
+            // Get Destiny Palace Data
+            const lifePalace = chartData?.find(c => c.isLife);
+            const mainStars = lifePalace?.stars.filter(s => s.type === 'main').map(s => s.name) || [];
+            const luckyStars = lifePalace?.stars.filter(s => s.type === 'lucky').map(s => s.name) || [];
+
+            // Determine "Soul Word" based on main stars
+            const getSoulWord = () => {
+                if (mainStars.length === 0) return "空";
+                const map = {
+                    "紫微": "尊", "天機": "智", "太陽": "貴", "武曲": "剛",
+                    "天同": "福", "廉貞": "囚", "天府": "庫", "太陰": "富",
+                    "貪狼": "慾", "巨門": "暗", "天相": "佐", "天梁": "蔭",
+                    "七殺": "將", "破軍": "耗"
+                };
+                return map[mainStars[0]] || "命";
+            };
+
+            const downloadCard = async () => {
+                if (!cardRef.current) return;
+                setIsGenerating(true);
+                try {
+                    // Wait for fonts/images
+                    await document.fonts.ready;
+                    const canvas = await html2canvas(cardRef.current, {
+                        scale: 3,
+                        backgroundColor: '#1e1b4b', // Dark blue background
+                        useCORS: true,
+                        logging: false
+                    });
+                    const link = document.createElement('a');
+                    link.download = `天機命譜-${userName}-${new Date().getTime()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } catch (e) {
+                    console.error("Card Gen Error:", e);
+                    alert("卡片生成失敗，請手動截圖分享。");
+                }
+                setIsGenerating(false);
+            };
+
+            return (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in" onClick={onClose}>
+                    <div className="fixed top-6 right-6 flex gap-4 z-[80]">
+                        <button onClick={downloadCard} disabled={isGenerating} className="px-6 py-3 bg-fuchsia-600 text-white rounded-full font-black shadow-[0_0_20px_rgba(192,38,211,0.5)] hover:bg-fuchsia-500 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 ring-2 ring-white/20">
+                            {isGenerating ? <Icon name="loader" className="w-5 h-5 animate-spin" /> : <Icon name="share-2" className="w-5 h-5" />}
+                            {isGenerating ? "繪製天機中..." : "保存天機卡"}
+                        </button>
+                        <button onClick={onClose} className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all">
+                            <Icon name="x" className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    <div className="relative animate-in zoom-in duration-500 max-w-full max-h-[90vh] overflow-auto no-scrollbar flex justify-center">
+                        {/* The Destiny Card */}
+                        <div
+                            ref={cardRef}
+                            className="w-[400px] h-[700px] bg-gradient-to-b from-[#1e1b4b] via-[#312e81] to-[#0f172a] relative overflow-hidden shadow-2xl flex flex-col items-center text-white print-font"
+                        >
+                            {/* Background Decorations */}
+                            <div className="absolute top-0 w-full h-full opacity-30 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+                            <div className="absolute -top-20 -left-20 w-64 h-64 bg-fuchsia-600/20 rounded-full blur-[80px]"></div>
+                            <div className="absolute bottom-0 right-0 w-80 h-80 bg-indigo-500/20 rounded-full blur-[100px]"></div>
+                            <div className="absolute inset-4 border border-white/20 rounded-[2rem]"></div>
+                            <div className="absolute inset-6 border border-white/10 rounded-[1.5rem]"></div>
+
+                            {/* Content */}
+                            <div className="z-10 w-full h-full flex flex-col p-10 items-center justify-between">
+                                {/* Header */}
+                                <div className="text-center">
+                                    <div className="flex items-center justify-center gap-2 mb-2 opacity-70">
+                                        <Icon name="star" className="w-3 h-3 text-yellow-400" />
+                                        <span className="text-[10px] tracking-[0.3em] font-sans">PURPLE FATE</span>
+                                        <Icon name="star" className="w-3 h-3 text-yellow-400" />
+                                    </div>
+                                    <h1 className="text-3xl font-black tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-amber-100 to-yellow-200 drop-shadow-sm font-serif">紫微天機</h1>
+                                </div>
+
+                                {/* Main Soul Word */}
+                                <div className="relative group">
+                                    <div className="absolute inset-0 bg-yellow-400/20 blur-[50px] rounded-full animate-pulse"></div>
+                                    <div className="w-48 h-48 border-[1px] border-white/20 rounded-full flex items-center justify-center relative backdrop-blur-sm bg-white/5 ring-4 ring-white/5">
+                                        <div className="absolute inset-2 border border-white/10 rounded-full border-dashed animate-spin" style={{ animationDuration: '60s' }}></div>
+                                        <span className="text-[100px] font-black font-serif text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+                                            {getSoulWord()}
+                                        </span>
+                                        {/* Satellites */}
+                                        {luckyStars.slice(0, 4).map((star, i) => (
+                                            <div key={i} className="absolute w-8 h-8 bg-[#1e1b4b] border border-yellow-400/50 rounded-full flex items-center justify-center text-[10px] font-bold text-yellow-200 shadow-[0_0_10px_rgba(250,204,21,0.3)]"
+                                                style={{
+                                                    top: '50%', left: '50%',
+                                                    transform: `rotate(${i * 90 + 45}deg) translate(80px) rotate(-${i * 90 + 45}deg)`
+                                                }}>
+                                                {star}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Star List */}
+                                <div className="text-center space-y-2">
+                                    <p className="text-xs text-indigo-300 font-bold tracking-widest uppercase">命宮主星</p>
+                                    <div className="flex gap-4 justify-center">
+                                        {mainStars.length > 0 ? mainStars.map(s => (
+                                            <span key={s} className="text-2xl font-black text-white drop-shadow-md font-serif border-b border-white/30 pb-1">{s}</span>
+                                        )) : <span className="text-xl font-bold text-white/50 italic">命無正曜 · 借星安宮</span>}
+                                    </div>
+                                    <p className="text-[14px] text-indigo-200 font-bold mt-2">
+                                        {destiny?.pillars.year}年 / {destiny?.lunar}
+                                    </p>
+                                </div>
+
+                                {/* User Info */}
+                                <div className="w-full bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-center">
+                                    <div className="text-xl font-black text-white mb-1">{userName} <span className="text-xs font-normal opacity-70 ml-1">緣主</span></div>
+                                    <div className="flex justify-center gap-4 text-xs font-bold text-indigo-200 uppercase tracking-wider">
+                                        <span>{gender === 'male' ? '乾造' : '坤造'}</span>
+                                        <span>•</span>
+                                        <span>{chartData?.find(c => c.isBody)?.palaceName}身</span>
+                                        <span>•</span>
+                                        <span>{destiny ? getBureau(destiny.yearStemIdx % 10, 0).replace("二", "2").replace("三", "3").replace("四", "4").replace("五", "5").replace("六", "6") : ""}</span>
+                                    </div>
+                                </div>
+
+                                {/* Footer */}
+                                <div className="text-[9px] text-indigo-400/50 tracking-[0.5em] font-bold uppercase mt-4">
+                                    DESIGNED BY PURPLE FATE MASTER
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const App = () => {
             const [inputType, setInputType] = useState(() => localStorage.getItem('ziwei_input_type') || 'solar');
 
@@ -1435,6 +1573,8 @@
             // 監控使用者是否修改過生日 (若有舊資料則視為已修改過)
             const [isDateModified, setIsDateModified] = useState(() => !!localStorage.getItem('ziwei_birth_date'));
             const [actionLoading, setActionLoading] = useState(null);
+            const [isListening, setIsListening] = useState(false); // Voice Input State
+            const [showDestinyCard, setShowDestinyCard] = useState(false); // Destiny Card State
 
             const chatEndRef = useRef(null);
             const baziRef = useRef(null);
@@ -1442,6 +1582,40 @@
             const chatCardRef = useRef(null);
             const chatInputRef = useRef(null);
             const currentTtsIdRef = useRef(null);
+
+            // Voice Input Handler
+            const handleVoiceInput = () => {
+                if (!('webkitSpeechRecognition' in window)) {
+                    alert("您的瀏覽器不支援語音輸入，請使用 Google Chrome 或 Edge。");
+                    return;
+                }
+                if (isListening) return;
+
+                const recognition = new window.webkitSpeechRecognition();
+                recognition.lang = 'zh-TW';
+                recognition.interimResults = true;
+                recognition.continuous = false;
+
+                recognition.onstart = () => setIsListening(true);
+                recognition.onend = () => setIsListening(false);
+                recognition.onerror = (e) => { console.error(e); setIsListening(false); };
+
+                recognition.onresult = (event) => {
+                    const transcript = Array.from(event.results)
+                        .map(result => result[0])
+                        .map(result => result.transcript)
+                        .join('');
+                    setInput(prev => {
+                        // Simple logic to avoid duplicating if interim fires multiple times
+                        // Actually, onresult returns full transcript for the session?
+                        // Let's just set it to the transcript if it's new.
+                        // But we might want to append? 
+                        // Simplify: Just replace current input if it's empty, or append.
+                        return transcript;
+                    });
+                };
+                recognition.start();
+            };
 
             // 開運卡內容蒸餾系統 (Extracts Key Points)
             const distillForCard = (rawText) => {
@@ -1557,7 +1731,7 @@
             };
 
             const MasterPresence = ({ isSpeaking }) => {
-                const [imgSrc, setImgSrc] = useState("master_portrait.png");
+                const [imgSrc, setImgSrc] = useState("master_portrait.jpg");
                 const [attempt, setAttempt] = useState(0);
 
                 const handleImgError = () => {
@@ -2060,7 +2234,7 @@
                 if (type === 'ritual') systemPrompt = "你是一位大師。禁止原理說明、問候。\n\n【格式】：直接列出 3 個最具威力的轉運行動：\n✦ 錦囊一：(內容)\n✦ 錦囊二：(內容)\n✦ 錦囊三：(內容)\n每點不超過 35 字。強制繁體。";
                 if (type === 'love') systemPrompt = "你是一位感情教父。禁說廢話。直接給予 3 個桃花攻略：\n✦ 攻略一：(內容)\n✦ 攻略二：(內容)\n✦ 攻略三：(內容)\n每點不超過 35 字。強制繁體。";
                 if (type === 'finance') systemPrompt = "你是一位財運大師。禁說廢話。直接給予 3 個財運重點：\n✦ 佈局一：(內容)\n✦ 佈局二：(內容)\n✦ 佈局三：(內容)\n每點不超過 35 字。強制繁體。";
-                if (type === 'chat') systemPrompt = "你是一位精通紫微斗數的命理宗師。\n\n【指令】：\n1. 請務必分段清晰，不要全部文字連在一起。\n2. 靈活運用「✦」或條列式來呈現重點。\n3. 每段文字不宜過長，適當換行以利閱讀。\n4. 請務必使用繁體中文。";
+                if (type === 'chat') systemPrompt = "你是一位精通紫微斗數的命理宗師。請針對緣主提問進行解答。\n\n【核心指令】：\n1. **個性分析**：請務必參照【命宮】、【身宮】及三方四正的星曜組合，精準分析緣主的內在性格與外在表現。\n2. **前途展望**：結合【官祿宮】與【財帛宮】，分析適合的職業方向與未來發展潛力。\n3. **劫難預警**：若命盤中有【化忌】、【羊陀火鈴】等煞星衝擊，請慈悲提點緣主何時（大限或流年）可能面臨挑戰或劫難，並給予化解之道。\n\n【排版要求】：\n- 分段清晰，重點處可使用「✦」標示。\n- 語氣需如得道高僧般慈悲溫暖。\n- 強制使用繁體中文 (Traditional Chinese)。";
                 if (type === 'bazi') systemPrompt = "你是一位精通《子平八字》的命理宗師。請略過紫微斗數，專注分析緣主的四柱八字。請撰寫一份結構清晰的【八字命書】，必須包含以下章節：\n\n### 1. 八字排盤與格局\n(分析日主強弱、五行喜忌、定格局)\n\n### 2. 性格特質分析\n(依據十神與五行生剋論斷)\n\n### 3. 事業與財運\n(分析喜用神對事業財運的影響)\n\n### 4. 感情與婚姻\n(男命看財，女命看官殺，論斷姻緣)\n\n### 5. 流年運勢提點\n(簡述近期流年吉凶)\n\n【排版要求】：\n- 請務必使用 Markdown 格式。\n- 每個章節必須換行分段。\n- 內容不要擠成一團，請適當分段以利閱讀。\n- 強制使用繁體中文。";
                 if (type === 'report') systemPrompt = `你是一位精通《紫微斗數全書》與《子平八字》的雙盤整合宗師。請為這位緣主(性別:${gender})撰寫一份【命譜詳評】。
 **核心指令（必須嚴格遵守）**：
@@ -2176,21 +2350,7 @@ ${chartContext}
 `;
             };
 
-            const fetchAiReport = async () => {
-                if (!destiny) return;
-                if (!checkName()) return;
-                setIsLoading(true);
-                setAiReport(""); // Clear previous
-                try {
-                    const context = getFullChartContext();
-                    const res = await callAiApi(`這是我目前的完整命盤數據：${context}。請大師為我進行【命譜詳評】。`, 'report');
-                    setAiReport(res);
-                } catch (e) {
-                    setAiReport("發生錯誤：" + e.message);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
+
 
             const saveUserProfile = async (silent = false) => {
                 // 不論有無名字都強制儲存，若無名則標記為「未知緣主」
@@ -2259,58 +2419,86 @@ ${chartContext}
                 return true;
             };
 
+            // Refactored Handlers to use Chat Interface
+
             const handleReport = async () => {
                 if (!checkName() || !checkDate()) return;
                 playRitualSound('start');
-                await saveUserProfile(true); // Auto-save silently
-                setIsLoading(true);
-                setAiReport(""); // 重要：每次開始前清空舊的報表，避免重複顯示
-                const res = await callAiApi(`【指令】：請使用台灣繁體中文 (Traditional Chinese) 撰寫。
-
-${getFullChartContext()}
-
-【特別指定】：緣主想查看【${targetYear}年 ${targetMonth}月 ${targetDay}日】的運勢。
-請針對該流年、流月、流日進行推演，並重點分析流年命宮、流月命宮與流日命宮的吉凶互動。
-
-【飛星與術語要求】：
-1. 請務必運用「四化飛星」的技法（如：本宮飛出之祿權科忌，沖照何宮）。
-2. 在分析飛星時，請依照標準格式三段論述：
-   - 【檢測宮位】：指出發射飛星的宮位（如流年命宮）。
-   - 【邏輯條件】：說明四化飛伏的路徑與撞擊點（例如：宮干化忌入子田線，沖撞本命財帛）。
-   - 【斷結果】：依據上述邏輯推演出的具體吉凶現象（例如：主今年財庫有破，不宜大額投資）。
-3. 【宮干四化深度應用】：
-   - 請務必分析「各宮宮干」（尤其是命宮、身宮、流年命宮）所引發的四化（祿權科忌）。
-   - 特別標註「自化」現象（如：命宮干化祿入命宮，稱自化祿），並解釋其含義（如：個性樂觀、自我滿足）。
-   - 分析宮干四化對「三方四正」的影響（如：官祿宮干化忌沖夫妻宮，主事業影響婚姻）。
-4. 【生年四化與飛星驗證】：
-   - 請特別檢視「生年四化」（本命祿權科忌）落入何宮，並觀察與「流年飛星」的碰撞。
-   - 若某宮位同時滿足「生年四化」條件（如：本命忌坐守）且被「流年/流月飛星」沖動（如：流年忌沖入），此為重大徵兆，必須列入詳評。
-   - 請具體說明該宮位如何符合心法規則（例如：構成「雙忌沖」或「祿忌交戰」）。
-5. 【關鍵術語定義與運用】：批註時請務必正確運用以下概念：
-   - 【對星】：成對出現的星曜（如日月、輔弼、昌曲、魁鉞、台座、龍鳳、火鈴、空劫）。若三方四正只見其一，稱為「單見」。
-   - 【對照/對拱】：本宮與對宮相對（如子午宮貪狼對紫微）。
-   - 【會/照/沖】：星曜於三方四正相遇。
-   - 【同度/同躔】：兩星坐守同一宮位。
-   - 【相夾】：兩星分別位於本宮之左右鄰宮（如羊陀夾羊）。
-   - 【空宮與借星】：若本宮無正曜，務必註明「空宮」，並說明需「借星安宮」（借對宮星曜論斷）。
-6. 若有特殊格局（如：鈴昌陀武、石中隱玉、馬頭帶劍等），請務必點出。
-
-請依據上述資訊與心法，為緣主進行詳細且專業的命盤批註。
-
-【嚴格要求】：全篇必須使用「繁體中文」。`, 'report', (chunk) => setAiReport(prev => prev + chunk));
+                const msg = "請大師慈悲，為我進行【大師即時諮詢】，詳細解析我的命宮、身宮與三方四正之格局。";
+                setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
+                setIsChatLoading(true);
+                setActionLoading('report');
+                await callAiApi(`${getFullChartContext()}\n\n【緣主祈求】：${msg}\n\n【大師指令】：請進行《紫微綜合命盤解析》。\n請條列式解析：1. 命宮主星與格局 2. 身宮與三方四正 3. 六吉六煞影響 4. 針對緣主當下最需注意之處給予提點。\n請用「繁體中文」與「道長語氣」詳盡論述。`, 'chat', (chunk) => setChat(prev => {
+                    const newChat = [...prev];
+                    if (newChat.length > 0) newChat[newChat.length - 1].text += chunk;
+                    return newChat;
+                }));
                 playRitualSound('end');
-                setIsLoading(false);
+                setIsChatLoading(false);
+                setActionLoading(null);
             };
-            const handleDailyTip = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('daily'); setDailyTip(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n查詢日期：${targetYear}年${targetMonth}月${targetDay}日。\n\n【指令】：請直接輸出給予緣主的 3 個「錦囊妙計」重點，禁止任何開場白或解釋。`, 'daily', (c) => setDailyTip(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
-            const handlePastLife = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('pastLife'); setPastLife(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請專注分析上述命盤中的【福德宮】（精神位）與【命宮】星曜，發揮想像力，講述一段關於緣主的前世因果故事。\n\n【特別要求】：故事請用「繁體中文」撰寫。`, 'pastLife', (c) => setPastLife(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
-            const handleRitual = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('ritual'); setRitual(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請檢視上述命盤中目前的【化忌】與【煞星】位置，提供一套具體可行的現代轉運儀式。\n\n【特別要求】：請使用「繁體中文」。`, 'ritual', (c) => setRitual(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
-            const handleGlyph = async () => { if (!input.trim()) { alert("請先輸入一個字！"); return; } if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); const char = input.trim().charAt(0); const q = input.trim(); setInput(""); setChat(prev => [...prev, { role: 'user', text: `測字：「${char}」 - ${q}` }, { role: 'assistant', text: "" }]); setIsChatLoading(true); setActionLoading('glyph'); await callAiApi(`${getFullChartContext()}\n\n用戶測字：「${char}」。\n用戶提問：「${q}」。\n\n請務必結合上述【緣主目前命盤資訊】（特別是命宮、福德宮氣場）與這個漢字，進行綜合測字占卜。\n\n【特別要求】：請使用「繁體中文」。`, 'glyph', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
+
+            const handleDailyTip = async () => {
+                if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
+                await saveUserProfile(true);
+                const msg = "請大師賜予今日錦囊妙計";
+                setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
+                setIsChatLoading(true);
+                setActionLoading('daily');
+                await callAiApi(`${getFullChartContext()}\n\n查詢日期：${targetYear}年${targetMonth}月${targetDay}日。\n\n【指令】：請直接輸出給予緣主的 3 個「錦囊妙計」重點，禁止任何開場白或解釋。`, 'daily', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                playRitualSound('end');
+                setIsChatLoading(false);
+                setActionLoading(null);
+            };
+
+            const handlePastLife = async () => {
+                if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
+                await saveUserProfile(true);
+                const msg = "請大師揭示我的前世因果";
+                setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
+                setIsChatLoading(true);
+                setActionLoading('pastLife');
+                await callAiApi(`${getFullChartContext()}\n\n請專注分析上述命盤中的【福德宮】（精神位）與【命宮】星曜，發揮想像力，講述一段關於緣主的前世因果故事。\n\n【特別要求】：故事請用「繁體中文」撰寫。`, 'pastLife', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                playRitualSound('end');
+                setIsChatLoading(false);
+                setActionLoading(null);
+            };
+
+            const handleRitual = async () => {
+                if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
+                await saveUserProfile(true);
+                const msg = "請大師傳授專屬轉運儀式";
+                setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
+                setIsChatLoading(true);
+                setActionLoading('ritual');
+                await callAiApi(`${getFullChartContext()}\n\n請檢視上述命盤中目前的【化忌】與【煞星】位置，提供一套具體可行的現代轉運儀式。\n\n【特別要求】：請使用「繁體中文」。`, 'ritual', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                playRitualSound('end');
+                setIsChatLoading(false);
+                setActionLoading(null);
+            };
+
+            const handleGlyph = async () => {
+                if (!input.trim()) { alert("請先輸入一個字！"); return; }
+                if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
+                await saveUserProfile(true);
+                const char = input.trim().charAt(0);
+                const q = input.trim();
+                setInput("");
+                setChat(prev => [...prev, { role: 'user', text: `測字：「${char}」 - ${q}` }, { role: 'assistant', text: "" }]);
+                setIsChatLoading(true);
+                setActionLoading('glyph');
+                await callAiApi(`${getFullChartContext()}\n\n用戶測字：「${char}」。\n用戶提問：「${q}」。\n\n請務必結合上述【緣主目前命盤資訊】（特別是命宮、福德宮氣場）與這個漢字，進行綜合測字占卜。\n\n【特別要求】：請使用「繁體中文」。`, 'glyph', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                playRitualSound('end');
+                setIsChatLoading(false);
+                setActionLoading(null);
+            };
+
             const handleDream = async () => {
-                chatCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                if (!input.trim()) {
-                    chatInputRef.current?.focus();
-                    return;
-                }
+                if (!input.trim()) { chatInputRef.current?.focus(); return; }
                 if (!checkName() || !checkDate()) return;
                 playRitualSound('start');
                 await saveUserProfile(true);
@@ -2324,17 +2512,43 @@ ${getFullChartContext()}
                 setIsChatLoading(false);
                 setActionLoading(null);
             };
-            const handleLove = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('love'); setChat(prev => [...prev, { role: 'user', text: "請大師指點迷津，賜予我桃花攻略！" }, { role: 'assistant', text: "" }]); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【夫妻宮】與【命宮】星曜，提供緣主一條具體的桃花攻略或相處之道。\n\n【特別要求】：請使用「繁體中文」。`, 'love', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; })); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
-            const handleFinance = async () => { if (!checkName() || !checkDate()) return; playRitualSound('start'); await saveUserProfile(true); setActionLoading('finance'); setFinance(""); setIsChatLoading(true); await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【財帛宮】、【官祿宮】與【田宅宮】，提供緣主關於【投資理財】與【流年財運】的專業建議。\n\n【特別要求】：請使用「繁體中文」。`, 'finance', (c) => setFinance(p => p + c)); playRitualSound('end'); setIsChatLoading(false); setActionLoading(null); };
+
+            const handleLove = async () => {
+                if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
+                await saveUserProfile(true);
+                setActionLoading('love');
+                setChat(prev => [...prev, { role: 'user', text: "請大師指點迷津，賜予我桃花攻略！" }, { role: 'assistant', text: "" }]);
+                setIsChatLoading(true);
+                await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【夫妻宮】與【命宮】星曜，提供緣主一條具體的桃花攻略或相處之道。\n\n【特別要求】：請使用「繁體中文」。`, 'love', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                playRitualSound('end');
+                setIsChatLoading(false);
+                setActionLoading(null);
+            };
+
+            const handleFinance = async () => {
+                if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
+                await saveUserProfile(true);
+                const msg = "請大師分析我的流年財運";
+                setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
+                setIsChatLoading(true);
+                setActionLoading('finance');
+                await callAiApi(`${getFullChartContext()}\n\n請詳細分析上述命盤中的【財帛宮】、【官祿宮】與【田宅宮】，提供緣主關於【投資理財】與【流年財運】的專業建議。\n\n【特別要求】：請使用「繁體中文」。`, 'finance', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                playRitualSound('end');
+                setIsChatLoading(false);
+                setActionLoading(null);
+            };
+
             const handleBazi = async () => {
                 if (!checkName() || !checkDate()) return;
                 playRitualSound('start');
                 await saveUserProfile(true);
-                setActionLoading('bazi');
-                setBazi("");
+                const msg = "請大師批算我的八字命盤";
+                setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
                 setIsChatLoading(true);
+                setActionLoading('bazi');
 
-                // Only send BaZi info to prevent Zi Wei context bleeding
                 const baziContext = `
 【緣主八字資訊】
 姓名：${userName}
@@ -2346,8 +2560,7 @@ ${getFullChartContext()}
 日柱 [${destiny.pillars.day}]
 時柱 [${destiny.pillars.hour}]
 `;
-
-                await callAiApi(`${baziContext}\n\n請詳細解析上述【八字四柱】資訊（含藏干、十神、大運、納音），並特別關注日主強弱與喜用神。`, 'bazi', (c) => setBazi(p => p + c));
+                await callAiApi(`${baziContext}\n\n請詳細解析上述【八字四柱】資訊（含藏干、十神、大運、納音），並特別關注日主強弱與喜用神。`, 'bazi', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
                 playRitualSound('end');
                 setIsChatLoading(false);
                 setActionLoading(null);
@@ -2357,14 +2570,27 @@ ${getFullChartContext()}
                 if (!checkName() || !checkDate()) return;
                 playRitualSound('start');
                 await saveUserProfile(true);
-                setActionLoading('simple');
-                setSimpleResult("");
+                const msg = "請大師用白話文精解我的命盤";
+                setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
                 setIsChatLoading(true);
-
-                await callAiApi(`${getFullChartContext()}\n\n請以現代白話文，針對上述命盤進行【性格與人生發展】的精簡分析。\n不需引用古文口訣，直接給予緣主具體建議與人格特質描述。\n\n【特別要求】：請使用「繁體中文」回答。`, 'simple', (c) => setSimpleResult(p => p + c));
+                setActionLoading('simple');
+                await callAiApi(`${getFullChartContext()}\n\n請以現代白話文，針對上述命盤進行【性格與人生發展】的精簡分析。\n不需引用古文口訣，直接給予緣主具體建議與人格特質描述。\n\n【特別要求】：請使用「繁體中文」回答。`, 'simple', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
                 playRitualSound('end');
                 setIsChatLoading(false);
                 setActionLoading(null);
+            };
+
+            const formatLuckyCardText = (text) => {
+                if (!text) return "";
+                // If text contains lottery numbers (2+ digits) or keywords, preserve it
+                if (/\d{2,}/.test(text) || text.includes("號碼") || text.includes("靈動數")) {
+                    return text.trim();
+                }
+                // Fallback to distillForCard if available
+                if (typeof distillForCard === 'function') {
+                    return distillForCard(text);
+                }
+                return text;
             };
 
             const handleChatSend = async () => {
@@ -2375,7 +2601,14 @@ ${getFullChartContext()}
                 setChat(prev => [...prev, { role: 'user', text: userMsg }, { role: 'assistant', text: "" }]);
                 setIsChatLoading(true);
                 setActionLoading('chat');
-                await callAiApi(`${getFullChartContext()}\n\n【緣主提問】：${userMsg}\n\n【大師指令】：請務必「優先引用」且「深度分析」《紫微心法》中的相關口訣來回答。若心法中有對應的特殊格局（如空劫、羊陀、化忌等組合），請務必點出並詳細解釋，不可僅用通用知識帶過。\n\n【特別要求】：1. 請務必使用「繁體中文」回答。\n2. 每個回答必須「分段清晰」，不要全部擠在一起，方便閱讀。\n3. 在思考過程中嚴謹地運用心法邏輯。`, 'chat', (chunk) => setChat(prev => {
+
+                let prompt = `${getFullChartContext()}\n\n【緣主提問】：${userMsg}\n\n【大師指令】：請務必「優先引用」且「深度分析」《紫微心法》中的相關口訣來回答。若心法中有對應的特殊格局（如空劫、羊陀、化忌等組合），請務必點出並詳細解釋，不可僅用通用知識帶過。\n\n【特別要求】：1. 請務必使用「繁體中文」回答。\n2. 每個回答必須「分段清晰」，不要全部擠在一起，方便閱讀。\n3. 在思考過程中嚴謹地運用心法邏輯。`;
+
+                if (userMsg.includes('靈動數') || userMsg.includes('幸運號碼') || userMsg.includes('明牌')) {
+                    prompt = `${getFullChartContext()}\n\n【緣主祈求】：${userMsg}\n\n【大師指令】：請直接給出今日幸運號碼（大樂透/威力彩/今彩539），並以「天機乍現」的語氣，神祕地透露這組號碼，並提醒切勿沉迷，僅供結緣參考。`;
+                }
+
+                await callAiApi(prompt, 'chat', (chunk) => setChat(prev => {
                     const newChat = [...prev];
                     if (newChat.length > 0) {
                         newChat[newChat.length - 1].text += chunk;
@@ -2412,18 +2645,21 @@ ${getFullChartContext()}
                                     <img src="logo_transparent.png" className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 object-contain" alt="紫微帝星" />
                                 </div>
                                 <div className="flex flex-col gap-1 items-center md:items-start">
-                                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-indigo-900 tracking-tighter drop-shadow-sm font-serif leading-none whitespace-nowrap">紫微八字</h1>
-                                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-indigo-600 tracking-widest drop-shadow-sm font-serif leading-none whitespace-nowrap">天機命譜</h1>
+                                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-indigo-900 tracking-tighter drop-shadow-sm font-serif leading-none whitespace-nowrap">紫微斗數</h1>
+                                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-indigo-600 tracking-widest drop-shadow-sm font-serif leading-none whitespace-nowrap">大師即時諮詢</h1>
                                     <div className="flex items-center gap-3 mt-2 md:mt-3 justify-center md:justify-start">
                                         <div className="h-[2px] w-6 md:w-8 bg-indigo-900/10"></div>
-                                        <p className="text-slate-500 font-bold text-[9px] md:text-[10px] uppercase tracking-[0.3em]">天機命譜 V20.0</p>
+                                        <p className="text-slate-500 font-bold text-[9px] md:text-[10px] uppercase tracking-[0.3em]">AI Master Consultation</p>
                                         <div className="h-[2px] w-6 md:w-8 bg-indigo-900/10"></div>
                                     </div>
                                 </div>
+
                             </div>
 
-                            <div className="absolute top-2 right-2 md:top-6 md:right-6 flex flex-col items-end gap-2 z-50">
+                            <div className="absolute top-5 right-5 md:top-8 md:right-8 flex flex-col items-end gap-2 z-50">
                                 <div className="flex gap-1 md:gap-2">
+
+
                                     <button onClick={() => setShowDonate(true)} className="text-[11px] md:text-xs font-black flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 bg-[length:200%_auto] animate-gradient text-white border-2 border-white/50 hover:shadow-lg hover:shadow-orange-500/50 hover:-translate-y-0.5 transition-all shadow-md"><i data-lucide="gift" className="w-4 h-4 animate-bounce" /> 隨喜贊助</button>
                                 </div>
                             </div>
@@ -2501,10 +2737,34 @@ ${getFullChartContext()}
 
 
                                 <div className="flex gap-4 items-center z-10">
-                                    <button onClick={handleReport} disabled={isLoading} className="group relative bg-indigo-600 hover:bg-indigo-700 text-white p-5 rounded-2xl shadow-xl shadow-indigo-300 hover:shadow-2xl hover:shadow-indigo-400 active:scale-95 transition-all duration-300 active:translate-y-1">
+                                    <button onClick={() => {
+                                        if (!checkName() || !checkDate()) return;
+                                        playRitualSound('start');
+                                        const msg = "請大師慈悲，為我進行【大師即時諮詢】，詳細解析我的命宮、身宮與三方四正之格局。";
+                                        setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
+                                        setIsChatLoading(true);
+                                        setActionLoading('chat');
+                                        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+
+                                        callAiApi(`${getFullChartContext()}\n\n【緣主祈求】：${msg}\n\n【大師指令】：請進行《紫微綜合命盤解析》。\n請條列式解析：1. 命宮主星與格局 2. 身宮與三方四正 3. 六吉六煞影響 4. 針對緣主當下最需注意之處給予提點。\n請用「繁體中文」與「道長語氣」詳盡論述。`, 'chat', (chunk) => setChat(prev => {
+                                            const newChat = [...prev];
+                                            if (newChat.length > 0) newChat[newChat.length - 1].text += chunk;
+                                            return newChat;
+                                        })).then(() => {
+                                            playRitualSound('end');
+                                            setIsChatLoading(false);
+                                            setActionLoading(null);
+                                        });
+                                    }} disabled={isLoading || isChatLoading} className="group relative bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl shadow-xl shadow-indigo-300 hover:shadow-2xl hover:shadow-indigo-400 active:scale-95 transition-all duration-300 active:translate-y-1 flex items-center gap-3" title="大師即時諮詢">
                                         <div className="absolute top-0 right-0 -mt-1 -mr-1 w-3 h-3 bg-red-400 rounded-full animate-ping"></div>
-                                        <i data-lucide="sparkles" className="w-8 h-8 group-hover:rotate-12 transition-transform duration-300"></i>
+                                        <i data-lucide="message-circle-more" className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300"></i>
+                                        <span className="font-bold text-lg tracking-widest hidden md:inline">大師即時諮詢</span>
+                                        <span className="font-bold text-lg tracking-widest md:hidden">諮詢</span>
                                     </button>
+                                    <button onClick={() => setShowDestinyCard(true)} className="bg-white hover:bg-fuchsia-50 text-fuchsia-600 p-5 rounded-2xl border-2 border-fuchsia-100 hover:border-fuchsia-200 shadow-xl shadow-fuchsia-100 active:scale-95 transition-all duration-300 group" title="分享命宮天機卡">
+                                        <i data-lucide="share-2" className="w-8 h-8 group-hover:scale-110 transition-transform"></i>
+                                    </button>
+
                                     <button onClick={() => window.print()} className="bg-white hover:bg-slate-50 text-indigo-900 p-5 rounded-2xl border-2 border-indigo-50 hover:border-indigo-100 shadow-xl shadow-slate-200 active:scale-95 transition-all duration-300 group">
                                         <i data-lucide="printer" className="w-8 h-8 group-hover:text-indigo-600 transition-colors"></i>
                                     </button>
@@ -2683,20 +2943,15 @@ ${getFullChartContext()}
                                     <button onClick={() => handleSimpleExec()} disabled={actionLoading === 'simple'} className={`bg-teal-600 text-white p-3 rounded-2xl shadow-lg hover:bg-teal-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-teal-200 ring-offset-2 ${actionLoading === 'simple' ? 'opacity-75 cursor-not-allowed' : ''}`}>
                                         {actionLoading === 'simple' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="message-circle" className="w-4 h-4" />} 白話精解
                                     </button>
-                                    <button onClick={() => fetchAiReport()} disabled={actionLoading === 'report'} className={`bg-indigo-900 text-white p-3 rounded-2xl shadow-lg hover:bg-indigo-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'report' ? 'opacity-75 cursor-not-allowed' : ''}`}>
-                                        {actionLoading === 'report' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="feather" className="w-4 h-4" />} 命譜詳評
+                                    <button onClick={() => handleReport()} disabled={actionLoading === 'report'} className={`bg-indigo-900 text-white p-3 rounded-2xl shadow-lg hover:bg-indigo-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'report' ? 'opacity-75 cursor-not-allowed' : ''}`}>
+                                        {actionLoading === 'report' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="feather" className="w-4 h-4" />} 詳盡命盤解析
                                     </button>
                                     <div className="flex gap-2">
                                         <button onClick={handleDailyTip} disabled={actionLoading === 'daily'} className="flex-1 bg-gradient-to-tr from-amber-500 to-orange-500 text-white rounded-2xl py-3 font-black shadow-lg shadow-amber-200 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group disabled:opacity-50 text-sm">
                                             {actionLoading === 'daily' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkles" className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
                                             今日錦囊妙計
                                         </button>
-                                        {dailyTip && (
-                                            <button onClick={() => setWisdomText(distillForCard(dailyTip))} className="bg-white border-2 border-amber-200 text-amber-600 px-3 py-2 rounded-2xl font-black hover:bg-amber-50 transition-all flex items-center gap-1 text-xs">
-                                                <Icon name="image" className="w-4 h-4" />
-                                                製成開運卡
-                                            </button>
-                                        )}
+
                                     </div>
                                     <button onClick={() => handlePastLife()} disabled={actionLoading === 'pastLife'} className={`bg-purple-600 text-white p-3 rounded-2xl shadow-lg hover:bg-purple-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'pastLife' ? 'opacity-75 cursor-not-allowed' : ''}`}>
                                         {actionLoading === 'pastLife' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="infinity" className="w-4 h-4" />} 前世因果
@@ -2717,82 +2972,43 @@ ${getFullChartContext()}
                                         {actionLoading === 'bazi' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="compass" className="w-4 h-4" />} 八字論命
                                     </button>
                                 </div>
-                                {(dailyTip || pastLife || ritual || finance || bazi || simpleResult) && (
-                                    <Card ref={baziRef} className="animate-in fade-in duration-700">
-                                        <CardContent className="p-6 text-[14px] font-bold leading-relaxed text-slate-800 bg-yellow-50/50">
-                                            {dailyTip && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-emerald-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="sun" className="w-4 h-4" /> 大師今日指引</span><button onClick={() => playTTS(dailyTip, 'daily')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('daily') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}>{isTTSLoading('daily') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('daily') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('daily') ? 'animate-pulse' : ''}`} />} {isTTSActive('daily') ? '停止' : '朗讀'}</button></h5>{dailyTip}</div>)}
-                                            {ritual && (<div className="mb-4 border-b border-yellow-200 pb-4 whitespace-pre-wrap"><h5 className="text-orange-600 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="sparkle" className="w-4 h-4" /> 專屬轉運儀式</span><button onClick={() => playTTS(ritual, 'ritual')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('ritual') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`}>{isTTSLoading('ritual') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('ritual') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('ritual') ? 'animate-pulse' : ''}`} />} {isTTSActive('ritual') ? '停止' : '朗讀'}</button></h5>{ritual}</div>)}
-                                            {pastLife && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-purple-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="infinity" className="w-4 h-4" /> 前世因果故事</span><button onClick={() => playTTS(pastLife, 'pastLife')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('pastLife') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`}>{isTTSLoading('pastLife') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('pastLife') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('pastLife') ? 'animate-pulse' : ''}`} />} {isTTSActive('pastLife') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{pastLife}</div></div>)}
-                                            {finance && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-amber-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="trending-up" className="w-4 h-4" /> 紫微財運佈局</span><button onClick={() => playTTS(finance, 'finance')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('finance') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'}`}>{isTTSLoading('finance') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('finance') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('finance') ? 'animate-pulse' : ''}`} />} {isTTSActive('finance') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{finance}</div></div>)}
-                                            {bazi && (<div className="mb-4 border-b border-yellow-200 pb-4"><h5 className="text-slate-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="compass" className="w-4 h-4" /> 子平八字精批</span><button onClick={() => playTTS(bazi, 'bazi')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('bazi') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}>{isTTSLoading('bazi') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('bazi') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('bazi') ? 'animate-pulse' : ''}`} />} {isTTSActive('bazi') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{bazi}</div></div>)}
-                                            {simpleResult && (<div><h5 className="text-teal-700 font-black mb-2 flex items-center justify-between"><span className="flex items-center gap-2"><Icon name="message-circle" className="w-4 h-4" /> 白話精選命理</span><button onClick={() => playTTS(simpleResult, 'simple')} className={`text-xs px-2 py-0.5 rounded-full transition-colors flex items-center gap-1 ${isTTSActive('simple') ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-teal-100 text-teal-700 hover:bg-teal-200'}`}>{isTTSLoading('simple') ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive('simple') ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying('simple') ? 'animate-pulse' : ''}`} />} {isTTSActive('simple') ? '停止' : '朗讀'}</button></h5><div className="whitespace-pre-wrap">{simpleResult}</div></div>)}
-                                        </CardContent>
-                                    </Card>
-                                )}
-                                <Card ref={reportRef} className="print:border-t-8 print:border-black print:rounded-none print:p-0 overflow-hidden border-0 shadow-2xl rounded-[2.5rem] ring-4 ring-indigo-50/50 bg-white mb-12">
-                                    <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-950 text-white p-6 relative overflow-hidden print:bg-white print:text-black print:border-b-4 print:border-black">
-                                        <div className="absolute top-[-50%] right-[-10%] w-64 h-64 bg-white opacity-5 rounded-full blur-3xl pointer-events-none"></div>
 
-                                        <div className="relative flex items-center gap-5">
-                                            <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md shadow-inner ring-1 ring-white/10">
-                                                <i data-lucide="feather" className="w-8 h-8 text-indigo-100 print:hidden"></i>
-                                            </div>
-                                            <div className="flex-1 flex justify-between items-center">
-                                                <div>
-                                                    <h3 className="text-xl font-black tracking-[0.3em] uppercase text-white drop-shadow-md print:text-black">命譜詳評</h3>
-                                                    <p className="text-[10px] text-indigo-200 font-bold tracking-widest mt-1 opacity-80 print:hidden">詳盡命盤解析</p>
-                                                </div>
-                                                {aiReport && (
-                                                    <div className="flex gap-2">
-                                                        {/隨喜|贊助|香火|結緣/.test(aiReport) && (
-                                                            <button onClick={() => setShowDonate(true)} className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-full text-xs font-black backdrop-blur-md transition-all flex items-center gap-1 border border-amber-400/30">
-                                                                <Icon name="heart" className="w-4 h-4" /> 隨喜贊助
-                                                            </button>
-                                                        )}
-                                                        <button onClick={() => isTTSActive('report') ? stopGlobalAudio() : playTTS(aiReport, 'report')} className={`bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md transition-all flex items-center gap-1 border border-white/20 ${isTTSActive('report') ? 'bg-red-500/80 hover:bg-red-500' : ''}`}>
-                                                            {isTTSLoading('report') ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name={isTTSActive('report') ? "square" : "volume-2"} className={`w-4 h-4 ${isTTSPlaying('report') ? 'animate-pulse' : ''}`} />} {isTTSActive('report') ? '停止播放' : '朗讀全文'}
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <CardContent className="p-10 text-[16px] font-bold leading-[2] whitespace-pre-wrap text-justify text-slate-700 print-font pure-text min-h-[200px] max-h-[600px] overflow-y-auto custom-scrollbar bg-slate-50/30">
-                                        {isLoading ? (
-                                            <div className="flex flex-col items-center gap-6 py-20">
-                                                <div className="relative">
-                                                    <div className="absolute inset-0 bg-indigo-500 blur-xl opacity-20 animate-pulse rounded-full"></div>
-                                                    <div className="animate-spin w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full relative z-10"></div>
-                                                </div>
-                                                <p className="font-black animate-pulse text-indigo-800 tracking-widest text-sm">大師翻閱心法古籍中...</p>
-                                            </div>
-                                        ) : (
-                                            aiReport || <div className="text-center py-12 text-slate-400 select-none">
-                                                <Icon name="scroll" className="w-16 h-16 mx-auto mb-6 opacity-20" />
-                                                <p className="tracking-widest font-black opacity-50">大師已準備就緒。<br />請點擊下方按鈕，將根據《紫微心法》全書內容為您批命。</p>
-                                                <button onClick={fetchAiReport} className="mt-8 bg-indigo-600 text-white px-8 py-3 rounded-full font-black shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all flex items-center gap-2 mx-auto ring-4 ring-indigo-50"><Icon name="feather" className="w-5 h-5" /> 開始詳批</button>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
+
 
                                 <Card ref={chatCardRef} className="print:hidden h-[600px] flex flex-col border-0 shadow-2xl rounded-[2.5rem] ring-4 ring-indigo-50/50 bg-white overflow-hidden mb-12">
-                                    <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-5 relative shrink-0">
-                                        <div className="relative flex items-center gap-4">
-                                            <div className="p-2.5 bg-indigo-500 rounded-xl shadow-lg ring-2 ring-indigo-400/30">
-                                                <i data-lucide="sparkles" className="w-5 h-5 text-white" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-black uppercase tracking-[0.25em] text-slate-100">大師即時諮詢</h3>
-                                                <p className="text-[9px] text-slate-400 font-bold tracking-wider mt-0.5">大師在線解惑</p>
-                                            </div>
+                                    <div className="relative p-6 shrink-0 overflow-hidden">
+                                        {/* Background with Image and Gradient Overlay */}
+                                        <div className="absolute inset-0 z-0">
+                                            <img
+                                                src="https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2027&auto=format&fit=crop"
+                                                alt="Galaxy Nebula"
+                                                className="w-full h-full object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/40 via-purple-800/30 to-slate-900/40"></div>
                                         </div>
-                                        <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 absolute top-5 right-5">
-                                            <button onClick={stopGlobalAudio} className="w-6 h-6 rounded-full bg-red-500/20 text-red-300 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all" title="停止語音">
-                                                <Icon name="square" className="w-3 h-3 fill-current" />
-                                            </button>
-                                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-                                            <span className="text-[9px] font-bold text-emerald-400">連線中</span>
+
+                                        {/* Content */}
+                                        <div className="relative z-10 flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.2)] group">
+                                                    <Icon name="sparkles" className="w-6 h-6 text-yellow-300 group-hover:rotate-12 transition-transform duration-500" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-black uppercase tracking-[0.3em] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">大師即時諮詢</h3>
+                                                    <p className="text-[11px] text-indigo-100 font-bold tracking-widest mt-1 opacity-90">紫微 · 八字 · 靈動數 · 測字</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3 px-4 py-2 bg-black/30 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/40 transition-all shadow-lg">
+                                                <button onClick={stopGlobalAudio} className="w-8 h-8 rounded-full bg-red-500/80 text-white hover:bg-red-600 flex items-center justify-center transition-all shadow-md active:scale-95 group" title="停止語音">
+                                                    <Icon name="square" className="w-3 h-3 fill-current group-active:scale-90 transition-transform" />
+                                                </button>
+                                                <div className="w-[1px] h-4 bg-white/20"></div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_rgb(52,211,153)]"></div>
+                                                    <span className="text-[10px] font-black text-emerald-100 tracking-wider shadow-black drop-shadow-sm">連線中</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -2814,7 +3030,7 @@ ${getFullChartContext()}
                                                             <button onClick={() => isTTSActive(`chat-${i}`) ? stopGlobalAudio() : playTTS(m.text, `chat-${i}`)} className={`flex items-center gap-1 text-[10px] transition-colors bg-indigo-50 px-2 py-1 rounded-full hover:bg-indigo-100 ${isTTSActive(`chat-${i}`) ? 'bg-red-500 text-white hover:bg-red-600' : 'text-indigo-400 hover:text-indigo-600'}`} title="朗讀">
                                                                 {isTTSLoading(`chat-${i}`) ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive(`chat-${i}`) ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying(`chat-${i}`) ? 'animate-pulse' : ''}`} />} <span>{isTTSActive(`chat-${i}`) ? '停止' : '朗讀'}</span>
                                                             </button>
-                                                            <button onClick={() => setWisdomText(distillForCard(m.text))} className="flex items-center gap-1 text-[10px] bg-amber-50 text-amber-600 px-2 py-1 rounded-full hover:bg-amber-500 hover:text-white transition-all font-bold">
+                                                            <button onClick={() => setWisdomText(formatLuckyCardText(m.text))} className="flex items-center gap-1 text-[10px] bg-amber-50 text-amber-600 px-2 py-1 rounded-full hover:bg-amber-500 hover:text-white transition-all font-bold">
                                                                 <Icon name="image" className="w-3 h-3" /> 開運卡
                                                             </button>
                                                         </div>
@@ -2860,7 +3076,7 @@ ${getFullChartContext()}
                                         {/* 問事快選區 */}
                                         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                                             <span className="text-[10px] font-black text-slate-400 shrink-0">💬 諮詢方向：</span>
-                                            {['今日財位', '適合什麼職業', '如何避小人', '桃花在那裡'].map(q => (
+                                            {['今日財位', '適合什麼職業', '如何避小人', '桃花在那裡', '今日幸運靈動數'].map(q => (
                                                 <button
                                                     key={q}
                                                     onClick={() => { setInput(q); }}
@@ -2882,11 +3098,12 @@ ${getFullChartContext()}
                                                 className="flex-1 min-w-0 bg-transparent px-4 py-2 text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400"
                                             />
                                             <div className="flex gap-1 pr-1">
+                                                <button onClick={handleVoiceInput} className={`w-10 h-10 rounded-full transition-all flex items-center justify-center transform active:scale-95 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`} title="語音輸入"><Icon name="mic" className="w-4 h-4" /></button>
                                                 <button onClick={handleGlyph} className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-500 hover:text-white transition-all flex items-center justify-center transform active:scale-95" title="測字"><Icon name="pen-tool" className="w-4 h-4" /></button>
                                                 <button onClick={handleChatSend} className="w-10 h-10 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all flex items-center justify-center transform active:scale-95"><Icon name="send" className="w-4 h-4 ml-0.5" /></button>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div>  {/* Correctly closing the inner container div */}
                                 </Card>
 
                                 <div className="rounded-[2.5rem] shadow-2xl bg-white overflow-hidden ring-4 ring-indigo-50/50 print:bg-white print:border-4 print:border-black print:shadow-none print:ring-0">
@@ -2931,8 +3148,9 @@ ${getFullChartContext()}
 
                         {showDonate && <DonateModal onClose={() => setShowDonate(false)} />}
                         {wisdomText && <WisdomCardModal text={wisdomText} onClose={() => setWisdomText("")} />}
-                    </div>
-                </div>
+                        {showDestinyCard && <DestinyShareModal userName={userName} gender={gender} destiny={destiny} chartData={chartData} onClose={() => setShowDestinyCard(false)} />}
+                    </div >
+                </div >
             );
         };
 

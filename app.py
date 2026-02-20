@@ -321,6 +321,57 @@ def get_heavenly_timing():
         
     return f"{season_msg} {time_advice}"
 
+def get_lottery_prediction(user_seed_str):
+    """
+    根據台灣彩券開獎規則與使用者命盤種子，計算「今日靈動數」。
+    規則：
+    週一、四：威力彩 (第1區 1-38 選6 / 第2區 1-8 選1) + 今彩539
+    週二、五：大樂透 (1-49 選6) + 今彩539
+    週三、六：今彩539 (1-39 選5)
+    週日：僅推薦刮刮樂靈感號碼
+    """
+    
+    # 建立命理隨機種子 (確保同一人同一天問到的號碼一致，增加神蹟感)
+    try:
+        # 使用簡單的雜湊將字串轉為整數種子
+        seed_val = sum(ord(c) for c in user_seed_str) + int(datetime.now().strftime("%Y%m%d"))
+        random.seed(seed_val)
+    except:
+        random.seed(int(time.time()))
+
+    weekday = datetime.now(timezone(timedelta(hours=8))).weekday() # 0=Mon, 6=Sun
+    
+    predictions = []
+    
+    # helper for sorted random sample
+    def get_nums(start, end, count):
+        return sorted(random.sample(range(start, end + 1), count))
+
+    # 威力彩 (Mon=0, Thu=3)
+    if weekday in [0, 3]:
+        sec1 = get_nums(1, 38, 6)
+        sec2 = random.randint(1, 8)
+        predictions.append(f"【威力彩靈動】：第一區 {sec1} / 第二區 [{sec2}]")
+        
+    # 大樂透 (Tue=1, Fri=4)
+    if weekday in [1, 4]:
+        nums = get_nums(1, 49, 6)
+        predictions.append(f"【大樂透天機】：{nums}")
+        
+    # 今彩539 (Mon-Sat = 0-5)
+    if weekday in [0, 1, 2, 3, 4, 5]:
+        nums = get_nums(1, 39, 5)
+        predictions.append(f"【今彩539】：{nums}")
+        
+    if weekday == 6:
+        lucky = random.randint(1, 99)
+        predictions.append(f"【週日財氣】：今日適合刮刮樂，幸運尾數 {lucky%10} 或總和 {lucky}")
+        
+    # 恢復隨機狀態以免影響後續
+    random.seed()
+    
+    return " | ".join(predictions)
+
 # --- App Globals ---
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
@@ -336,8 +387,9 @@ def get_key_list(env_name, config_key):
 GROQ_KEYS = get_key_list("GROQ_API_KEY", "groq_key")
 GEMINI_KEYS = get_key_list("GEMINI_API_KEY", "api_key")
 
-GROQ_MODEL = "llama-3.1-8b-instant"
-GEMINI_MODEL = "gemini-2.0-flash"
+conf_model = CONFIG['gemini'].get('model', 'gemini-1.5-flash')
+GEMINI_MODEL = conf_model if "gemini" in conf_model or "flash" in conf_model else "gemini-1.5-flash"
+GROQ_MODEL = conf_model if "llama" in conf_model or "mixtral" in conf_model or "gemma" in conf_model else "llama-3.1-8b-instant"
 import random
 
 # --- AI Engine Callers ---
@@ -663,7 +715,6 @@ def get_admin_data():
         chats = list(reversed(full_chats[-50:]))
     
     # Determine DB Status text
-    # Determine DB Status text
     status_parts = []
     
     if USE_MONGODB and MONGO_URI:
@@ -835,6 +886,14 @@ def chat():
         else:
             # 極簡模式：僅提供地點參考，不要求擬人化語氣
             geo_msg += f" (推薦周邊『{target_recommend}』)"
+            
+        # 注入今日財運偏財靈動數 (僅針對財運、每日錦囊、或一般聊天)
+        if target_type in ["finance", "daily", "chat"]:
+            # 使用 用戶名+生日 作為隨機種子，讓號碼專屬於該人且當日固定
+            seed_str = f"{user_info.get('user_name')}{user_info.get('birth_date')}"
+            lottery_msg = get_lottery_prediction(seed_str)
+            if lottery_msg:
+                geo_msg += f"\n\n【今日天機財數】：{lottery_msg}。若緣主問及財運或幸運號碼，請以「天機乍現」的語氣，神祕地透露這組號碼，並提醒切勿沉迷，僅供結緣參考。"
 
         # 動態系統提示詞：平常對話不帶秘卷以節省 Token
         # 重要：將前端指定的 client_sys 放在最後，並加上最高指令標籤，確保 AI 嚴格執行格式要求
