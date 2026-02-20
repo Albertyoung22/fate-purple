@@ -1,0 +1,28 @@
+{
+    "use_mongodb": false,
+    "spreadsheet_id": "1xGpscui5E1kcnr5z4WAo4Ukaj5WLqY8e5f0zNrygegA",
+    "server": {
+        "host": "0.0.0.0",
+        "port": 5000,
+        "debug": false
+    },
+    "gemini": {
+        "provider": "groq",
+        "api_key": "AIzaSyBEVWhdoibHyuw56osfTbgGFSZ2D9iP3bk, AIzaSyBJNdSixS_jm68CCSfkRzuhDLvvVluKSLw, AIzaSyBfNcSzFqx72PAojU4SUzSSyysWd_zvHEQ",
+        "model": "llama-3.1-8b-instant",
+        "max_output_tokens": 2048,
+        "temperature": 0.7,
+        "groq_key": "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, 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, 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, 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, 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"
+    },
+    "ollama": {
+        "enable": true,
+        "url": "http://127.0.0.1:11434/api/generate",
+        "model": "gemma2:2b"
+    },
+    "app": {
+        "title": "紫微八字 · 天機命譜系統",
+        "geometry": "1000x750",
+        "theme": "clam",
+        "icon_path": "icon.png"
+    }
+}
