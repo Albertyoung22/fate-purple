@@ -556,6 +556,73 @@ def get_love_vibe_instruction(age, gender):
         
     return f"{vibe}\n【專屬調情指令】：{detail}"
 
+def get_age_behavior_instruction(age):
+    """根據緣主歲數，決定 AI 對答的行為準則與重點避諱"""
+    if age < 18:
+        return (
+            "【最高行為準則：未成年緣主】\n"
+            "1. **身份切換**：緣主尚在學，主要磁場在『學業』與『父母保護』。絕對禁止與其深入談論職場權謀、創業投資、或是深刻的肉體欲望。\n"
+            "2. **術語定義轉換**：將所有的『事業/官祿』自動解鎖為『學業成績/考試運勢』；將『財帛』解鎖為『零用錢管理/長輩餽贈』；將『夫妻/桃花』解鎖為『校園人緣/純愛好感』。\n"
+            "3. **重點關注**：父母宮(師長緣)、兄弟宮(同儕緣)、文昌文曲(考運)。"
+        )
+    elif age < 25:
+        return (
+            "【最高行為準則：求學/社會新鮮人】\n"
+            "1. **重點**：此階段為人生轉折期。重點在於『初入職場的磨合』與『學業深造』。\n"
+            "2. **語氣**：以提攜後輩的宗師口吻，鼓勵其勇於嘗試，若問事業，請點出其職涯初期的『貴人運』。"
+        )
+    elif age < 60:
+        return (
+            "【最高行為準則：社會中堅力量】\n"
+            "1. **重點**：此時人生重心在『財富累積』、『事業權力』與『家庭穩定』。\n"
+            "2. **行為要求**：論斷需精確犀利，直接指出其職場潛在小人或破財縫隙。對其追求成功的慾望給予正面引導或風險示警。"
+        )
+    else:
+        return (
+            "【最高行為準則：晚年人生】\n"
+            "1. **重點**：重心在『疾厄養生』、『福德清淨』與『子女傳承』。\n"
+            "2. **語氣**：慈悲開闊。少談爭強鬥勝，多談精神寄託與健康之道。若問事業，請轉向談論『守成』與『家族榮光』。"
+        )
+
+def get_gender_behavior_instruction(gender):
+    """根據性別（乾造/坤造），調整論命的切入點與現代社會特徵"""
+    if str(gender).lower() in ["male", "m", "乾造"]:
+        return (
+            "【性別特徵準則：乾造 (男)】\n"
+            "1. **傳統重心**：強調『功名權力』與『門第責任』。論斷時以『官祿、財帛、遷移』為外在核心。\n"
+            "2. **現代語法**：關注職場競爭力、投資決斷力與領導風範。若命盤有煞，點出其『孤膽英豪』或『剛愎自用』的特徵。"
+        )
+    else:
+        return (
+            "【性別特徵準則：坤造 (女)】\n"
+            "1. **傳統重心**：強調『福德安穩』與『圓滿守護』。論斷時加重『福德、夫妻、田宅』的穩定度分析。\n"
+            "2. **現代語法**：融合『獨立女性』特質。在論及家庭的同時，必須肯定其專業能力與自我實現。避諱過於男尊女卑的說法，強調『巾嶹不讓鬚眉』的能量。"
+        )
+
+def get_intent_sentiment_instruction(prompt):
+    """針對緣主的提問語氣與內容，判定其當下的心理狀態並調整 AI 情緒"""
+    crisis_keywords = ["慘", "救", "死", "路", "絕", "走投無路", "怎麼辦", "救救我", "完了", "失敗"]
+    is_crisis = any(k in prompt for k in crisis_keywords)
+    
+    if is_crisis:
+        return (
+            "【情感密令：緊急安撫模式】\n"
+            "- 緣主目前正處於『心神大亂』的危機時刻，語氣要極度溫柔且堅定，像是長輩握著他的手。\n"
+            "- 先給予精神上的肯定（如：天無絕人之路），再從命盤中找出一絲『活水』或『貴人』所在，給予其求生的希望。"
+        )
+    
+    aggressive_keywords = ["贏", "賺", "發", "勝", "搞定", "擊敗", "超越"]
+    is_aggressive = any(k in prompt for k in aggressive_keywords)
+    
+    if is_aggressive:
+        return (
+            "【情感密令：謀略宗師模式】\n"
+            "- 緣主目前『野心勃勃』，正欲大展宏圖。語氣要充滿張力與殺氣，重點在於『佈局』與『精確打擊』。\n"
+            "- 直接點出致勝的宮位與時機，同時提醒其『剛不可久』的避諱。"
+        )
+    
+    return "【情感密令：從客入座】語氣保持中道，神祕而深沉。"
+
 def get_nearby_temples(location, inquiry_text):
     """根據地點與所問之事，尋找適合的開運廟宇"""
     # 判斷所問之事分類
@@ -1145,9 +1212,21 @@ def chat():
         # 獲取天機吉凶
         daily_omens = get_daily_omens()
         
+        # 獲取年齡行為準則
+        age_behavior = get_age_behavior_instruction(age)
+        
+        # 獲取性別行為準則
+        gender_behavior = get_gender_behavior_instruction(gender)
+        
+        # 獲取提問情緒密令
+        intent_vibe = get_intent_sentiment_instruction(user_prompt)
+        
         # 擴寫地理位置與感應訊息
         location_metaphor = get_metaphorical_location(location)
         geo_msg = (f"{personality_synthesis}\n\n"
+                  f"{age_behavior}\n\n"
+                  f"{gender_behavior}\n\n"
+                  f"{intent_vibe}\n\n"
                   f"【天機感應】：\n"
                   f"- 位置：{location}。{location_metaphor}。\n"
                   f"- 天時：{heavenly_timing}。\n"
