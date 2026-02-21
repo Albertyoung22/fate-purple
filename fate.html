@@ -1654,6 +1654,122 @@
             </div>
         );
 
+        const GuideModal = ({ onClose }) => {
+            const [step, setStep] = useState(0);
+            const steps = [
+                {
+                    title: "天機啟動：輸入緣主資訊",
+                    content: "在頁面頂端輸入姓名、性別，並選擇準確的生辰八字。本系統支持農曆與國曆切換，準確的時辰是精準推算的關鍵。",
+                    image: "guide_master.png",
+                    icon: "user-plus"
+                },
+                {
+                    title: "宮位奧秘：如何看懂命盤",
+                    content: "命盤由12個宮位組成，代表人生不同面向（如：命宮看性格、財帛宮看財運、官祿宮看事業）。點擊任何一個宮位，大師會為您高亮顯示其「三方四正」，這是觀察格局強弱的重要古法。",
+                    image: "guide_interpret.png",
+                    icon: "compass"
+                },
+                {
+                    title: "歲時輪轉：流年流月之法",
+                    content: "想要知道今年的運勢？點擊命盤上方的「流年」標籤，宮位名稱會自動切換為今年的分佈。再點擊右側的「流年運勢」按鈕，AI 大師將針對今年的四化能量為您進行深度剖析。",
+                    image: "guide_chart.png",
+                    icon: "clock"
+                },
+                {
+                    title: "流月推演：掌握當下磁場",
+                    content: "切換到「流月」視角可觀察每個月的運勢起伏。結合下方的「流月運勢」快捷鍵，大師會點出本月適合的行動方針，助您避嫌吉位。",
+                    image: "guide_ai.png",
+                    icon: "calendar"
+                },
+                {
+                    title: "大師對話：AI 靈智核心",
+                    content: "對話框內含多種快速功能：求解靈符、前世因果、桃花攻略等。AI 大師會結合您的即時命盤數據，提供一針見血的現代化建議。",
+                    image: "guide_ai.png",
+                    icon: "sparkles"
+                },
+                {
+                    title: "命譜解析：生成結緣靈卡",
+                    content: "點擊「詳盡命盤解析」生成萬字格局報告；或透過「今日錦囊」生成精美的開運靈卡，將這份天機好運下載並分享給身邊親友。",
+                    image: "guide_chart.png",
+                    icon: "download"
+                }
+            ];
+
+            const next = () => setStep(s => Math.min(steps.length - 1, s + 1));
+            const prev = () => setStep(s => Math.max(0, s - 1));
+
+            return (
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-indigo-950/80 backdrop-blur-md animate-in fade-in duration-500" onClick={onClose}>
+                    <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col md:flex-row relative border-8 border-indigo-100/50" onClick={e => e.stopPropagation()}>
+                        <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors z-50">
+                            <Icon name="x" className="w-5 h-5 text-slate-500" />
+                        </button>
+
+                        {/* Left Side: Image with Animation */}
+                        <div className="w-full md:w-1/2 bg-indigo-950 relative overflow-hidden h-48 md:h-64 lg:h-auto">
+                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 mix-blend-overlay"></div>
+                            {steps.map((s, i) => (
+                                <img
+                                    key={i}
+                                    src={s.image}
+                                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 transform ${i === step ? 'opacity-70 scale-100 rotate-0' : 'opacity-0 scale-110 rotate-3'}`}
+                                    alt={s.title}
+                                />
+                            ))}
+                            <div className="absolute bottom-6 left-6 right-6">
+                                <div className="flex gap-2">
+                                    {steps.map((_, i) => (
+                                        <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-500 ${i === step ? 'bg-white' : 'bg-white/20'}`}></div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Right Side: Content */}
+                        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-between bg-white min-h-[400px]">
+                            <div className="animate-in slide-in-from-right-10 duration-500">
+                                <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center mb-6">
+                                    <Icon name={steps[step].icon} className="w-6 h-6 text-indigo-600" />
+                                </div>
+                                <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight leading-tight">
+                                    {steps[step].title}
+                                </h3>
+                                <p className="text-slate-500 text-lg leading-relaxed font-medium">
+                                    {steps[step].content}
+                                </p>
+                            </div>
+
+                            <div className="mt-12 flex items-center justify-between">
+                                <button
+                                    onClick={prev}
+                                    disabled={step === 0}
+                                    className={`p-4 rounded-2xl border-2 border-slate-100 text-slate-400 hover:bg-slate-50 transition-all ${step === 0 ? 'opacity-30 cursor-not-allowed' : 'active:scale-95'}`}
+                                >
+                                    <Icon name="arrow-left" className="w-6 h-6" />
+                                </button>
+
+                                {step < steps.length - 1 ? (
+                                    <button
+                                        onClick={next}
+                                        className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black flex items-center gap-2 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 transition-all active:scale-95 group"
+                                    >
+                                        下一頁 <Icon name="arrow-right" className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={onClose}
+                                        className="px-8 py-4 bg-emerald-600 text-white rounded-2xl font-black flex items-center gap-2 hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200 transition-all active:scale-95"
+                                    >
+                                        開始啟航 <Icon name="check" className="w-5 h-5" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const WisdomCardModal = ({ text, onClose }) => {
             const cardRef = useRef(null);
             const [isGenerating, setIsGenerating] = useState(false);
@@ -2035,6 +2151,7 @@
             const [focusedPalace, setFocusedPalace] = useState(null);
             const [isChatLoading, setIsChatLoading] = useState(false); // Moved from below
             const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('ziwei_sound_enabled') !== 'false'); // Default to true
+            const [viewMode, setViewMode] = useState('natal'); // natal, yearly, monthly
 
             // TTS State: { id:string | null, status: 'idle' | 'loading' | 'playing' }
             const [ttsState, setTtsState] = useState({ id: null, status: 'idle' });
@@ -2050,6 +2167,7 @@
             const [isListening, setIsListening] = useState(false); // Voice Input State
             const [showDestinyCard, setShowDestinyCard] = useState(false); // Destiny Card State
             const [showTalisman, setShowTalisman] = useState(false);
+            const [showGuide, setShowGuide] = useState(false);
             const [talismanText, setTalismanText] = useState("");
 
             const chatEndRef = useRef(null);
@@ -2407,6 +2525,8 @@
                     const yearlyNameVar = PALACES[yearlyPalaceIdx];
                     const isDouJun = id === douJunPos;
                     const isMonthlyMing = id === currentMonthPalaceIdx;
+                    const monthlyPalaceIdx = (currentMonthPalaceIdx - id + 12) % 12;
+                    const monthlyNameVar = PALACES[monthlyPalaceIdx];
                     const isDailyMing = id === currentDayPalaceIdx;
                     const pStemIdx = getPalaceStem(id);
                     const pStem = STEMS[pStemIdx];
@@ -2430,6 +2550,7 @@
 
                     return {
                         id, zhi: BRANCHES[id], palaceName: pName, yearlyName: yearlyNameVar,
+                        monthlyName: monthlyNameVar,
                         gan: pStem, isLaiYin, stars: finalStars,
                         isLife: pName === "命宮",
                         isBody: id === shenIdx,
@@ -2794,7 +2915,7 @@ ${FLYING_STAR_DATA}
             };
 
             const getFullChartContext = () => {
-                const chartContext = chartData.filter(c => c.id !== -1).map(c => `${c.palaceName}(${c.zhi}宮):[${c.stars.map(s => s.name).join(',')}]`).join(' | ');
+                const chartContext = chartData.filter(c => c.id !== -1).map(c => `${c.palaceName}(${c.zhi}宮,大限:${c.bigLimit}):[${c.stars.map(s => s.name).join(',')}]`).join(' | ');
 
                 // 獲取當下的詳細農曆資訊
                 const now = new Date();
@@ -3136,6 +3257,48 @@ ${chartContext}
                 setActionLoading(null);
             };
 
+            const handleDecadeLimit = async () => {
+                if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
+                await saveUserProfile(true);
+                const msg = "請大師幫我推算未來十年的大限運勢，我應該把重心放在哪裡？會遇到什麼挑戰？";
+                setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
+                setIsChatLoading(true);
+                setActionLoading('limit');
+                await callAiApi(`${getFullChartContext()} \n\n【緣主祈求】：${msg} \n\n【大師指令】：請進行十年大限運程推演。`, 'chat', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                playRitualSound('end');
+                setIsChatLoading(false);
+                setActionLoading(null);
+            };
+
+            const handleYearlyFlow = async () => {
+                if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
+                await saveUserProfile(true);
+                const msg = `請大師幫我推算 ${targetYear} 年的流年運勢，這一年我的整體趨勢如何？`;
+                setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
+                setIsChatLoading(true);
+                setActionLoading('yearly');
+                await callAiApi(`${getFullChartContext()} \n\n【緣主祈求】：${msg} \n\n【大師指令】：請針對目前的流年命宮、流年四化與流年神煞，詳盡解析該年的運勢重點與注意事項。`, 'chat', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                playRitualSound('end');
+                setIsChatLoading(false);
+                setActionLoading(null);
+            };
+
+            const handleMonthlyFlow = async () => {
+                if (!checkName() || !checkDate()) return;
+                playRitualSound('start');
+                await saveUserProfile(true);
+                const msg = `請大師幫我推算 ${targetYear} 年 ${targetMonth} 月的流月運勢，這個月的磁場如何？`;
+                setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
+                setIsChatLoading(true);
+                setActionLoading('monthly');
+                await callAiApi(`${getFullChartContext()} \n\n【緣主祈求】：${msg} \n\n【大師指令】：請針對目前的流月命宮、流月四化，解析本月的吉凶禍福與具體建議。`, 'chat', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                playRitualSound('end');
+                setIsChatLoading(false);
+                setActionLoading(null);
+            };
+
             const formatLuckyCardText = (text) => {
                 if (!text) return "";
                 // 針對幸運號碼的特別優化：過濾掉多餘文字，只顯示純數字
@@ -3218,11 +3381,12 @@ ${chartContext}
 
                             </div>
 
-                            <div className="absolute top-5 right-5 md:top-8 md:right-8 flex flex-col items-end gap-2 z-50">
+                            <div className="absolute top-2 right-2 md:top-3 md:right-3 flex flex-col items-end gap-1.5 z-50">
                                 <div className="flex gap-1 md:gap-2">
-
-
-                                    <button onClick={() => setShowDonate(true)} className="text-[11px] md:text-xs font-black flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 bg-[length:200%_auto] animate-gradient text-white border-2 border-white/50 hover:shadow-lg hover:shadow-orange-500/50 hover:-translate-y-0.5 transition-all shadow-md"><i data-lucide="gift" className="w-4 h-4 animate-bounce" /> 隨喜贊助</button>
+                                    <button onClick={() => setShowGuide(true)} className="text-[11px] md:text-xs font-black flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur shadow-md hover:bg-white hover:shadow-lg transition-all border border-indigo-100 text-indigo-600">
+                                        <i data-lucide="help-circle" className="w-4 h-4" /> 使用說明
+                                    </button>
+                                    <button onClick={() => setShowDonate(true)} className="text-xs md:text-sm font-black flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 bg-[length:200%_auto] animate-gradient text-white border-2 border-white/60 hover:shadow-xl hover:shadow-orange-500/60 hover:-translate-y-0.5 transition-all shadow-[0_0_15px_rgba(245,158,11,0.5)] active:scale-95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"><i data-lucide="gift" className="w-4 h-4 md:w-5 md:h-5 animate-bounce" /> 隨喜贊助</button>
                                 </div>
                             </div>
 
@@ -3394,6 +3558,26 @@ ${chartContext}
                                             <button onClick={() => { const n = new Date(); setTargetYear(n.getFullYear()); setTargetMonth(n.getMonth() + 1); setTargetDay(n.getDate()); }} className="text-[9px] text-slate-400 hover:text-indigo-500 bg-slate-100 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors" title="回到今日">歸位</button>
                                         </div>
 
+                                        {/* Chart View Modes */}
+                                        <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                                            {[
+                                                { id: 'natal', label: '本命', color: 'indigo' },
+                                                { id: 'yearly', label: '流年', color: 'red' },
+                                                { id: 'monthly', label: '流月', color: 'emerald' }
+                                            ].map(mode => (
+                                                <button
+                                                    key={mode.id}
+                                                    onClick={() => setViewMode(mode.id)}
+                                                    className={`px-3 py-0.5 rounded-md text-[9px] font-black transition-all ${viewMode === mode.id
+                                                        ? `bg-white text-${mode.color}-600 shadow-sm ring-1 ring-black/5`
+                                                        : 'text-slate-400 hover:text-slate-600'
+                                                        }`}
+                                                >
+                                                    {mode.label}
+                                                </button>
+                                            ))}
+                                        </div>
+
                                         {/* Toggle Buttons */}
                                         <button
                                             onClick={() => setShowSanFang(!showSanFang)}
@@ -3442,7 +3626,12 @@ ${chartContext}
                                                                     <span className="text-[14px] font-black text-slate-400 mr-1"><span className="palace-stem">{c.gan}</span>{c.zhi}</span>
                                                                 </div>
                                                                 <div className="text-right flex flex-col items-end">
-                                                                    <span className={`px-1.5 py-0.5 rounded text-[11px] font-black leading-none ${c.isLife ? 'bg-indigo-600 text-white' : 'bg-slate-100'} `}>{c.palaceName}</span>
+                                                                    <span className={`px-1.5 py-0.5 rounded text-[11px] font-black leading-none ${(viewMode === 'natal' && c.palaceName === '命宮') ||
+                                                                        (viewMode === 'yearly' && c.yearlyName === '命宮') ||
+                                                                        (viewMode === 'monthly' && c.monthlyName === '命宮')
+                                                                        ? 'bg-indigo-600 text-white' : 'bg-slate-100'} `}>
+                                                                        {viewMode === 'natal' ? c.palaceName : viewMode === 'yearly' ? c.yearlyName : c.monthlyName}
+                                                                    </span>
                                                                     {c.isBody && <span className="mt-1 bg-fuchsia-600 text-white px-1.5 py-0.5 rounded text-[10px] font-black leading-none shadow-md ring-1 ring-white/50">身宮</span>}
                                                                 </div>
                                                             </div>
@@ -3593,7 +3782,25 @@ ${chartContext}
                                             幸運靈動數
                                         </div>
                                     </button>
-                                    <button onClick={() => handleBazi()} disabled={actionLoading === 'bazi'} className={`bg-slate-700 text-white p-3 rounded-2xl shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'bazi' ? 'opacity-75 cursor-not-allowed' : ''} `}>
+                                    <button onClick={() => handleDecadeLimit()} disabled={actionLoading === 'limit'} className={`bg-violet-600 text-white p-3 rounded-2xl shadow-lg hover:bg-violet-700 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ring-2 ring-violet-200 ring-offset-1 ${actionLoading === 'limit' ? 'opacity-75 cursor-not-allowed' : ''} `}>
+                                        <div className="flex items-center gap-1">
+                                            {actionLoading === 'limit' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="hourglass" className="w-3 h-3" />}
+                                            十年運程
+                                        </div>
+                                    </button>
+                                    <button onClick={() => handleYearlyFlow()} disabled={actionLoading === 'yearly'} className={`bg-rose-600 text-white p-3 rounded-2xl shadow-lg hover:bg-rose-700 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ring-2 ring-rose-200 ring-offset-1 ${actionLoading === 'yearly' ? 'opacity-75 cursor-not-allowed' : ''} `}>
+                                        <div className="flex items-center gap-1">
+                                            {actionLoading === 'yearly' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="calendar" className="w-3 h-3" />}
+                                            {targetYear}流年
+                                        </div>
+                                    </button>
+                                    <button onClick={() => handleMonthlyFlow()} disabled={actionLoading === 'monthly'} className={`bg-emerald-600 text-white p-3 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ring-2 ring-emerald-200 ring-offset-1 ${actionLoading === 'monthly' ? 'opacity-75 cursor-not-allowed' : ''} `}>
+                                        <div className="flex items-center gap-1">
+                                            {actionLoading === 'monthly' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="calendar-days" className="w-3 h-3" />}
+                                            {targetMonth}月運勢
+                                        </div>
+                                    </button>
+                                    <button onClick={() => handleBazi()} disabled={actionLoading === 'bazi'} className={`bg-slate-700 text-white p-3 rounded-2xl shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] col-span-full ${actionLoading === 'bazi' ? 'opacity-75 cursor-not-allowed' : ''} `}>
                                         <div className="flex items-center gap-1">
                                             {actionLoading === 'bazi' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="compass" className="w-3 h-3" />}
                                             八字論命
@@ -3777,6 +3984,7 @@ ${chartContext}
                         </div>
 
                         {showDonate && <DonateModal onClose={() => setShowDonate(false)} />}
+                        {showGuide && <GuideModal onClose={() => setShowGuide(false)} />}
                         {wisdomText && <WisdomCardModal text={wisdomText} onClose={() => setWisdomText("")} />}
                         {showDestinyCard && <DestinyShareModal userName={userName} gender={gender} destiny={destiny} chartData={chartData} onClose={() => setShowDestinyCard(false)} />}
                         {showTalisman && <TalismanModal text={talismanText} onClose={() => setShowTalisman(false)} />}
