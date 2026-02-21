@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 登入 - 課堂廣播系統</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
+            animation: float 15s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+
+            50% {
+                transform: translateY(-20px) scale(1.05);
+            }
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+            padding: 50px 45px;
+            max-width: 450px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-login:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .alert-error {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 2px solid #fecaca;
+            color: #991b1b;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #bbf7d0;
+            color: #166534;
+        }
+
+        .footer-links {
+            margin-top: 30px;
+            text-align: center;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .footer-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: #764ba2;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            cursor: pointer;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .remember-me label {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 40px 30px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="logo-section">
+            <div class="logo-icon">🔐</div>
+            <h1>課堂廣播系統</h1>
+            <p class="subtitle">請登入以繼續使用</p>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">帳號</label>
+                <input type="text" id="username" name="username" required autocomplete="username" placeholder="請輸入帳號">
+            </div>
+
+            <div class="form-group">
+                <label for="password">密碼</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password"
+                    placeholder="請輸入密碼">
+            </div>
+
+            <div class="remember-me">
+                <input type="checkbox" id="remember" name="remember">
+                <label for="remember">記住我</label>
+            </div>
+
+            <button type="submit" class="btn-login" id="loginBtn">🔓 登入</button>
+        </form>
+
+        <div class="footer-links">
+            <a href="/">← 返回首頁</a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const alertBox = document.getElementById('alertBox');
+        const loginBtn = document.getElementById('loginBtn');
+        const urlParams = new URLSearchParams(window.location.search);
+        const nextParam = urlParams.get('next') || '';
+
+        function showAlert(message, type) {
+            alertBox.textContent = message;
+            alertBox.className = 'alert alert-' + type;
+            alertBox.style.display = 'block';
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 5000);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
+
+            if (!username || !password) {
+                showAlert('請輸入帳號和密碼', 'error');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = '⏳ 登入中...';
+
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password, remember, next: nextParam })
+                });
+
+                const data = await response.json();
+
+                if (data.ok) {
+                    showAlert('登入成功！正在跳轉...', 'success');
+                    const target = data.redirect || nextParam || '/';
+                    setTimeout(() => {
+                        window.location.href = target;
+                    }, 500);
+                } else {
+                    showAlert(data.error || '登入失敗，請檢查帳號密碼', 'error');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = '🔓 登入';
+                }
+            } catch (error) {
+                showAlert('網路錯誤，請稍後再試', 'error');
+                loginBtn.disabled = false;
+                loginBtn.textContent = '🔓 登入';
+            }
+        });
+
+        // Auto focus username
+        document.getElementById('username').focus();
+    </script>
+</body>
+
+</html>

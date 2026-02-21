@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🥕 果菜市場廣播系統</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script defer src="auth.js"></script>
+    <style>
+        :root {
+            --primary: #2e7d32;
+            /* Green */
+            --secondary: #ed6c02;
+            /* Orange */
+            --bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-main: #212121;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+            user-select: none;
+            /* Prevent selection for touch UI */
+        }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .status-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        /* --- Layout --- */
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 16px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 3fr 2fr;
+            }
+        }
+
+        /* --- Cards --- */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            font-size: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- Controls --- */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            font-size: 24px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 16px;
+            transition: transform 0.1s, filter 0.1s;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-green {
+            background-color: var(--primary);
+        }
+
+        .btn-orange {
+            background-color: var(--secondary);
+        }
+
+        .btn-red {
+            background-color: #d32f2f;
+        }
+
+        .btn-gray {
+            background-color: #757575;
+        }
+
+        .btn-large {
+            width: 100%;
+            font-size: 22px;
+            padding: 20px;
+        }
+
+        .grid-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* --- Slider & Switch --- */
+        input[type="range"] {
+            width: 100%;
+            height: 24px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        /* Custom Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>🥦 果菜市場廣播系統</h1>
+        <div id="status" class="status-badge">連線中...</div>
+    </header>
+
+    <div class="container">
+        <!-- Left Column: Operations -->
+        <div style="display:flex; flex-direction:column; gap:20px;">
+
+            <!-- Vehicle Mediation -->
+            <div class="card">
+                <h2>🚛 車輛調度 (移車)</h2>
+                <div class="input-group">
+                    <input type="text" id="plateInput" placeholder="輸入車牌 (如 ABC-123)" maxlength="10">
+                </div>
+                <div class="grid-buttons">
+                    <button class="btn-orange" onclick="speakPlate('move')">📢 請移車</button>
+                    <button class="btn-green" onclick="speakPlate('arrive')">🚛 臨停/到貨</button>
+                </div>
+                <div style="margin-top:12px; display:flex; gap:8px; overflow-x:auto;">
+                    <button class="btn-gray" style="padding:8px 16px; font-size:16px;"
+                        onclick="addPreset('大貨車')">大貨車</button>
+                    <button class="btn-gray" style="padding:8px 16px; font-size:16px;"
+                        onclick="addPreset('小貨車')">小貨車</button>
+                    <button class="btn-gray" style="padding:8px 16px; font-size:16px;"
+                        onclick="addPreset('機車')">機車</button>
+                </div>
+            </div>
+
+            <!-- Auction & Presets -->
+            <div class="card">
+                <h2>📢 常用廣播</h2>
+                <div class="grid-buttons">
+                    <button class="btn-green btn-large" onclick="speak('各位承銷人，拍賣即將開始，請就位。')">🔔 拍賣開始</button>
+                    <button class="btn-green btn-large" onclick="speak('今日拍賣作業結束，辛苦了。')">🏁 交易完成</button>
+                    <button class="btn-orange btn-large" onclick="speak('貨車進出頻繁，請注意安全。')">⚠️ 注意安全</button>
+                    <button class="btn-orange btn-large" onclick="speak('請保持走道暢通，勿堆積雜物。')">📦 走道暢通</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: System & Manual -->
+        <div style="display:flex; flex-direction:column; gap:20px;">
+
+            <!-- System Control -->
+            <div class="card">
+                <h2>⚙️ 系統控制</h2>
+
+                <div style="margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <strong>擴大機電源 (Relay)</strong>
+                        <span id="relayStatus">OFF</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="relayToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <strong>音量</strong>
+                        <span id="volVal">80%</span>
+                    </div>
+                    <input type="range" id="volRange" min="0" max="100" value="80">
+                </div>
+
+                <button class="btn-red" style="width:100%;" onclick="stopAll()">⏹ 緊急停止 / 靜音</button>
+            </div>
+
+            <!-- Manual Input -->
+            <div class="card">
+                <h2>🎤 臨時廣播</h2>
+                <textarea id="manualText" rows="3" placeholder="輸入廣播內容..."
+                    style="width:100%; padding:10px; border-radius:8px; border:2px solid #ddd; font-size:18px; margin-bottom:12px; resize:none;"></textarea>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-green" style="flex:1;" onclick="manualSpeak()">▶ 播放</button>
+                    <button class="btn-gray" onclick="document.getElementById('manualText').value=''">❌ 清空</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>ℹ️ 訊息記錄</h2>
+                <div id="logBox"
+                    style="height:150px; overflow-y:auto; background:#fafafa; border:1px solid #ddd; padding:8px; font-size:14px; color:#555;">
+                    <div>系統就緒...</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const API_CMD = '/api/cmd';
+        const API_STATE = '/state';
+        const POLL_INTERVAL = 2000;
+
+        // --- State ---
+        let currentState = {};
+
+        // --- Initialization ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initControls();
+            pollState();
+            setInterval(pollState, POLL_INTERVAL);
+            log("歡迎使用果菜市場廣播系統");
+        });
+
+        function initControls() {
+            // Relay Toggle
+            document.getElementById('relayToggle').addEventListener('change', (e) => {
+                setRelay(e.target.checked);
+            });
+
+            // Volume Slider
+            const volSlider = document.getElementById('volRange');
+            volSlider.addEventListener('input', (e) => {
+                document.getElementById('volVal').textContent = e.target.value + '%';
+            });
+            volSlider.addEventListener('change', (e) => {
+                postForm('/setvol', { vol: e.target.value });
+            });
+
+            // Plate Input Enter Key
+            document.getElementById('plateInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') speakPlate('move');
+            });
+        }
+
+        // --- Actions ---
+
+        function speakPlate(type) {
+            const input = document.getElementById('plateInput');
+            const plate = input.value.trim().toUpperCase();
+            if (!plate) {
+                alert("請輸入車號！");
+                return;
+            }
+
+            let msg = "";
+            // Spaced out for clearer TTS reading of letters/numbers
+            const spokenPlate = plate.split('').join(' ');
+
+            if (type === 'move') {
+                msg = `車號 ${spokenPlate}，車號 ${spokenPlate}，車主請移車。`;
+            } else if (type === 'arrive') {
+                msg = `車號 ${spokenPlate}，車號 ${spokenPlate}，請至卸貨區。`;
+            }
+
+            speak(msg);
+            log(`📢 呼叫車輛: ${plate}`);
+            // Keep input for repeat calls, or user can clear manually
+        }
+
+        function addPreset(text) {
+            const input = document.getElementById('plateInput');
+            input.value = text + " " + input.value;
+        }
+
+        function manualSpeak() {
+            const text = document.getElementById('manualText').value.trim();
+            if (text) speak(text);
+        }
+
+        function speak(text) {
+            if (!text) return;
+            // Construct standard TTS command
+            // Using 'zh-TW' and 'female' (or backend default)
+            // If backend api calls 'speak', we can simulate it via /api/cmd -> TTS command
+            // OR better, use new /api/speak_v2 if available, or just /api/cmd compatible format.
+            // Index.html uses /api/speak_v2. Let's stick to simple /api/cmd TTS capability if we want to be safe, 
+            // OR just post to /api/speak_v2 like index.html does for best quality.
+
+            // Using /api/speak_v2 logic from index.html for consistency
+            fetch('/api/speak_v2', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: text,
+                    lang: 'zh-TW',
+                    gender: 'female' // Market loud environment might prefer female voice or sharp male
+                })
+            }).then(r => r.json()).then(j => {
+                if (!j.ok) log("❌ 播放失敗: " + j.error);
+                else log("✅ 已發送: " + text.substring(0, 10) + "...");
+            }).catch(e => log("❌ 網路錯誤"));
+        }
+
+        function stopAll() {
+            postForm('/cmd', { cmd: 'CancelALL' });
+            log("⏹ 已停止所有廣播");
+        }
+
+        function setRelay(enabled) {
+            // Optimistic UI update
+            const statusSpan = document.getElementById('relayStatus');
+            statusSpan.textContent = enabled ? "ON" : "OFF";
+            statusSpan.style.color = enabled ? "var(--primary)" : "#aaa";
+
+            fetch('/api/set_relay_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ auto_on: enabled }) // Note: This sets auto-on config, usually relay logic syncs with it
+            }).then(r => r.json()).then(j => {
+                if (!j.ok) {
+                    alert("切換失敗: " + j.error);
+                    document.getElementById('relayToggle').checked = !enabled; // Revert
+                }
+            });
+        }
+
+        // --- Networking ---
+
+        async function pollState() {
+            try {
+                const r = await fetch(API_STATE, { cache: "no-store" });
+                if (!r.ok) return;
+                const s = await r.json();
+                currentState = s;
+                updateUI(s);
+            } catch (e) {
+                console.error("Polling failed", e);
+                document.getElementById('status').textContent = "⚠️ 連線中斷";
+                document.getElementById('status').style.background = "#d32f2f";
+            }
+        }
+
+        function updateUI(s) {
+            // Status Badge
+            const badge = document.getElementById('status');
+            badge.textContent = "🟢 連線正常";
+            badge.style.background = "var(--primary)";
+
+            // Volume (Sync if changed elsewhere)
+            if (s.volume !== undefined && document.activeElement.id !== 'volRange') {
+                document.getElementById('volRange').value = s.volume;
+                document.getElementById('volVal').textContent = s.volume + '%';
+            }
+
+            // Relay Config (Auto-On status)
+            if (s.relay && s.relay.auto_on !== undefined) {
+                const toggle = document.getElementById('relayToggle');
+                // Only update if not being interacted with
+                toggle.checked = !!s.relay.auto_on;
+
+                const statusSpan = document.getElementById('relayStatus');
+                statusSpan.textContent = s.relay.auto_on ? "ON (Auto)" : "OFF";
+                statusSpan.style.color = s.relay.auto_on ? "var(--primary)" : "#aaa";
+            }
+        }
+
+        async function postForm(url, data) {
+            const params = new URLSearchParams();
+            for (const key in data) {
+                params.append(key, data[key]);
+            }
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    body: params,
+                    cache: 'no-store'
+                });
+            } catch (e) {
+                log("❌ 指令發送失敗");
+            }
+        }
+
+        function log(msg) {
+            const box = document.getElementById('logBox');
+            const time = new Date().toLocaleTimeString();
+            const line = document.createElement('div');
+            line.textContent = `[${time}] ${msg}`;
+            box.prepend(line);
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,436 @@
+﻿<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>&#129374; 事件紀錄</title>
+  <link rel="icon" href="favicon.png">
+  <style>
+    /* === 與 index/eew 一致的基礎樣式 === */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, "Microsoft JhengHei", Segoe UI, Roboto, Arial;
+      background: #f5f8fb;
+      color: #0b2239;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #1e7bd8;
+      color: #fff;
+    }
+
+    header .title {
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    header .links a {
+      color: #dff1ff;
+      text-decoration: none;
+      margin-left: 12px;
+      font-size: 13px;
+    }
+
+    header .links .sep {
+      color: rgba(255, 255, 255, 0.4);
+      margin: 0 2px 0 10px;
+      font-size: 11px;
+    }
+
+    main {
+      padding: 12px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      background: #eaf3ff;
+      border: 1px solid #cfe5ff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+
+    .status .left {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .badge {
+      padding: 4px 8px;
+      background: #fff;
+      border: 1px solid #d8e7fb;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #1f3b57;
+    }
+
+    .muted {
+      color: #5c738f;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 12px;
+      width: 100%;
+    }
+
+    .left-col {
+      grid-column: span 12;
+    }
+
+    .right-col {
+      grid-column: span 12;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e7f0fb;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 1px 0 rgba(16, 24, 40, 0.03);
+    }
+
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: #0b2239;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin: 8px 0;
+    }
+
+    .row.stretch>* {
+      flex: 1 1 auto;
+      min-width: 220px;
+    }
+
+    label.small {
+      font-size: 12px;
+      color: #445b78;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      font-size: 14px;
+      padding: 8px 10px;
+      border: 1px solid #d6e3f7;
+      border-radius: 10px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    /* ★ 按鈕加上 hover / active 手感 ★ */
+    button {
+      appearance: none;
+      border: 1px solid #cfe1fb;
+      background: #f6faff;
+      color: #0a2b5a;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .16);
+      transition: transform .08s ease, box-shadow .08s ease, filter .08s ease;
+    }
+
+    button.primary {
+      background: #1e7bd8;
+      border-color: #1e7bd8;
+      color: #fff;
+    }
+
+    button.ghost {
+      background: #fff;
+    }
+
+    button:hover {
+      filter: brightness(1.03);
+      box-shadow: 0 3px 6px rgba(15, 23, 42, .22);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, .2);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #f3f8ff;
+      border-bottom: 1px solid #e4eefc;
+      padding: 8px;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    tbody td {
+      border-top: 1px solid #f1f4fb;
+      padding: 8px;
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    tbody tr:hover {
+      background: #f8fbff;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .spacer {
+      flex: 1 1 auto;
+    }
+  </style>
+  <script defer src="auth.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="title">&#129374; 紀錄 </div>
+    <div class="links">
+      <span id="nowText"
+        style="margin-right:12px;opacity:.9;display:inline-block;min-width:140px;text-align:right">--:--:--</span>
+      <a href="index.html">🎛 主控台</a>
+      <a href="sched.html">🕐 排程</a>
+      <a href="single_reservation.html">📅 預約</a>
+      <a href="tt.html">📚 課表</a>
+      <span class="sep">|</span>
+      <a href="taigi_edu.html">🇹🇼 本土語</a>
+      <a href="eew.html">🌋 地震</a>
+      <a href="relay4.html">📣 分區</a>
+      <a href="silent-dashboard.html">🔇 無聲</a>
+      <span class="sep">|</span>
+      <a href="broadcast.html" target="_blank">🎙️ 行動</a>
+      <a href="live.html">🔴 直播</a>
+      <a href="teacher_call.html" target="_blank">📹 通話</a>
+      <a href="shortcuts.html">⚡ 快捷</a>
+      <a href="buddha.html">🕌 佛教</a>
+      <span class="sep">|</span>
+      <a href="clients.html" target="_blank">👥 設備</a>
+      <a href="/teacher?key=teacher" target="_blank">🎵 媒體</a>
+      <a href="logs.html">🗒 紀錄</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="status">
+      <div class="left">
+        <span class="badge">檔案日期：<span id="dateBadge" class="mono">—</span></span>
+        <span class="badge">筆數：<span id="countBadge" class="mono">—</span></span>
+      </div>
+      <div class="right">
+        <span class="muted">伺服器時間：</span><span id="srvTime" class="mono">—</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="left-col">
+        <div class="card">
+          <h3>🔎 篩選條件</h3>
+          <div class="row">
+            <div style="max-width:220px;">
+              <label class="small">日期</label>
+              <select id="dateSel"></select>
+            </div>
+            <div class="stretch">
+              <label class="small">關鍵字（來源/動作/Relay）</label>
+              <input id="q" type="text" placeholder="例如：Web、YTFull、PlayMP3、192.168…" />
+            </div>
+            <div style="max-width:140px;">
+              <label class="small">每頁筆數</label>
+              <select id="limit">
+                <option>100</option>
+                <option selected>500</option>
+                <option>1000</option>
+                <option>5000</option>
+              </select>
+            </div>
+            <div style="max-width:140px;">
+              <label class="small">頁次</label>
+              <input id="page" type="number" value="1" min="1" />
+            </div>
+            <div>
+              <button id="btnQuery" class="primary">查詢</button>
+            </div>
+            <div class="spacer"></div>
+            <div>
+              <button id="btnDownload" class="ghost">⬇️ 下載 CSV</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <h3>&#129374; 事件清單（最新在上）</h3>
+          <div style="overflow:auto; max-height: 70vh;">
+            <table id="logTable">
+              <thead>
+                <tr>
+                  <th style="width:120px;">時間</th>
+                  <th style="width:140px;">來源</th>
+                  <th style="width:130px;">IP</th>
+                  <th>動作 / 內容</th>
+                  <th style="width:120px;">Relay</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const el = {
+      dateSel: $('#dateSel'),
+      q: $('#q'),
+      limit: $('#limit'),
+      page: $('#page'),
+      btnQuery: $('#btnQuery'),
+      btnDownload: $('#btnDownload'),
+      dateBadge: $('#dateBadge'),
+      countBadge: $('#countBadge'),
+      srvTime: $('#srvTime'),
+      tbody: $('#logTable tbody'),
+    };
+
+    function esc(s) { return String(s).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[m])); }
+
+    async function refreshDates() {
+      const r = await fetch('/logs/dates', { cache: 'no-store' });
+      const j = await r.json();
+      el.dateSel.innerHTML = '';
+      if (!j.ok || !Array.isArray(j.dates) || !j.dates.length) {
+        const op = document.createElement('option');
+        op.value = ''; op.textContent = '（沒有檔案）';
+        el.dateSel.appendChild(op);
+        return;
+      }
+      j.dates.forEach(d => {
+        const op = document.createElement('option');
+        op.value = d; op.textContent = d;
+        el.dateSel.appendChild(op);
+      });
+      // 預設選最新
+      el.dateSel.selectedIndex = 0;
+    }
+
+    async function query() {
+      const date = el.dateSel.value || '';
+      const q = el.q.value.trim();
+      const limit = parseInt(el.limit.value, 10) || 500;
+      const page = Math.max(1, parseInt(el.page.value, 10) || 1);
+      const offset = (page - 1) * limit;
+
+      const params = new URLSearchParams();
+      if (date) params.set('date', date);
+      params.set('limit', String(limit));
+      params.set('offset', String(offset));
+      if (q) params.set('q', q);
+
+      const r = await fetch('/logs?' + params.toString(), { cache: 'no-store' });
+      const j = await r.json();
+      if (!j.ok) {
+        alert('讀取失敗：' + (j.error || 'unknown'));
+        return;
+      }
+
+      el.dateBadge.textContent = j.date || date || '—';
+      el.countBadge.textContent = j.total || 0;
+
+      // 表格
+      el.tbody.innerHTML = '';
+      (j.rows || []).forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="mono">${esc(row.time || '')}</td>
+          <td>${esc(row.sender || '')}</td>
+          <td class="mono">${row.ip ? esc(row.ip) : '—'}</td>
+          <td>${esc(row.message || '')}</td>
+          <td>${esc(row.relay || '')}</td>
+        `;
+        el.tbody.appendChild(tr);
+      });
+    }
+
+    async function pingState() {
+      try {
+        const r = await fetch('/state', { cache: 'no-store' });
+        const j = await r.json();
+        if (j && j.ok && j.ts) el.srvTime.textContent = j.ts;
+      } catch { }
+    }
+
+    el.btnQuery.addEventListener('click', query);
+    el.btnDownload.addEventListener('click', () => {
+      const date = el.dateSel.value || '';
+      if (!date) return alert('沒有可下載的日期');
+      window.open('/logs/download?date=' + encodeURIComponent(date), '_blank');
+    });
+
+    // 初始化
+    (async () => {
+      await refreshDates();
+      await query();
+      await pingState();
+      // 定時更新伺服器時間
+      setInterval(pingState, 5000);
+    })();
+  </script>
+  <script>
+    (function () {
+      function pad2(n) { return String(n).padStart(2, '0'); }
+      function fmt(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); }
+      function startClock() { function tick() { var el = document.getElementById('nowText'); if (el) el.textContent = fmt(new Date()); } tick(); setInterval(tick, 1000); }
+      document.addEventListener('DOMContentLoaded', startClock);
+    })();
+  </script>
+</body>
+
+</html>

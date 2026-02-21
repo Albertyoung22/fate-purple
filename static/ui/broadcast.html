@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>行動廣播站</title>
+    <style>
+        :root {
+            --primary: #2196F3;
+            --danger: #f44336;
+            --success: #4CAF50;
+            --bg: #f5f5f5;
+            --text: #333;
+        }
+
+        body {
+            margin: 0;
+            padding: 16px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
+            box-sizing: border-box;
+            display: block;
+            overflow-y: auto;
+        }
+
+        header {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #555;
+            flex: 0 0 auto;
+        }
+
+        #status {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+            height: 20px;
+            flex: 0 0 auto;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 40px;
+        }
+
+        /* Buttons */
+        .btn {
+            border: none;
+            border-radius: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            user-select: none;
+            /* Prevent text selection */
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            /* Improve touch response */
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:disabled {
+            background-color: #ccc !important;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Hold to Talk - Big Button */
+        #btn-hold {
+            flex: 2;
+            /* Takes more space */
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+        }
+
+        #btn-hold.recording {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Toggle Record - Smaller Button */
+        #btn-toggle {
+            flex: 1.5;
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+
+        #btn-toggle.recording {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+        }
+
+        #btn-toggle.preview {
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+        }
+
+        /* Preview Controls */
+        #preview-box {
+            display: none;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            align-items: center;
+            gap: 10px;
+            flex: 0 0 auto;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        audio {
+            flex: 1;
+            height: 40px;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(244, 67, 54, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+            }
+        }
+
+        .icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            font-weight: normal;
+        }
+
+        /* Modal for Permissions */
+        #mic-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            text-align: left;
+        }
+
+        .url-box {
+            background: #eee;
+            padding: 8px;
+            border-radius: 6px;
+            word-break: break-all;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 13px;
+        }
+    </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196F3">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+
+<body>
+
+    <header style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <a href="index.html"
+            style="text-decoration: none; font-size: 1rem; color: #555; display: inline-flex; align-items: center; gap: 4px;"
+            title="回首頁">🏠 回首頁</a>
+        <span style="font-size: 1.2rem; font-weight: bold;">行動廣播站 📢 <span
+                style="font-size:0.6em;opacity:0.7;">(Rev.3)</span></span>
+    </header>
+    <div id="status">準備就緒</div>
+
+    <!-- Container starts -->
+    <div class="container">
+
+        <!-- Options -->
+        <div style="text-align:center; margin-bottom: 8px;">
+            <label
+                style="display:inline-flex;align-items:center;gap:8px;font-size:1.1rem;padding:8px;background:white;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                <input type="checkbox" id="chk-chime" checked style="width:20px;height:20px;">
+                <span>播放提示音 (前後)</span>
+            </label>
+            <label
+                style="display:inline-flex;align-items:center;gap:8px;font-size:1.1rem;padding:8px;background:white;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-left:8px;">
+                <input type="checkbox" id="chk-noise" checked style="width:20px;height:20px;">
+                <span>啟用降噪</span>
+            </label>
+        </div>
+
+        <!-- Debug / Install Area -->
+        <div style="text-align:center; margin-bottom: 15px;">
+            <!-- Install Button -->
+            <button id="btn-install" onclick="installApp()"
+                style="display:none; margin:0 auto; background: #333; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">📲</span>
+                <span>安裝此應用程式</span>
+            </button>
+
+            <!-- Diagnosise Button (Small text) -->
+            <div style="margin-top:8px;">
+                <span onclick="runPWADiagnosis()"
+                    style="font-size: 0.8rem; text-decoration: underline; color: #999; cursor: pointer;">APP 安裝診斷</span>
+            </div>
+            <div id="debug-log"
+                style="font-size: 0.75rem; color: #666; background: #eee; padding: 8px; margin-top: 8px; border-radius: 8px; text-align: left; display: none; white-space: pre-wrap;">
+            </div>
+        </div>
+
+        <script>
+            async function installApp() {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log("User response to install prompt:", outcome);
+                deferredPrompt = null;
+                document.getElementById('btn-install').style.display = 'none';
+            }
+        </script>
+
+        <!-- Live Mode Toggle -->
+        <div style="text-align:center; margin-bottom: 8px;">
+            <div
+                style="background: white; display: inline-flex; border-radius: 99px; padding: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <button id="mode-std" onclick="setMode('std')"
+                    style="border:none; background:#2196F3; color:white; padding: 8px 16px; border-radius: 99px; font-weight:bold; transition:0.3s; font-size:1rem;">錄音傳送</button>
+                <button id="mode-live" onclick="setMode('live')"
+                    style="border:none; background:transparent; color:#666; padding: 8px 16px; border-radius: 99px; font-weight:bold; transition:0.3s; font-size:1rem;">🔴
+                    即時直播</button>
+            </div>
+            <div id="live-hint" style="font-size:12px; color:#f44336; margin-top:4px; display:none;">低延遲直播模式 (WIFI環境佳)
+            </div>
+        </div>
+
+        <!-- Visualizer Canvas (Move here) -->
+        <div id="visualizer-box" style="display:none; justify-content:center; margin-bottom:10px;">
+            <canvas id="visualizer" width="300" height="60"
+                style="border-radius:12px; background:#e0e0e0; border:1px solid #ccc;"></canvas>
+        </div>
+
+        <!-- Hold to Talk -->
+        <button id="btn-hold" class="btn">
+            <span class="icon">🎤</span>
+            <span>按住 ‧ 即說</span>
+            <span class="hint">放開立即廣播</span>
+        </button>
+
+        <!-- Toggle Record -->
+        <button id="btn-toggle" class="btn">
+            <span class="icon">🔴</span>
+            <span id="toggle-text">點擊開始錄音</span>
+            <span class="hint" id="toggle-hint">錄製長段語音</span>
+        </button>
+
+        <!-- Live Chime Buttons (Hidden by default) -->
+        <div id="live-chime-box" style="display:none; gap:12px; margin-top:8px;">
+            <button onclick="playLiveChime('start')" class="btn"
+                style="flex:1; background:white; color:#333; font-size:1rem; padding:12px;">
+                🔔 提示音
+            </button>
+            <button onclick="playLiveChime('end')" class="btn"
+                style="flex:1; background:white; color:#333; font-size:1rem; padding:12px;">
+                🔕 結束音
+            </button>
+        </div>
+
+        <!-- Preview Box (Hidden by default) -->
+        <div id="preview-box">
+            <audio id="audio-preview" controls></audio>
+            <button id="btn-cancel"
+                style="padding: 8px 16px; border-radius: 8px; border: none; background: #9e9e9e; color: white;">❌</button>
+        </div>
+
+        <!-- Volume Control -->
+        <div
+            style="margin-top: 24px; background: white; padding: 16px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            <label style="display:block; margin-bottom: 8px; font-weight: bold; color: #374151;">🔊 現場音量</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button onclick="adjustVol(-5)"
+                    style="width:40px;height:40px;border-radius:50%;border:1px solid #ddd;background:#f3f4f6;font-size:1.2rem;">-</button>
+                <input type="range" id="vol-slider" min="0" max="100" value="80" style="flex:1; height:8px;"
+                    onchange="setVol(this.value)">
+                <button onclick="adjustVol(+5)"
+                    style="width:40px;height:40px;border-radius:50%;border:1px solid #ddd;background:#f3f4f6;font-size:1.2rem;">+</button>
+            </div>
+            <div id="vol-val" style="text-align:center; font-size: 0.9rem; color:#6b7280; margin-top:4px;">80%</div>
+        </div>
+
+        <!-- Force Stop -->
+        <div style="margin-top: 16px;">
+            <button onclick="forceStop()" class="btn"
+                style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); width: 100%;">
+                <span class="icon">🛑</span>
+                <span>強制停止所有廣播</span>
+            </button>
+        </div>
+
+        <!-- Relay Control -->
+        <div style="margin-top: 16px; display: flex; gap: 12px;">
+            <button onclick="sendCmd('RelayOn')" class="btn"
+                style="flex: 1; background: linear-gradient(135deg, #4CAF50, #388E3C); font-size: 1.2rem; padding: 12px;">
+                <span class="icon">🔌</span>
+                <span>Relay ON</span>
+            </button>
+            <button onclick="sendCmd('RelayOff')" class="btn"
+                style="flex: 1; background: linear-gradient(135deg, #9e9e9e, #616161); font-size: 1.2rem; padding: 12px;">
+                <span class="icon">🔌</span>
+                <span>Relay OFF</span>
+            </button>
+        </div>
+
+        <!-- History -->
+        <div style="margin-top: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label style="font-weight: bold; color: #374151;">📝 最近廣播 (前5次)</label>
+                <button onclick="fetchHistory()"
+                    style="background:none; border:none; color:#2563eb; font-size:0.9rem;">🔄
+                    重新整理</button>
+            </div>
+            <div id="history-list" style="display:flex; flex-direction:column; gap:8px;">
+                <div style="text-align:center; color:#9ca3af; padding:8px;">載入中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Permission Modal -->
+    <div id="mic-modal">
+        <div class="modal-content">
+            <h3 style="color:#d32f2f;margin-top:0">⚠️ 無法使用麥克風</h3>
+            <p>因瀏覽器安全限制，非 HTTPS 環境需手動開啟權限。</p>
+            <ol style="padding-left:20px; font-size:14px; line-height:1.5;">
+                <li>複製下方網址：<br>
+                    <div class="url-box" id="flag-url">chrome://flags/#unsafely-treat-insecure-origin-as-secure</div>
+                </li>
+                <li>開新分頁貼上並前往。</li>
+                <li>填入本站網址：<br>
+                    <div class="url-box" id="site-url" style="color:#2196F3;font-weight:bold;"></div>
+                </li>
+                <li>設為 <b>Enabled</b> 並 Relaunch。</li>
+            </ol>
+            <div style="text-align:right">
+                <button onclick="copyUrl()"
+                    style="padding:8px 16px;background:#2196F3;color:white;border:none;border-radius:4px;">複製 Flag
+                    網址</button>
+                <button onclick="copySiteUrl()"
+                    style="padding:8px 16px;background:#4CAF50;color:white;border:none;border-radius:4px;margin-left:8px;">複製本站網址</button>
+                <button onclick="document.getElementById('mic-modal').style.display='none'"
+                    style="padding:8px 16px;background:#ddd;border:none;border-radius:4px;margin-left:8px;">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State ---
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let isVisualizing = false; // Separate flag for visualizer
+        let broadcastMode = 'instant'; // 'instant' or 'preview'
+        let recordedBlob = null;
+        let currentMode = 'std'; // 'std' or 'live'
+        let ws = null;
+
+        // Visualizer State
+        let audioCtx, analyser, dataArray, visualizerBox, visualizerCanvas, visualizerCtx, animationId;
+
+        // --- References ---
+        const btnHold = document.getElementById('btn-hold');
+        const btnToggle = document.getElementById('btn-toggle');
+        const toggleText = document.getElementById('toggle-text');
+        const toggleHint = document.getElementById('toggle-hint');
+        const statusEl = document.getElementById('status');
+        const previewBox = document.getElementById('preview-box');
+        const audioPreview = document.getElementById('audio-preview');
+        const btnCancel = document.getElementById('btn-cancel');
+
+        // Init Visualizer Refs
+        visualizerBox = document.getElementById('visualizer-box');
+        visualizerCanvas = document.getElementById('visualizer');
+        visualizerCtx = visualizerCanvas.getContext('2d');
+
+        // --- Helper ---
+        function setStatus(msg) { statusEl.textContent = msg; }
+
+        function ensureUnmute() {
+            const slider = document.getElementById('vol-slider');
+            if (!slider) return;
+            // Always ensure server is unmuted
+            fetch('/cmd', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'cmd=Unmute'
+            }).catch(() => { });
+
+            let v = parseInt(slider.value || "0", 10);
+            if (v === 0) {
+                v = 50;
+                slider.value = v;
+                setVol(v);
+                setStatus("🔊 已自動解除靜音");
+            }
+        }
+
+        function drawVisualizer() {
+            if (!isVisualizing) return;
+            animationId = requestAnimationFrame(drawVisualizer);
+
+            analyser.getByteFrequencyData(dataArray);
+
+            visualizerCtx.fillStyle = '#f0f0f0';
+            visualizerCtx.fillRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
+
+            const barWidth = (visualizerCanvas.width / dataArray.length) * 2.5;
+            let barHeight;
+            let x = 0;
+
+            for (let i = 0; i < dataArray.length; i++) {
+                barHeight = dataArray[i] / 2;
+
+                // Color based on height (Green -> Red)
+                if (barHeight > 50) visualizerCtx.fillStyle = '#f44336';
+                else if (barHeight > 30) visualizerCtx.fillStyle = '#ff9800';
+                else visualizerCtx.fillStyle = '#4CAF50';
+
+                visualizerCtx.fillRect(x, visualizerCanvas.height - barHeight, barWidth, barHeight);
+                x += barWidth + 1;
+            }
+        }
+
+        async function checkMicPermission() {
+            // 1. Check for Secure Context (HTTPS or localhost)
+            if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                // Try to proceed anyway, but show modal if mediaDevices is missing
+                if (!navigator.mediaDevices) {
+                    showPermissionModal();
+                    return false;
+                }
+            }
+
+            // 2. Check Device Support
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showPermissionModal();
+                return false;
+            }
+            return true;
+        }
+
+        function showPermissionModal() {
+            // Update URL specific instructions
+            const currentUrl = window.location.href;
+            document.getElementById('site-url').textContent = currentUrl;
+            document.getElementById('mic-modal').style.display = 'flex';
+        }
+
+        window.copyUrl = () => {
+            const txt = document.getElementById('flag-url').textContent;
+            // Fallback copy
+            const ta = document.createElement("textarea");
+            ta.value = txt;
+            ta.style.position = "fixed"; ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.focus(); ta.select();
+            try {
+                document.execCommand('copy');
+                alert("已複製！");
+            } catch (e) {
+                prompt("請手動複製:", txt);
+            }
+            document.body.removeChild(ta);
+        };
+
+        window.copySiteUrl = () => {
+            const txt = document.getElementById('site-url').textContent;
+            // Fallback copy
+            const ta = document.createElement("textarea");
+            ta.value = txt;
+            ta.style.position = "fixed"; ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.focus(); ta.select();
+            try {
+                document.execCommand('copy');
+                alert("已複製本站網址！");
+            } catch (e) {
+                prompt("請手動複製:", txt);
+            }
+            document.body.removeChild(ta);
+        };
+
+        // --- Core Recording Logic ---
+        function setMode(m) {
+            currentMode = m;
+            const btnStd = document.getElementById('mode-std');
+            const btnLive = document.getElementById('mode-live');
+            const hint = document.getElementById('live-hint');
+
+            if (m === 'live') {
+                btnLive.style.background = '#f44336';
+                btnLive.style.color = 'white';
+                btnStd.style.background = 'transparent';
+                btnStd.style.color = '#666';
+                hint.style.display = 'block';
+
+                document.querySelector('#btn-hold span:nth-child(2)').textContent = "按住 ‧ 直播";
+                document.querySelector('#btn-hold .hint').textContent = "放開立即停止";
+
+                document.getElementById('toggle-text').textContent = "點擊開始直播";
+                document.getElementById('toggle-hint').textContent = "直播直到停止";
+            } else { // std
+                btnStd.style.background = '#2196F3';
+                btnStd.style.color = 'white';
+                btnLive.style.background = 'transparent';
+                btnLive.style.color = '#666';
+                hint.style.display = 'none';
+
+                document.querySelector('#btn-hold span:nth-child(2)').textContent = "按住 ‧ 即說";
+                document.querySelector('#btn-hold .hint').textContent = "放開立即廣播";
+
+                document.getElementById('toggle-text').textContent = "點擊開始錄音";
+                document.getElementById('toggle-hint').textContent = "錄製長段語音";
+            }
+
+            // Toggle Chime Box
+            const chimeBox = document.getElementById('live-chime-box');
+            if (chimeBox) chimeBox.style.display = (m === 'live') ? 'flex' : 'none';
+        }
+
+        async function startRecording(mode) {
+            ensureUnmute();
+            // 1. Init AudioContext and Visualizer UI immediately (User Gesture)
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                // Show visualizer placeholder immediately
+                if (visualizerBox) visualizerBox.style.display = 'flex';
+            } catch (e) { console.error("AudioCtx Error:", e); }
+
+            if (!await checkMicPermission()) return;
+
+            try {
+                const useNoise = document.getElementById("chk-noise").checked;
+
+                // Use simpler constraints to ensure compatibility
+                let constraints = { audio: true };
+
+                if (!useNoise) {
+                    constraints = {
+                        audio: {
+                            echoCancellation: false,
+                            noiseSuppression: false,
+                            autoGainControl: false
+                        }
+                    };
+                }
+
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                // Visualizer Connection
+                if (audioCtx && stream.getAudioTracks().length > 0) {
+                    const source = audioCtx.createMediaStreamSource(stream);
+                    if (!analyser) {
+                        analyser = audioCtx.createAnalyser();
+                        analyser.fftSize = 64;
+                        dataArray = new Uint8Array(analyser.frequencyBinCount);
+                    }
+                    source.connect(analyser);
+
+                    isVisualizing = true;
+                    drawVisualizer();
+                }
+
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                // Visualizer already started above
+
+                // UI Updates
+                if (currentMode === 'live') {
+                    // LIVE MODE LOGIC
+                    mediaRecorder.ondataavailable = event => {
+                        if (event.data.size > 0 && ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(event.data);
+                        }
+                    };
+
+                    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    ws = new WebSocket(`${proto}//${location.host}/ws/live?role=broadcaster`);
+
+                    ws.onopen = () => {
+                        mediaRecorder.start(500); // 500ms chunks for better stability
+                        isRecording = true;
+                        setStatus("🔴 直播中...");
+
+                        // UI
+                        if (mode === 'instant') { // Hold
+                            btnHold.classList.add('recording');
+                            btnToggle.disabled = true;
+                        } else { // Toggle
+                            btnToggle.classList.add('recording');
+                            toggleText.textContent = "停止直播";
+                            toggleHint.textContent = "點擊結束";
+                            btnHold.disabled = true;
+                        }
+                    };
+                    ws.onerror = (e) => {
+                        console.error(e);
+                        setStatus("❌ 連線錯誤");
+                        if (isRecording) stopRecording();
+                    };
+                    return;
+                }
+
+                // STANDARD RECORDING LOGIC
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    if (currentMode === 'live') return; // Handled separately if mixed? No.
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    recordedBlob = blob;
+                    handleRecordingComplete(blob);
+
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                broadcastMode = mode;
+                setStatus("🔴 錄音中...");
+
+                // UI Updates
+                if (mode === 'instant') {
+                    btnHold.classList.add('recording');
+                    btnToggle.disabled = true;
+                    btnHold.querySelector('.hint').textContent = "放開 -> 傳送";
+                } else {
+                    btnToggle.classList.add('recording');
+                    toggleText.textContent = "停止並預覽";
+                    toggleHint.textContent = "點擊結束錄音";
+                    btnHold.disabled = true;
+                }
+
+            } catch (err) {
+                console.error(err);
+                setStatus("❌ 麥克風啟動失敗");
+                alert("麥克風啟動失敗: " + err.message);
+            }
+        }
+
+        function stopRecording() {
+            isVisualizing = false;
+
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+
+                // Stop Visualizer
+                if (animationId) cancelAnimationFrame(animationId);
+                visualizerBox.style.display = 'none';
+
+                // If Live Mode, close WS and Reset UI immediately
+                if (currentMode === 'live') {
+                    if (ws) ws.close();
+                    setStatus("直播結束");
+                    setTimeout(() => setStatus("準備就緒"), 2000);
+
+                    btnHold.classList.remove('recording');
+                    btnToggle.classList.remove('recording');
+                    btnHold.disabled = false;
+                    btnToggle.disabled = false;
+
+                    // Reset Toggle Text
+                    toggleText.textContent = "點擊開始直播";
+                    toggleHint.textContent = "直播直到停止";
+
+                    // Release Stream
+                    if (mediaRecorder.stream) {
+                        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    }
+                }
+            } else {
+                // Determine if we need to cleanup visualizer if isRecording was false (e.g. error case or early stop)
+                if (animationId) cancelAnimationFrame(animationId);
+                visualizerBox.style.display = 'none';
+
+                // Also release any stream if it exists but wasn't recording
+                if (mediaRecorder && mediaRecorder.stream) {
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+            }
+        }
+
+        async function handleRecordingComplete(blob) {
+            // Reset UI first
+            btnHold.classList.remove('recording');
+            btnToggle.classList.remove('recording');
+            btnHold.disabled = false;
+            btnToggle.disabled = false;
+            btnHold.querySelector('.hint').textContent = "放開立即廣播";
+            toggleText.textContent = "點擊開始錄音";
+            toggleHint.textContent = "錄製長段語音";
+
+            if (blob.size < 1024) {
+                setStatus("⚠️ 錄音太短 (<1KB)，已取消");
+                resetPreview();
+                return;
+            }
+
+            if (broadcastMode === 'instant') {
+                // Check duration (avoid tiny accidental clicks)
+                // Size checked above
+                setStatus("⏳ 上傳廣播中...");
+                await uploadAudio(blob);
+            } else {
+                // Preview Mode
+                setStatus("▶️ 準備預覽");
+                const url = URL.createObjectURL(blob);
+                audioPreview.src = url;
+                previewBox.style.display = 'flex';
+
+                // Change Toggle Button to Send
+                btnToggle.classList.add('preview');
+                // Change text to 'Send'
+                toggleText.textContent = "📤 確認傳送";
+                toggleHint.textContent = "由手機廣播";
+
+                // Hide hold button temporarily
+                btnHold.style.display = 'none';
+
+                // Override click handler for Send
+                // We handle this state in the click listener below
+            }
+        }
+
+        async function uploadAudio(blob) {
+            const formData = new FormData();
+            formData.append("file", blob, "mobile_voice.webm");
+
+            // Add Chime option
+            const useChime = document.getElementById("chk-chime").checked;
+            formData.append("chime", useChime ? "true" : "false");
+
+            try {
+                const res = await fetch("/api/speak_audio_blob", {
+                    method: "POST",
+                    body: formData
+                });
+                if (res.ok) {
+                    setStatus("✅ 廣播成功！");
+                    fetchHistory();
+                    setTimeout(() => setStatus("準備就緒"), 3000);
+                } else {
+                    const txt = await res.text();
+                    throw new Error(txt);
+                }
+            } catch (e) {
+                setStatus("❌ 傳送失敗");
+                alert("傳送失敗: " + e.message);
+            }
+        }
+
+        function resetPreview() {
+            previewBox.style.display = 'none';
+            audioPreview.pause();
+            audioPreview.src = "";
+            recordedBlob = null;
+
+            btnToggle.classList.remove('preview');
+            toggleText.textContent = "點擊開始錄音";
+            toggleHint.textContent = "錄製長段語音";
+            btnHold.style.display = 'flex';
+            setStatus("準備就緒");
+        }
+
+        // --- Volume & Logic ---
+        function adjustVol(delta) {
+            const slider = document.getElementById('vol-slider');
+            let v = parseInt(slider.value) + delta;
+            if (v < 0) v = 0; if (v > 100) v = 100;
+            slider.value = v;
+            setVol(v);
+        }
+
+        function setVol(v) {
+            document.getElementById('vol-val').innerText = v + "%";
+            fetch('/setvol', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'vol=' + v
+            });
+        }
+
+        function forceStop() {
+            // Immediate action
+            fetch('/cmd', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'cmd=CancelALL'
+            }).then(() => {
+                setStatus("🛑 已執行強制停止");
+                resetPreview();
+                setTimeout(() => setStatus("準備就緒"), 3000);
+            });
+        }
+
+        function sendCmd(cmd) {
+            fetch('/cmd', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'cmd=' + cmd
+            }).then(() => {
+                setStatus("✅ 指令已發送: " + cmd);
+                setTimeout(() => setStatus("準備就緒"), 2000);
+            }).catch(e => {
+                setStatus("❌ 發送失敗");
+                alert("發送失敗: " + e);
+            });
+        }
+
+        async function fetchHistory() {
+            const list = document.getElementById('history-list');
+            try {
+                const r = await fetch('/files?source=rec');
+                const j = await r.json();
+                if (!j.ok) throw new Error("API Fail: " + (j.error || "unknown"));
+
+                // Filter: show .mp3s, but exclude the generated '_chime' files
+                const recs = j.files
+                    .filter(f => f.name.toLowerCase().endsWith('.mp3'))
+                    .filter(f => !f.name.toLowerCase().endsWith('_chime.mp3'))
+                    .sort((a, b) => b.mtime - a.mtime)
+                    .slice(0, 5);
+
+                if (recs.length === 0) {
+                    list.innerHTML = `<div style="text-align:center; color:#9ca3af; padding:8px;">無錄音記錄 (共 ${j.files.length} 檔案)</div>`;
+                    return;
+                }
+
+                list.innerHTML = recs.map(f => {
+                    const d = new Date(f.mtime * 1000);
+                    const timeStr = (d.getMonth() + 1) + "/" + d.getDate() + " " +
+                        String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0') + ":" + String(d.getSeconds()).padStart(2, '0');
+                    const label = f.orig && f.orig.startsWith("錄音-") ? f.orig : "錄音";
+
+                    return `
+                    <div style="display:flex; align-items:center; background:white; padding:10px; border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                        <div style="flex:1;">
+                            <div style="font-weight:bold; color:#333;">${label}</div>
+                            <div style="font-size:0.8rem; color:#666;">${timeStr}</div>
+                        </div>
+                        <button onclick="playHistory('${f.name}')" style="background:#dbeafe; color:#1e40af; border:none; padding:8px 16px; border-radius:8px; display:flex; align-items:center; gap:4px; font-size:0.9rem;">
+                            <span>▶️</span> 重播
+                        </button>
+                    </div>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                console.error(e);
+                list.innerHTML = `<div style="text-align:center; color:#ef4444; padding:8px;">載入失敗: ${e.message}</div>`;
+            }
+        }
+
+        let isPlayingHistory = false;
+
+        function playHistory(path) {
+            if (isPlayingHistory) return;
+            ensureUnmute();
+            if (!confirm("確定要再次廣播此內容嗎？")) return;
+
+            isPlayingHistory = true;
+
+            const chk = document.getElementById('chk-chime');
+            const useChime = chk && chk.checked;
+            const cmdName = useChime ? "PlayWithChime:" : "PlayMP3:";
+
+            fetch('/cmd', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'cmd=' + cmdName + path
+            }).then(() => {
+                setStatus("✅ 重播指令已發送" + (useChime ? " (含提示音)" : ""));
+                setTimeout(() => setStatus("準備就緒"), 2000);
+            }).finally(() => {
+                setTimeout(() => { isPlayingHistory = false; }, 1000);
+            });
+        }
+
+        // Init state
+        fetch('/state').then(r => r.json()).then(d => {
+            if (d.volume !== undefined) {
+                document.getElementById('vol-slider').value = d.volume;
+                document.getElementById('vol-val').innerText = d.volume + "%";
+            }
+        }).catch(() => { });
+
+        fetchHistory();
+
+        // --- Event Listeners ---
+
+        // 1. Hold to Talk
+        const handleStart = (e) => {
+            if (e.cancelable) e.preventDefault(); // Prevent scrolling on touch
+            if (isRecording || previewBox.style.display === 'flex') return;
+            startRecording('instant');
+        };
+        const handleEnd = (e) => {
+            if (e.cancelable) e.preventDefault();
+            if (isRecording && broadcastMode === 'instant') {
+                stopRecording();
+            }
+        };
+
+        btnHold.addEventListener('mousedown', handleStart);
+        btnHold.addEventListener('touchstart', handleStart);
+
+        btnHold.addEventListener('mouseup', handleEnd);
+        btnHold.addEventListener('touchend', handleEnd);
+        btnHold.addEventListener('mouseleave', () => {
+            if (isRecording && broadcastMode === 'instant') stopRecording();
+        });
+
+        // 2. Toggle Record / Send
+        btnToggle.addEventListener('click', () => {
+            // State: Sending (Preview)
+            if (btnToggle.classList.contains('preview')) {
+                if (recordedBlob) {
+                    setStatus("⏳ 上傳中...");
+                    btnToggle.disabled = true;
+                    uploadAudio(recordedBlob).finally(() => {
+                        btnToggle.disabled = false;
+                        resetPreview();
+                    });
+                }
+                return;
+            }
+
+            // State: Recording -> Stop
+            if (isRecording) {
+                stopRecording();
+                return;
+            }
+
+            // State: Idle -> Start Recording (Preview Mode)
+            startRecording('preview');
+        });
+
+        // 3. Cancel
+        btnCancel.addEventListener('click', resetPreview);
+
+        // Prevent context menu on buttons (long press)
+        window.oncontextmenu = function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        };
+
+        function playLiveChime(type) {
+            ensureUnmute();
+            // type: 'start' or 'end'
+            fetch('/cmd', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'cmd=PlayChime:' + type
+            }).then(() => {
+                setStatus(type === 'start' ? "🔔 播放提示音" : "🔕 播放結束音");
+                setTimeout(() => {
+                    if (isRecording) setStatus("🔴 直播中...");
+                    else setStatus("準備就緒");
+                }, 1500);
+            });
+        }
+
+
+        // --- PWA Logic ---
+        let deferredPrompt;
+        const btnInstall = document.getElementById('btn-install'); // We need to add this button to HTML
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            deferredPrompt = e;
+
+            // Show the install button
+            if (btnInstall) {
+                btnInstall.style.display = 'flex';
+                setStatus("📲 可安裝 App");
+            }
+            console.log("PWA: beforeinstallprompt fired");
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => {
+                        console.log('SW reg success:', reg.scope);
+                        // Check if controlling
+                        if (!navigator.serviceWorker.controller) {
+                            console.log("PWA: SW registered but not controlling yet. Reload might be needed.");
+                        }
+                    })
+                    .catch(err => {
+                        console.error('SW reg fail:', err);
+                        setStatus("⚠️ SW 註冊失敗");
+                    });
+            });
+        }
+
+        // Check Secure Context
+        if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            console.warn("PWA: Not secure context. Install might fail.");
+            // We can allow the user to see a warning if they want
+        }
+
+        // --- PWA Diagnosis ---
+        async function runPWADiagnosis() {
+            const logEl = document.getElementById('debug-log');
+            if (!logEl) return;
+            logEl.style.display = 'block';
+            logEl.textContent = "正在檢查環境...\n";
+
+            function log(msg) {
+                logEl.textContent += msg + "\n";
+                // console.log("[Diag] " + msg);
+            }
+
+            // 1. Basic Protocol & Secure Context
+            log(`URL: ${window.location.protocol}//${window.location.host}`);
+            log(`Secure Context: ${window.isSecureContext ? "✅ Yes" : "❌ No (必備條件)"}`);
+
+            if (!window.isSecureContext && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+                log("⚠️ 警告: 非 HTTPS 且非 localhost，Chrome 99% 會阻擋安裝。請設定 chrome://flags");
+            }
+
+            // 2. Service Worker
+            if ('serviceWorker' in navigator) {
+                try {
+                    const reg = await navigator.serviceWorker.getRegistration();
+                    if (reg) {
+                        log(`✅ SW 已註冊 (Scope: ${reg.scope})`);
+                    } else {
+                        log("❌ SW 未註冊 (嘗試重新整理)");
+                    }
+                } catch (e) {
+                    log("❌ SW 檢查錯誤: " + e);
+                }
+            } else {
+                log("❌ 瀏覽器不支援 Service Worker");
+            }
+
+            // 3. Manifest
+            try {
+                const res = await fetch('manifest.json');
+                if (res.ok) {
+                    log("✅ Manifest 讀取成功");
+                    const json = await res.json();
+                } else {
+                    log(`❌ Manifest 讀取失敗 (Status: ${res.status})`);
+                }
+            } catch (e) {
+                log("❌ Manifest 請求錯誤: " + e);
+            }
+
+            // 4. Icons Check
+            const iconUrl = 'icon_192.png';
+            const img = new Image();
+            img.onload = () => log("✅ Icon 192 讀取成功");
+            img.onerror = () => log("❌ Icon 192 讀取失敗");
+            img.src = iconUrl;
+
+            // 5. Install Prompt Event
+            if (deferredPrompt) {
+                log("✅ 安裝事件已捕捉 (可安裝)");
+                const btn = document.getElementById('btn-install');
+                if (btn) btn.style.display = 'flex';
+            } else {
+                log("⚠️ 未捕捉到安裝事件。");
+                log("可能原因：\n1. 已經安裝過 (請檢查 APP 列表)\n2. 條件不符 (看上方檢查)\n3. 曾經拒絕過 (請清除快取)");
+            }
+        }
+    </script>
+
+</body>
+
+</html>

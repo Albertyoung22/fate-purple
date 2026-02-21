@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RelayBell AI 語音廣播展示廳</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+TC:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7c4dff;
+            --primary-glow: rgba(124, 77, 255, 0.5);
+            --secondary: #00e5ff;
+            --secondary-glow: rgba(0, 229, 255, 0.5);
+            --bg-dark: #0a0b1e;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-main: #ffffff;
+            --text-dim: #b0b0cc;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+            background: radial-gradient(circle at top right, #1a1b3a, #0a0b1e);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background Elements */
+        .bg-blob {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: var(--primary-glow);
+            filter: blur(100px);
+            border-radius: 50%;
+            z-index: -1;
+            animation: float 20s infinite alternate;
+        }
+
+        .blob-1 {
+            top: -100px;
+            right: -100px;
+        }
+
+        .blob-2 {
+            bottom: -100px;
+            left: -100px;
+            background: var(--secondary-glow);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            100% {
+                transform: translate(50px, 50px) scale(1.1);
+            }
+        }
+
+        header {
+            padding: 40px 20px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .logo-container img {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #fff, #7c4dff, #00e5ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .main-container {
+            width: 90%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 40px 0;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-title i {
+            color: var(--secondary);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        textarea,
+        select,
+        input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 15px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus,
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        textarea {
+            height: 120px;
+            resize: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #b388ff);
+            color: white;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            box-shadow: 0 6px 20px var(--primary-glow);
+            transform: scale(1.02);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .visualizer {
+            height: 60px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+            margin: 20px 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .visualizer.active {
+            opacity: 1;
+        }
+
+        .bar {
+            width: 6px;
+            background: var(--secondary);
+            border-radius: 3px;
+            height: 5px;
+            animation: bounce 1s infinite alternate ease-in-out;
+        }
+
+        @keyframes bounce {
+            0% {
+                height: 5px;
+            }
+
+            100% {
+                height: 40px;
+            }
+        }
+
+        .bar:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .bar:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .bar:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        .bar:nth-child(5) {
+            animation-delay: 0.4s;
+        }
+
+        .bar:nth-child(6) {
+            animation-delay: 0.5s;
+        }
+
+        .bar:nth-child(7) {
+            animation-delay: 0.6s;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 255, 0, 0.1);
+            color: #4caf50;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #4caf50;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #4caf50;
+        }
+
+        /* Success Message Popup */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .features-grid {
+            display: flex;
+            gap: 15px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            border: 1px solid var(--glass-border);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+
+    <header>
+        <div style="position: absolute; top: 20px; left: 20px;">
+            <a href="/" class="btn btn-secondary" style="width: auto; padding: 8px 15px; font-size: 0.8rem;">
+                ⬅ 回到主控台
+            </a>
+        </div>
+        <div class="logo-container">
+            <img src="/static/ui/favicon.png" alt="RelayBell Logo" id="logoImg">
+        </div>
+        <h1>RelayBell <span style="font-weight: 300;">Showcase</span></h1>
+        <p class="subtitle">體驗下一代 AI 語音廣播與翻譯系統。即時合成、多國語言翻譯，聽得到的科技魅力。</p>
+    </header>
+
+    <div class="main-container">
+        <!-- TTS Card -->
+        <div class="card">
+            <div class="card-title">
+                <span>🎙️</span> 語音即時合成 (TTS)
+            </div>
+            <div class="input-group">
+                <label>廣播文字</label>
+                <textarea id="ttsText" placeholder="請輸入要廣播的文字..."></textarea>
+            </div>
+            <div class="input-group">
+                <label>選擇語音/語言</label>
+                <select id="ttsVoice">
+                    <option value="zh-TW-HsiaoChenNeural">台灣 - 曉臻 (女)</option>
+                    <option value="zh-TW-YunJheNeural">台灣 - 雲哲 (男)</option>
+                    <option value="zh-CN-XiaoxiaoNeural">中國 - 曉曉 (女)</option>
+                    <option value="en-US-AriaNeural">美國 - Aria (女)</option>
+                    <option value="en-US-GuyNeural">美國 - Guy (男)</option>
+                    <option value="ja-JP-NanamiNeural">日本 - 七海 (女)</option>
+                    <option value="ko-KR-SunHiNeural">韓國 - Sun-Hi (女)</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" id="btnSpeak">
+                <span>🔊</span> 立即播出
+            </button>
+
+            <div class="visualizer" id="visualizer">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                雲端語音引擎 已連線
+            </div>
+        </div>
+
+        <!-- Translation Card -->
+        <div class="card">
+            <div class="card-title">
+                <span>🌐</span> 智慧跨國翻譯
+            </div>
+            <div class="input-group">
+                <label>原文內容 (自動偵測語言)</label>
+                <textarea id="transInput" placeholder="輸入任何語言的文字..."></textarea>
+            </div>
+            <div class="input-group">
+                <label>目標語言</label>
+                <select id="transTarget">
+                    <option value="zh-TW">繁體中文</option>
+                    <option value="en">English (英文)</option>
+                    <option value="ja">日本語 (日文)</option>
+                    <option value="ko">한국어 (韓文)</option>
+                    <option value="th">ไทย (泰文)</option>
+                    <option value="vi">Tiếng Việt (越南文)</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-secondary" style="flex:1" id="btnTranslate">
+                    <span>✨</span> 翻譯
+                </button>
+                <button class="btn btn-primary" style="flex:1.5" id="btnTransSpeak">
+                    <span>🔊</span> 翻譯並播放
+                </button>
+            </div>
+
+            <div id="transOutputContainer" style="margin-top:20px; display:none;">
+                <label>翻譯結果</label>
+                <div id="transResult"
+                    style="background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; border:1px dashed var(--glass-border); line-height:1.6;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="features-grid">
+        <div class="feature-item">✓ 網頁端即時輸出</div>
+        <div class="feature-item">✓ Edge TTS 高品質音質</div>
+        <div class="feature-item">✓ Google Translate 智慧引擎</div>
+        <div class="feature-item">✓ 跨平台相容性</div>
+    </div>
+
+    <div id="toast">廣播任務已啟動</div>
+
+    <audio id="audioPlayer" style="display:none;"></audio>
+
+    <script>
+        const audioPlayer = document.getElementById('audioPlayer');
+        const visualizer = document.getElementById('visualizer');
+        const toast = document.getElementById('toast');
+
+        // Animation for visualizer
+        function setVisualizerActive(active) {
+            const bars = document.querySelectorAll('.bar');
+            if (active) {
+                visualizer.classList.add('active');
+                bars.forEach(bar => {
+                    bar.style.animationDuration = (Math.random() * 0.5 + 0.3) + 's';
+                });
+            } else {
+                visualizer.classList.remove('active');
+            }
+        }
+
+        function showToast(msg) {
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        async function playTTS(text, voice) {
+            if (!text) return;
+
+            setVisualizerActive(true);
+            showToast("正在準備音訊...");
+
+            try {
+                const response = await fetch('/api/tts_preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, lang: voice })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    audioPlayer.src = url;
+                    audioPlayer.play();
+                    showToast("聲音播出中...");
+                } else {
+                    showToast("語音合成失敗");
+                    setVisualizerActive(false);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("連線錯誤");
+                setVisualizerActive(false);
+            }
+        }
+
+        audioPlayer.onended = () => {
+            setVisualizerActive(false);
+        };
+
+        // TTS Button
+        document.getElementById('btnSpeak').onclick = () => {
+            const text = document.getElementById('ttsText').value;
+            const voice = document.getElementById('ttsVoice').value;
+            playTTS(text, voice);
+        };
+
+        // Translate Logic
+        async function translateText(text, target) {
+            try {
+                const response = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, target })
+                });
+                const data = await response.json();
+                if (data.ok) {
+                    document.getElementById('transOutputContainer').style.display = 'block';
+                    document.getElementById('transResult').innerText = data.translated;
+                    return data.translated;
+                } else {
+                    showToast("翻譯失敗");
+                    return null;
+                }
+            } catch (err) {
+                showToast("翻譯連線錯誤");
+                return null;
+            }
+        }
+
+        document.getElementById('btnTranslate').onclick = async () => {
+            const text = document.getElementById('transInput').value;
+            const target = document.getElementById('transTarget').value;
+            if (!text) return;
+            showToast("翻譯中...");
+            await translateText(text, target);
+        };
+
+        document.getElementById('btnTransSpeak').onclick = async () => {
+            const text = document.getElementById('transInput').value;
+            const target = document.getElementById('transTarget').value;
+            if (!text) return;
+
+            showToast("正在翻譯並準備語音...");
+            const translated = await translateText(text, target);
+            if (translated) {
+                // Determine voice for translated language
+                let voice = "zh-TW-HsiaoChenNeural";
+                if (target === 'en') voice = "en-US-AriaNeural";
+                else if (target === 'ja') voice = "ja-JP-NanamiNeural";
+                else if (target === 'ko') voice = "ko-KR-SunHiNeural";
+                // Add more mappings if needed
+
+                await playTTS(translated, voice);
+            }
+        };
+
+        // Initial visualizer off
+        setVisualizerActive(false);
+
+        // Pre-fill some text
+        document.getElementById('ttsText').value = "歡迎來到 RelayBell AI 展示空間。這是一個高品質的語音合成系統。";
+        document.getElementById('transInput').value = "RelayBell is the best smart broadcast system for schools and offices.";
+
+    </script>
+</body>
+
+</html>

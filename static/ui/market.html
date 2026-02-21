@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍎 果菜市場廣播主控台</title>
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --primary-light: #4caf50;
+            --secondary: #ff9800;
+            --bg: #f0f4f0;
+            --glass: rgba(255, 255, 255, 0.9);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            margin: 0;
+            padding: 20px;
+            color: #1b5e20;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+            background: var(--glass);
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        header p {
+            margin: 5px 0 0 0;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 1100px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 750px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--glass);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .card-wide {
+            grid-column: 1 / -1;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 1.3em;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid #a5d6a7;
+            padding-bottom: 8px;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        label {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #388e3c;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid #c8e6c9;
+            background: white;
+            font-size: 15px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            color: var(--primary);
+            border: 1px solid #a5d6a7;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        button.primary:hover {
+            background: #1b5e20;
+        }
+
+        button.dispatch {
+            background: #e3f2fd;
+            color: #1565c0;
+            border-color: #bbdefb;
+        }
+
+        button.dispatch:hover {
+            background: #1565c0;
+            color: white;
+        }
+
+        button.warn {
+            background: #fff3e0;
+            color: #e65100;
+            border-color: #ffe0b2;
+        }
+
+        button.warn:hover {
+            background: #e65100;
+            color: white;
+        }
+
+        button.stop {
+            background: #ffebee;
+            color: #c62828;
+            border-color: #ffcdd2;
+            grid-column: span 2;
+            margin-top: 5px;
+        }
+
+        button.stop:hover {
+            background: #b71c1c;
+            color: white;
+        }
+
+        /* Sliders */
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--primary);
+        }
+
+        /* Switches */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(22px);
+        }
+
+        .hint {
+            font-size: 0.8em;
+            color: #666;
+            font-style: italic;
+        }
+
+        .badge {
+            background: #4caf50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🍎 果菜市場 ‧ 廣播主控台</h1>
+            <p>快速調度車輛、環境宣導、多語播報服務</p>
+        </header>
+
+        <div class="grid">
+            <!-- Row 1, Col 1: Vehicle Dispatch -->
+            <div class="card">
+                <h2>🚛 車輛調度</h2>
+                <div class="col">
+                    <label>請輸入車號 (License Plate)</label>
+                    <input type="text" id="plateInput" placeholder="例：ABC-1234"
+                        style="font-size: 1.2em; font-weight: bold; text-transform: uppercase;">
+                </div>
+                <div class="btn-group">
+                    <button class="dispatch" onclick="dispatch('請車號 {P} 的車主，立即將車輛移開，以免影響交通。')">🚗 違規移車</button>
+                    <button class="dispatch" onclick="dispatch('請車號 {P} 的車主，到一號卸貨區進行裝載。')">⬅️ 卸貨引導</button>
+                    <button class="dispatch" onclick="dispatch('請車號 {P} 的車主，您的車輛阻礙通道，請配合調整。')">⚠️ 阻礙通行</button>
+                    <button class="dispatch" onclick="dispatch('請車號 {P} 的車員，到服務台領取提單。')">📋 領取文件</button>
+                </div>
+                <div class="row tight">
+                    <span class="hint">會根據上方語音設定自動變換語言。</span>
+                </div>
+            </div>
+
+            <!-- Row 1, Col 2: Speech Settings -->
+            <div class="card">
+                <h2>🗣️ 語音設定</h2>
+                <div class="col">
+                    <label>播報語言 (套用於所有按鈕)</label>
+                    <select id="lang">
+                        <option value="zh-TW">中文（台灣）</option>
+                        <option value="en-US">英文（美國）</option>
+                        <option value="ja-JP">日文（日本）</option>
+                        <option value="ko-KR">韓文（韓國）</option>
+                        <option value="vi-VN">越南語</option>
+                        <option value="id-ID">印尼語</option>
+                        <option value="nan-TW">台語 (高品質)</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label>播報聲別</label>
+                    <select id="gender">
+                        <option value="female">女聲 (Female)</option>
+                        <option value="male">男聲 (Male)</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label>音量 / 擴大機</label>
+                    <div class="row">
+                        <input type="range" id="volSlider" min="0" max="100" value="80" oninput="setvol(this.value)">
+                        <span id="volValue" style="min-width: 40px;">80%</span>
+                    </div>
+                    <div class="row" style="margin-top: 5px;">
+                        <span style="flex:1; font-size: 0.9em;">自動開啟廣播擴大機</span>
+                        <label class="switch">
+                            <input type="checkbox" id="relayToggle" onchange="setRelay(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 1, Col 3: Environment & Common -->
+            <div class="card">
+                <h2>📢 市場常態播報</h2>
+                <div class="btn-group">
+                    <button onclick="speak('各位攤商，今日市場交易即將開始，請做好準備。')">🌅 開始交易</button>
+                    <button onclick="speak('本市場禁止吸菸與隨地吐檳榔汁，請共同維護環境。')">🚭 環境衛生</button>
+                    <button onclick="speak('清場時間已到，請各位將空籃集中擺放。')">🧹 清理告知</button>
+                    <button onclick="speak('天雨路滑，請駕駛人員減速慢行，注意安全。')">🌧️ 安全提醒</button>
+                </div>
+                <div style="margin-top: auto; padding-top: 10px; border-top: 1px dashed #ccc;">
+                    <button onclick="stopAll()" class="stop" style="width: 100%; grid-column: auto;">🛑 緊急停止播報</button>
+                </div>
+            </div>
+
+            <!-- Row 2: Multilingual & Manual -->
+            <div class="card card-wide">
+                <h2>🌐 文字播報與翻譯助手</h2>
+                <div class="col">
+                    <label>播報內容 (Text to Speak)</label>
+                    <textarea id="manualText" rows="4" placeholder="請在此輸入要播報的文字內容..."></textarea>
+                </div>
+
+                <div class="row"
+                    style="background: rgba(46, 125, 50, 0.05); padding: 15px; border-radius: 15px; border: 1px dashed #a5d6a7;">
+                    <div class="col">
+                        <label>翻譯助理</label>
+                        <div class="row">
+                            <select id="tgtLangSimple" style="max-width: 200px;">
+                                <option value="zh">中文 (Mandarin)</option>
+                                <option value="nan">台語 (Hokkien)</option>
+                                <option value="en">英文 (English)</option>
+                                <option value="ja">日文 (Japanese)</option>
+                                <option value="ko">韓文 (Korean)</option>
+                                <option value="vi">越南語 (Vietnamese)</option>
+                                <option value="id">印尼語 (Indonesian)</option>
+                            </select>
+                            <button onclick="translateSimple()" class="warn" style="white-space: nowrap;">✨
+                                立即翻譯並填入</button>
+                        </div>
+                    </div>
+                    <div class="col" style="align-items: flex-end;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
+                            <button class="primary" onclick="manualSpeak()"
+                                style="padding: 15px 30px; font-size: 1.1em; min-width: 160px;">🔊 直接播報文字</button>
+                            <button class="warn" onclick="speakTaigi()"
+                                style="padding: 15px 30px; font-size: 1.1em; min-width: 160px;">🗣️ 講台語</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Common Tools -->
+            <div class="card card-wide">
+                <h2>⚙️ 常用快捷工具</h2>
+                <div class="btn-group" style="grid-template-columns: repeat(4, 1fr);">
+                    <button onclick="postCmd('RelayOn')">🔌 開啟擴大機</button>
+                    <button onclick="postCmd('RelayOff')">🔌 關閉擴大機</button>
+                    <button onclick="postCmd('Bell:ClassStart')">🔔 提示鈴 A</button>
+                    <button onclick="postCmd('Bell:ClassEnd')">🔔 提示鈴 B</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Utils from index.html ---
+        function normalizeLang(code) {
+            if (!code) return "";
+            const c = String(code).toLowerCase();
+            if (c.startsWith("nan")) return "nan";
+            if (c.startsWith("zh")) return "zh";
+            if (c.startsWith("en")) return "en";
+            if (c.startsWith("ja")) return "ja";
+            if (c.startsWith("ko")) return "ko";
+            if (c.startsWith("vi")) return "vi";
+            if (c.startsWith("id")) return "id";
+            return c.slice(0, 2);
+        }
+
+        function detectLang(text) {
+            const s = String(text || "");
+            if (/[\u3400-\u9FFF]/.test(s)) return "zh";
+            if (/[\u3040-\u30ff\u31f0-\u31ff]/.test(s)) return "ja";
+            if (/[\u1100-\u11FF\uAC00-\uD7AF]/.test(s)) return "ko";
+            if (/[ăâđêôơưĂÂĐÊÔƠƯ]/i.test(s)) return "vi";
+            if (/[áàâăāēíìîīóòôōúùûū][1-9]?|[ⁿ·]/i.test(s) && /[a-z]/i.test(s)) return "nan";
+            if (/^\s*[a-z0-9 ,.'-]+\s*$/i.test(s)) return "en";
+            return "zh";
+        }
+
+        // --- Taigi Interceptor for Fetch ---
+        const _fetch = window.fetch;
+        window.fetch = async function (input, init) {
+            try {
+                const url = (typeof input === 'string') ? input : (input && input.url) || '';
+                const isTranslate = /\/translate(\b|$)/.test(url);
+                if (isTranslate && init && init.method === 'POST') {
+                    let bodyObj = JSON.parse(init.body);
+                    const target = bodyObj.target;
+                    if (target === 'nan') {
+                        // Redirect to specialized Taigi endpoint
+                        return _fetch('/taigi/translate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                text: bodyObj.q || bodyObj.text || '',
+                                direction: 'zh2nan'
+                            })
+                        });
+                    }
+                }
+            } catch (e) { console.warn('Fetch Interceptor error:', e); }
+            return _fetch(input, init);
+        };
+
+        // --- Business Logic ---
+
+        function dispatch(template) {
+            const plate = document.getElementById('plateInput').value.trim();
+            if (!plate) return alert('請先輸入車號！');
+            const spelledPlate = plate.toUpperCase().split('').join(' ');
+            const text = template.replace('{P}', spelledPlate);
+            speak(text);
+        }
+
+        async function translateSimple() {
+            const textArea = document.getElementById('manualText');
+            const text = textArea.value.trim();
+            const target = document.getElementById('tgtLangSimple').value;
+            if (!text) return alert('請先輸入原文');
+
+            const source = detectLang(text);
+            if (normalizeLang(source) === normalizeLang(target)) {
+                alert('來源與目標語言相同，不需翻譯。');
+                return;
+            }
+
+            try {
+                const res = await fetch('/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ q: text, text: text, source: source, target: target })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    textArea.value = data.translatedText || data.text;
+                    syncSpeechLang(target);
+                } else {
+                    alert('翻譯失敗: ' + (data.error || '未知錯誤'));
+                }
+            } catch (e) {
+                alert('連線失敗');
+            }
+        }
+
+        function syncSpeechLang(tgt) {
+            const langMap = {
+                'zh': 'zh-TW', 'en': 'en-US', 'ja': 'ja-JP', 'ko': 'ko-KR',
+                'vi': 'vi-VN', 'id': 'id-ID', 'nan': 'nan-TW'
+            };
+            const speechSelect = document.getElementById('lang');
+            if (langMap[tgt]) speechSelect.value = langMap[tgt];
+        }
+
+        async function manualSpeak() {
+            const text = document.getElementById('manualText').value.trim();
+            if (!text) return alert('請輸入播報文字');
+            const lang = document.getElementById('lang').value;
+            const gender = document.getElementById('gender').value;
+            doSpeak(text, lang, gender);
+        }
+
+        async function speakTaigi() {
+            const text = document.getElementById('manualText').value.trim();
+            if (!text) return alert('請先輸入文字');
+            doSpeak(text, 'nan-TW', 'female');
+        }
+
+        // --- Smart Speak Handler ---
+
+        async function speak(text) {
+            if (!text) return;
+            const targetLang = document.getElementById('lang').value;
+            const gender = document.getElementById('gender').value;
+            const shortTarget = normalizeLang(targetLang);
+
+            let textToSpeak = text;
+
+            // 1. Auto-Translate if targeting foreign language (and original is Chinese)
+            if (shortTarget !== 'zh' && shortTarget !== 'nan' && shortTarget !== '') {
+                try {
+                    const res = await fetch('/translate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ q: text, target: shortTarget, source: 'zh' })
+                    });
+                    const data = await res.json();
+                    if (data.ok) textToSpeak = data.translatedText || data.text;
+                } catch (e) { console.warn("Auto-translate failed", e); }
+            }
+
+            // 2. Perform Speech
+            doSpeak(textToSpeak, targetLang, gender);
+        }
+
+        async function doSpeak(text, lang, gender) {
+            const shortTarget = normalizeLang(lang);
+
+            if (shortTarget === 'nan') {
+                // Specialized Taigi Engine
+                fetch('/taigi/say', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text, direction: "zh2nan", play: true })
+                });
+            } else {
+                // Standard Metadata-aware API
+                fetch('/api/speak_v2', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, lang, gender })
+                });
+            }
+        }
+
+        // --- System API Handlers ---
+
+        function stopAll() {
+            postForm('/cmd', { cmd: 'CancelALL' });
+        }
+
+        function setvol(vol) {
+            document.getElementById('volValue').innerText = vol + '%';
+            postForm('/setvol', { vol: vol });
+        }
+
+        function setRelay(enabled) {
+            fetch('/api/relay_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ auto_on: enabled })
+            });
+        }
+
+        function postCmd(cmdString) {
+            postForm('/cmd', { cmd: cmdString });
+        }
+
+        function postForm(url, data) {
+            const params = new URLSearchParams();
+            for (const k in data) params.append(k, data[k]);
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            }).catch(err => console.error("API Error:", err));
+        }
+
+        function pollState() {
+            fetch('/state').then(r => r.json()).then(s => {
+                const volSlider = document.getElementById('volSlider');
+                const volValue = document.getElementById('volValue');
+                const relayToggle = document.getElementById('relayToggle');
+
+                if (s.volume !== undefined && document.activeElement !== volSlider) {
+                    volSlider.value = s.volume;
+                    volValue.innerText = s.volume + '%';
+                }
+                if (s.relay_auto_on !== undefined) {
+                    relayToggle.checked = s.relay_auto_on;
+                }
+            }).catch(e => console.error("Poll failed", e));
+        }
+
+        setInterval(pollState, 3000);
+        pollState();
+    </script>
+</body>
+
+</html>

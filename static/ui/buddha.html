@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>🕌 佛教音樂專區</title>
+    <meta name="theme-color" content="#8D5524">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, "Microsoft JhengHei", Segoe UI, Roboto, Arial;
+            background: #fdfbf7;
+            color: #3e2723;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Mobile-first Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #8D5524;
+            color: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        header .title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        header .links {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        header .links a {
+            color: #efebe9;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        /* Hide desktop links on mobile */
+        @media (max-width: 768px) {
+
+            header .links span.sep,
+            header .links a:not(.home-icon) {
+                display: none;
+            }
+
+            header .links a.home-icon {
+                display: inline-block;
+                font-size: 20px;
+            }
+
+            #nowText {
+                display: none !important;
+            }
+        }
+
+        main {
+            padding: 16px;
+            max-width: 800px;
+            /* Focus on vertical layout for mobile */
+            margin: 0 auto;
+            padding-bottom: 80px;
+            /* Space for fixed bottom bar if needed */
+        }
+
+        /* Large Touch Buttons Grid */
+        .shortcut-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .big-btn {
+            background: #fff;
+            border: 1px solid #e0d4c8;
+            border-radius: 16px;
+            padding: 20px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(141, 85, 36, 0.05);
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            height: 140px;
+            /* Fixed height for squares */
+        }
+
+        .big-btn:active {
+            transform: scale(0.96);
+            background: #fff8e1;
+            border-color: #ffb300;
+        }
+
+        /* Delete button (small X in corner) - Enhanced */
+        .btn-del-corner {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 32px;
+            height: 32px;
+            color: #ef5350;
+            font-size: 20px;
+            line-height: 32px;
+            text-align: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            font-weight: bold;
+        }
+
+        .btn-del-corner:active {
+            background: #ffebee;
+            color: #b71c1c;
+            transform: scale(1.1);
+        }
+
+        .big-btn .icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+            color: #8D5524;
+        }
+
+        .big-btn .name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #3e2723;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .big-btn .meta {
+            font-size: 11px;
+            color: #8d6e63;
+            margin-top: 6px;
+            background: #efebe9;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Quick Controls (Sticky Top/Bottom or Card) */
+        .controls-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+            border: 1px solid #efebe9;
+        }
+
+        .quick-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-stop-large {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(211, 47, 47, 0.3);
+        }
+
+        .btn-stop-large:active {
+            transform: scale(0.98);
+            background: #b71c1c;
+        }
+
+        /* Admin/Edit Section - Collapsible */
+        .admin-section {
+            margin-top: 30px;
+            border-top: 1px dashed #d7ccc8;
+            padding-top: 20px;
+        }
+
+        details {
+            background: #fff;
+            border: 1px solid #efebe9;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        summary {
+            padding: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            list-style: none;
+            /* Hide default arrow */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #5d4037;
+        }
+
+        summary::after {
+            content: '+';
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        details[open] summary::after {
+            content: '-';
+        }
+
+        .details-content {
+            padding: 0 14px 14px 14px;
+            border-top: 1px solid #f5f5f5;
+        }
+
+        /* Form Elements */
+        .form-row {
+            margin-bottom: 12px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #6d4c41;
+            font-weight: 600;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d7ccc8;
+            border-radius: 8px;
+            font-size: 16px;
+            /* Prevent IOS zoom */
+            box-sizing: border-box;
+            background: #fdfdfd;
+        }
+
+        .btn-primary {
+            background: #8D5524;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        /* Volume Slider optimization */
+        input[type=range] {
+            height: 28px;
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #8D5524;
+            margin-top: -10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+        }
+
+        /* Toast Notification */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        #toast.show {
+            opacity: 1;
+        }
+    </style>
+    <script defer src="auth.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="title">🕌 佛教音樂</div>
+        <div class="links">
+            <span id="nowText">--:--</span>
+            <a href="index.html" class="home-icon">🏠</a>
+            <a href="index.html">主控台</a>
+            <a href="shortcuts.html">一般快捷</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Top Controls: Stop & Volume -->
+        <div class="controls-card">
+            <div class="quick-row">
+                <button class="btn-stop-large" id="btnForceCancel" onclick="forceCancelAll(this)">
+                    <span>⏹ 強制停止</span>
+                </button>
+            </div>
+            <div style="margin-top: 16px; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size:20px;">🔊</span>
+                <input type="range" id="volumeSlider" min="0" max="100" value="80">
+                <span id="volumeValue"
+                    style="min-width: 40px; text-align: right; font-weight: bold; font-family: monospace;">80%</span>
+            </div>
+        </div>
+
+        <!-- Big Buttons Grid -->
+        <h3 style="margin: 0 0 8px 4px; color: #5d4037;">點擊播放</h3>
+        <div id="gridContainer" class="shortcut-grid">
+            <div style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">載入中...</div>
+        </div>
+
+        <!-- Admin / Edit Section -->
+        <div class="admin-section">
+            <details>
+                <summary>➕ 新增佛樂 / 誦經</summary>
+                <div class="details-content">
+                    <div class="form-row">
+                        <label class="form-label">名稱</label>
+                        <input type="text" id="newName" placeholder="例如：大悲咒">
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">類型</label>
+                        <div style="display:flex; gap:16px; font-size:15px;">
+                            <label style="display:flex;align-items:center;gap:6px;">
+                                <input type="radio" name="shortcutMode" value="mp3" checked> 播放 MP3
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;">
+                                <input type="radio" name="shortcutMode" value="tts"> 誦經 (TTS)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-row" id="fileRow">
+                        <label class="form-label">選擇檔案</label>
+                        <select id="newFile" style="margin-bottom:8px;">
+                            <option value="">(無)</option>
+                        </select>
+                        <div style="display:flex; gap:8px;">
+                            <button onclick="document.getElementById('uploadInput').click()"
+                                style="flex:1; padding:8px; background:#fff3e0; border:1px solid #ffe0b2; border-radius:8px;">⬆
+                                上傳新檔案</button>
+                            <input type="file" id="uploadInput" accept=".mp3,.wav,.m4a" style="display:none"
+                                onchange="uploadFile(this)">
+                        </div>
+                    </div>
+
+                    <div class="form-row" id="textRow" style="display:none;">
+                        <label class="form-label">經文內容</label>
+                        <textarea id="newText" placeholder="在此輸入經文文字..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">播放選項</label>
+                        <div style="display:flex; gap:16px;">
+                            <label style="display:flex;align-items:center;gap:6px;">
+                                <input type="checkbox" id="chkStart"> 前導音
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;">
+                                <input type="checkbox" id="chkEnd"> 結束音
+                            </label>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" onclick="addShortcut()">＋ 新增按鈕</button>
+                </div>
+            </details>
+
+            <details>
+                <summary>📂 檔案管理</summary>
+                <div class="details-content">
+                    <div style="display:flex; justify-content:flex-end; padding-top:8px;">
+                        <button onclick="loadFiles()"
+                            style="padding:6px 12px; background:#f5f5f5; border:1px solid #ddd; border-radius:6px;">🔄
+                            重新整理</button>
+                    </div>
+                    <div id="fileManager" style="margin-top:10px;"></div>
+                </div>
+            </details>
+        </div>
+    </main>
+
+    <div id="toast">訊息已傳送</div>
+
+    <script>
+        // Clock
+        (function () {
+            function pad2(n) { return String(n).padStart(2, '0'); }
+            function fmt(d) { return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+            function startClock() { function tick() { var el = document.getElementById('nowText'); if (el) el.textContent = fmt(new Date()); } tick(); setInterval(tick, 1000); }
+            document.addEventListener('DOMContentLoaded', startClock);
+        })();
+    </script>
+
+    <script>
+        let shortcuts = [];
+        let files = [];
+        const MODE_MP3 = 'mp3';
+        const MODE_TTS = 'tts';
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function normalizeShortcut(item) {
+            const rawMode = (item && item.mode) ? String(item.mode).toLowerCase() : MODE_MP3;
+            // Support 'text' as alias for tts
+            const mode = (rawMode === MODE_TTS || rawMode === 'text') ? MODE_TTS : MODE_MP3;
+            return {
+                name: (item && item.name) || '未命名',
+                mode,
+                filename: (item && item.filename) || '',
+                text: (item && item.text) || '',
+                options: {
+                    start: !!(item && item.options && item.options.start),
+                    end: !!(item && item.options && item.options.end)
+                }
+            };
+        }
+
+        async function loadShortcuts() {
+            try {
+                const r = await fetch('/api/buddha_shortcuts');
+                let data = await r.json();
+                if (!Array.isArray(data)) data = [];
+                shortcuts = data.map(normalizeShortcut);
+                renderGrid();
+            } catch (e) {
+                document.getElementById('gridContainer').innerHTML = '<div style="padding:20px;text-align:center;">載入失敗</div>';
+            }
+        }
+
+        async function saveShortcuts() {
+            try {
+                await fetch('/api/buddha_shortcuts', {
+                    method: 'POST',
+                    body: JSON.stringify(shortcuts)
+                });
+            } catch (e) { showToast('儲存失敗'); }
+        }
+
+        function renderGrid() {
+            const c = document.getElementById('gridContainer');
+            if (shortcuts.length === 0) {
+                c.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; color:#999; border:2px dashed #eee; border-radius:12px;">請點擊下方的「新增」來建立按鈕</div>';
+                return;
+            }
+
+            // New items added to end of array usually, but let's just render array order.
+            // If user wants specific order, we might need drag-drop later. For now, simple list.
+
+            c.innerHTML = shortcuts.map((s, i) => {
+                const icon = s.mode === MODE_TTS ? '📜' : '🎵';
+                const meta = s.mode === MODE_TTS ? '誦經' : '音樂';
+                return `
+                <div class="big-btn" onclick="playShortcut(${i})">
+                    <div class="btn-del-corner" onclick="event.stopPropagation(); delShortcut(${i})">×</div>
+                    <div class="icon">${icon}</div>
+                    <div class="name">${esc(s.name)}</div>
+                    <div class="meta">${meta}</div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        async function playShortcut(idx) {
+            const item = shortcuts[idx];
+            if (!item) return;
+
+            // Visual feedback
+            const btn = document.querySelectorAll('.big-btn')[idx];
+            if (btn) {
+                btn.style.background = '#fff8e1';
+                btn.style.borderColor = '#ffb300';
+                setTimeout(() => {
+                    btn.style.background = '';
+                    btn.style.borderColor = '';
+                }, 300);
+            }
+
+            const payload = {
+                mode: item.mode,
+                start_chime: item.options.start,
+                end_chime: item.options.end
+            };
+            if (item.mode === MODE_TTS) {
+                payload.text = item.text;
+                if (!payload.text) return showToast('無經文內容');
+            } else {
+                payload.filename = item.filename;
+                if (!payload.filename) return showToast('未選擇檔案');
+            }
+
+            try {
+                const r = await fetch('/api/play_shortcut', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const j = await r.json();
+                if (j.ok) showToast('已送出播放');
+                else showToast('播放失敗：' + j.error);
+            } catch (e) {
+                showToast('連線錯誤');
+            }
+        }
+
+        function delShortcut(i) {
+            if (!confirm('確定要刪除這個按鈕嗎？')) return;
+            shortcuts.splice(i, 1);
+            saveShortcuts();
+            renderGrid();
+        }
+
+        // Add New Logic
+        function updateModeUI() {
+            const radios = document.getElementsByName('shortcutMode');
+            let mode = 'mp3';
+            for (let r of radios) if (r.checked) mode = r.value;
+
+            document.getElementById('fileRow').style.display = mode === 'mp3' ? 'block' : 'none';
+            document.getElementById('textRow').style.display = mode === 'tts' ? 'block' : 'none';
+        }
+
+        document.querySelectorAll('input[name="shortcutMode"]').forEach(r => r.addEventListener('change', updateModeUI));
+
+        function addShortcut() {
+            const name = document.getElementById('newName').value.trim();
+            if (!name) return alert('請輸入名稱');
+
+            const radios = document.getElementsByName('shortcutMode');
+            let mode = 'mp3';
+            for (let r of radios) if (r.checked) mode = r.value;
+
+            const newItem = {
+                name,
+                mode,
+                filename: '',
+                text: '',
+                options: {
+                    start: document.getElementById('chkStart').checked,
+                    end: document.getElementById('chkEnd').checked
+                }
+            };
+
+            if (mode === MODE_MP3) {
+                const file = document.getElementById('newFile').value;
+                if (!file) return alert('請選擇檔案');
+                newItem.filename = toStoredFilename(file);
+            } else {
+                const text = document.getElementById('newText').value.trim();
+                if (!text) return alert('請輸入經文');
+                newItem.text = text;
+            }
+
+            shortcuts.push(newItem);
+            saveShortcuts();
+            renderGrid();
+
+            // Clear inputs
+            document.getElementById('newName').value = '';
+            document.getElementById('newText').value = '';
+            showToast('已新增按鈕');
+        }
+
+        // File Management
+        async function loadFiles() {
+            try {
+                const r = await fetch('/api/uploads?only=av&t=' + Date.now());
+                const j = await r.json();
+                if (j.ok) {
+                    files = (j.items || []).filter(f => /\.(mp3|wav|ogg|m4a)$/i.test(f.url));
+                    renderFiles();
+                    updateFileSelect();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function updateFileSelect() {
+            const sel = document.getElementById('newFile');
+            const current = sel.value;
+            sel.innerHTML = '<option value="">(請選擇)</option>' +
+                files.map(f => {
+                    const val = f.url;
+                    const name = f.orig || f.saved;
+                    return `<option value="${val}">${esc(name)}</option>`;
+                }).join('');
+            if (current) sel.value = current;
+        }
+
+        function renderFiles() {
+            const c = document.getElementById('fileManager');
+            if (files.length === 0) {
+                c.innerHTML = '<div style="color:#999;font-size:13px;padding:10px;">無檔案</div>';
+                return;
+            }
+            c.innerHTML = files.map(f => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid #eee;">
+                    <div style="font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60%;">
+                        ${esc(f.orig || f.saved)}
+                    </div>
+                    <div>
+                        <button onclick="previewAudio('${f.url}')" style="font-size:12px; padding:4px 8px; border:1px solid #ccc; background:#fff; border-radius:4px;">試聽</button>
+                        <button onclick="deleteFile('${f.saved}')" style="font-size:12px; padding:4px 8px; border:1px solid #ffcdd2; background:#ffebee; color:#d32f2f; border-radius:4px; margin-left:4px;">刪除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteFile(fname) {
+            if (!confirm('刪除檔案？')) return;
+            const fd = new FormData();
+            fd.append('filename', fname);
+            await fetch('/delete_file', { method: 'POST', body: fd });
+            loadFiles();
+        }
+
+        function previewAudio(url) {
+            const a = new Audio(url);
+            a.volume = 0.5;
+            a.play();
+        }
+
+        async function uploadFile(input) {
+            const f = input.files[0];
+            if (!f) return;
+            const fd = new FormData();
+            fd.append('file', f);
+
+            // Show loading
+            const btn = input.previousElementSibling;
+            const oldTxt = btn.textContent;
+            btn.textContent = '上傳中...';
+            btn.disabled = true;
+
+            try {
+                const r = await fetch('/upload', { method: 'POST', body: fd });
+                const j = await r.json();
+                if (j.ok) {
+                    await loadFiles();
+                    // Select new file
+                    const sel = document.getElementById('newFile');
+                    // simple match
+                    for (let opt of sel.options) {
+                        if (opt.value.includes(j.filename || f.name)) {
+                            sel.value = opt.value;
+                            break;
+                        }
+                    }
+                    if (sel.selectedIndex <= 0 && sel.options.length > 1) sel.selectedIndex = sel.options.length - 1;
+                    showToast('上傳成功');
+                } else {
+                    alert('失敗:' + j.error);
+                }
+            } catch (e) { alert('上傳錯誤'); }
+
+            btn.textContent = oldTxt;
+            btn.disabled = false;
+            input.value = '';
+        }
+
+        // Helpers
+        function forceCancelAll(btn) {
+            btn.style.opacity = '0.7';
+            fetch('/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'msg=CancelALL'
+            });
+            setTimeout(() => { btn.style.opacity = '1'; showToast('已送出停止'); }, 500);
+        }
+
+        function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+        function toStoredFilename(path) {
+            return path.replace('/uploads/', '').replace('/static/uploads/', '');
+        }
+
+        // Init
+        loadShortcuts();
+        loadFiles();
+        // Volume
+        const volSlider = document.getElementById('volumeSlider');
+        volSlider.addEventListener('change', e => {
+            fetch('/setvol', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'vol=' + e.target.value
+            });
+        });
+        volSlider.addEventListener('input', e => {
+            document.getElementById('volumeValue').textContent = e.target.value + '%';
+        });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{{ site_title }}</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            background: #000;
+            color: #e2e8f0;
+            font-family: "Microsoft JhengHei", ui-sans-serif, system-ui, -apple-system, "Segoe UI"
+        }
+
+        .bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            background: rgba(2, 6, 23, .75);
+            backdrop-filter: blur(6px);
+            z-index: 30
+        }
+
+        .pill {
+            background: #0ea5e9;
+            color: #001018;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-weight: 700
+        }
+
+        .tiny {
+            font-size: 12px
+        }
+
+        .badge {
+            margin-left: auto;
+            background: #10b981;
+            color: #042316;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-weight: 700
+        }
+
+        #box {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 48px);
+            margin-top: 40px
+        }
+
+        #m {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            object-fit: contain
+        }
+
+        /* 跑馬燈槽：位置與寬度由 JS 同步成與影片等寬置中 */
+        .banner {
+            position: fixed;
+            top: 40px;
+            height: 56px;
+            display: none;
+            z-index: 20;
+            border-bottom: 1px solid rgba(255, 255, 255, .12);
+            background: linear-gradient(90deg, #0b1220 0%, #153b63 50%, #0b1220 100%);
+        }
+
+        .banner::before {
+            content: "";
+            position: absolute;
+            inset: -2px -20%;
+            z-index: -1;
+            filter: blur(18px);
+            opacity: .55;
+            background: conic-gradient(from 0deg, #06b6d4, #a78bfa, #22d3ee, #34d399, #06b6d4);
+            animation: halo 8s linear infinite;
+        }
+
+        @keyframes halo {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .banner .inner {
+            overflow: hidden;
+            white-space: nowrap;
+            width: 100%;
+            height: 100%
+        }
+
+        .banner .marquee {
+            display: inline-block;
+            will-change: transform;
+            line-height: 56px;
+            padding-left: 0;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: .8px;
+            color: #fff;
+            text-shadow:
+                0 0 1px rgba(255, 255, 255, .9),
+                0 0 6px rgba(255, 255, 255, .85),
+                0 0 14px rgba(255, 255, 255, .7),
+                0 3px 10px rgba(0, 0, 0, .7);
+        }
+
+        @keyframes marqueeR2L {
+            from {
+                transform: translateX(var(--startX, 100%));
+            }
+
+            to {
+                transform: translateX(var(--endX, -100%));
+            }
+        }
+
+        @keyframes glowPulse {
+
+            0%,
+            100% {
+                text-shadow: 0 0 6px rgba(255, 255, 255, .95), 0 0 14px #67e8f9, 0 0 30px #22d3ee, 0 0 60px #06b6d4;
+            }
+
+            50% {
+                text-shadow: 0 0 6px rgba(255, 255, 255, 1), 0 0 16px #a78bfa, 0 0 36px #60a5fa, 0 0 70px #22d3ee;
+            }
+        }
+
+        /* 待機遮罩 */
+        #closing-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .86);
+            color: #fff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            text-align: center;
+            padding: 24px
+        }
+
+        #closing-overlay.show {
+            display: flex
+        }
+
+        .btn {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 0;
+            cursor: pointer;
+            background: #e5e7eb;
+            color: #111827;
+            font-weight: 700
+        }
+
+        /* 自動播放解鎖 (嵌入式 - 靜態版) */
+        #unlock {
+            /* 改為靜態區塊，不浮動 */
+            display: none;
+            width: 100%;
+            margin-top: 40px;
+            /* 避開頂部 Bar */
+            padding: 15px;
+            background: #1e293b;
+            text-align: center;
+            border-bottom: 1px solid #334155;
+            box-sizing: border-box;
+            z-index: 50;
+            /* 比 bar (30) 高，比 overlay 低 */
+        }
+
+        #unlock .box {
+            /* 移除彈窗樣式 */
+            display: inline-block;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            animation: none;
+        }
+
+        #unlock .box h3 {
+            display: inline-block;
+            margin: 0 15px 0 0;
+            font-size: 18px;
+            vertical-align: middle;
+            color: #fbbf24;
+        }
+    </style>
+    <script defer src="auth.js"></script>
+</head>
+
+<body>
+    <div class="bar">
+        <span class="pill">組 <span id="gid">—</span></span>
+        <!-- ★ 新增：同步顯示教師卡片標題 -->
+        <span class="tiny" id="grpTitle" style="font-weight:800"></span>
+        <span class="tiny" id="siteTitle">{{ site_title }}</span>
+        <span class="badge" id="conn">連線中</span>
+    </div>
+
+    <!-- 自動播放解鎖 (嵌入式 - 靜態版) -->
+    <div id="unlock">
+        <div class="box">
+            <h3 id="unlockTitle">▶ 準備開始</h3>
+            <button id="unlockBtn" class="btn" onclick="stepOne()"
+                style="font-size:16px; padding:8px 20px;">點此開始</button>
+        </div>
+    </div>
+
+
+    <div class="banner" id="msgBar">
+        <div class="inner">
+            <div class="marquee" id="msg"></div>
+        </div>
+    </div>
+
+    <div id="box"><video id="m" controls preload="metadata" playsinline></video></div>
+
+    <div id="closing-overlay">
+        <div>
+            <div style="font-size:28px;font-weight:800;margin-bottom:12px">本次播送已暫停</div>
+            <div style="font-size:16px;opacity:.9;margin-bottom:16px">老師恢復播放後將自動繼續；若未自動恢復，請按下方按鈕或使用瀏覽器重新載入</div>
+            <button class="btn" onclick="manualWake()">我知道了</button>
+        </div>
+    </div>
+
+
+
+
+    <script>
+        /* === 參數 === */
+        const gidNum = Number((location.pathname.split('/').pop() || '').trim());
+        document.getElementById('gid').textContent = gidNum;
+        const urlParams = new URL(location.href).searchParams;
+        const NO_AUTO_FS = (urlParams.get('nofs') === '1');
+        const LOCKS_ENABLED = urlParams.get('locks') === '1'; // 可選：啟動即鎖
+        const AUTO_UNLOCK = (urlParams.get('autoplay') !== '0'); // ★ 修改：預設開啟自動解鎖 (除非設為0)
+
+        /* === 小工具 === */
+        function once(el, ev, ms = 8000) {
+            return new Promise((res, rej) => {
+                const t = setTimeout(() => { el.removeEventListener(ev, on, false); rej(new Error('timeout:' + ev)); }, ms);
+                function on(e) { clearTimeout(t); el.removeEventListener(ev, on, false); res(e); }
+                el.addEventListener(ev, on, false);
+            });
+        }
+        function canTypeByExt(url) {
+            const u = (url || '').toLowerCase();
+            if (u.endsWith('.mp4') || u.includes('type=mp4')) return 'video/mp4';
+            if (u.endsWith('.webm')) return 'video/webm';
+            if (u.endsWith('.ogg') || u.endsWith('.ogv')) return 'video/ogg';
+            return '';
+        }
+        function cacheBust(url) {
+            try { const u = new URL(url, location.href); u.searchParams.set('_cb', String(Date.now() % 1e7)); return u.toString(); }
+            catch { return url; }
+        }
+        function cleanUrl(url) {
+            try { const u = new URL(url, location.href); u.searchParams.delete('_cb'); return u.href.split('#')[0]; }
+            catch { return (url || '').split('#')[0]; }
+        }
+
+        /* === 媒體載入（確保影片軌也解碼） === */
+        async function applyMedia(url, type) {
+            const m = document.getElementById('m'); if (!m || !url) return;
+            m.loop = false; // Reset loop by default
+            let src = url;
+            if (m.currentSrc && (m.currentSrc === url || m.currentSrc.split('#')[0] === url.split('#')[0])) src = cacheBust(url);
+            try { m.pause(); } catch { }
+            try { m.removeAttribute('src'); } catch { }
+            try { Array.from(m.querySelectorAll('source')).forEach(s => s.remove()); } catch { }
+            const mime = type || canTypeByExt(src);
+            if (mime && m.canPlayType(mime)) {
+                const s = document.createElement('source'); s.src = src; s.type = mime; m.appendChild(s);
+            } else { m.src = src; }
+            m.preload = 'auto'; m.playsInline = true; m.autoplay = true; // Add autoplay attribute
+            try { m.load(); } catch { }
+            try { await once(m, 'loadedmetadata', 8000); } catch { }
+        }
+
+        /* === 自動播放政策＆全螢幕 === */
+        function resetUnlockUI() {
+            const h = document.getElementById('unlockTitle');
+            const b = document.getElementById('unlockBtn');
+            if (h) h.textContent = '▶ 準備開始';
+            if (b) {
+                // If AUTO_UNLOCK is true, skip the confirmation step
+                if (AUTO_UNLOCK) {
+                    b.textContent = '點此播放';
+                    b.onclick = unlockAudio;
+                    b.style.background = '#22c55e';
+                    b.style.color = '#022c22';
+                } else {
+                    b.textContent = '點此開始';
+                    b.onclick = stepOne;
+                    b.style.background = '#e5e7eb';
+                    b.style.color = '#111827';
+                }
+            }
+        }
+
+        function stepOne() {
+            const h = document.getElementById('unlockTitle');
+            const b = document.getElementById('unlockBtn');
+            if (h) h.textContent = '❓ 確認播放';
+            if (b) {
+                b.textContent = '允許播放';
+                b.onclick = unlockAudio;
+                b.style.background = '#22c55e'; // Green for confirm
+                b.style.color = '#022c22';
+            }
+        }
+
+        function showUnlock() {
+            const u = document.getElementById('unlock');
+            if (u) {
+                resetUnlockUI();
+                u.style.display = 'flex';
+            }
+        }
+        function hideUnlock() { const u = document.getElementById('unlock'); if (u) u.style.display = 'none'; }
+        async function unlockAudio() { const m = document.getElementById('m'); try { await m.play(); hideUnlock(); } catch { showUnlock(); } }
+
+        async function safePlay(m) {
+            try {
+                const p = m.play();
+                if (p && p.catch) await p.catch(() => { showUnlock(); });
+                if (!NO_AUTO_FS && !document.fullscreenElement) {
+                    const req = m.requestFullscreen || m.webkitRequestFullscreen || m.msRequestFullscreen || m.mozRequestFullScreen;
+                    if (req) req.call(m);
+                }
+            } catch { showUnlock(); }
+        }
+
+        /* === 跑馬燈槽與動畫（寬度=影片寬；訊息從最右→最左） === */
+        function syncBannerToVideo() {
+            const v = document.getElementById('m');
+            const bar = document.getElementById('msgBar');
+            if (!v || !bar) return;
+            const rect = v.getBoundingClientRect();
+            bar.style.left = Math.round(rect.left) + 'px';
+            bar.style.width = Math.round(rect.width) + 'px';
+        }
+
+        let msgTimer = null;
+        function applyMarquee() {
+            const bar = document.getElementById('msgBar'); const msg = document.getElementById('msg');
+            if (!bar || !msg || bar.style.display === 'none') return;
+            const barW = Math.max(0, bar.clientWidth || 0);
+            const msgW = Math.max(0, msg.scrollWidth || 0);
+            const pxPerSec = 160;
+            const dur = Math.max(5, (barW + msgW) / pxPerSec);
+            msg.style.setProperty('--startX', barW + 'px');
+            msg.style.setProperty('--endX', (-msgW) + 'px');
+            msg.style.animation = 'none';
+            msg.style.transform = `translateX(${barW}px)`;
+            void msg.offsetWidth;
+            requestAnimationFrame(() => {
+                msg.style.animation = `marqueeR2L ${dur}s linear infinite, glowPulse 2.6s ease-in-out infinite`;
+            });
+        }
+
+        function showBanner(text, opt) {
+            const bar = document.getElementById('msgBar'); const msg = document.getElementById('msg');
+            if (!text) { hideBanner(); return; }
+            bar.style.display = 'block'; msg.textContent = text;
+            syncBannerToVideo();
+            applyMarquee();
+            if (msgTimer) { clearTimeout(msgTimer); msgTimer = null; }
+            const duration = (opt && typeof opt.duration === 'number') ? opt.duration : 0;
+            if (duration > 0) { msgTimer = setTimeout(hideBanner, duration * 1000); }
+        }
+        function hideBanner() {
+            const bar = document.getElementById('msgBar'); const msg = document.getElementById('msg');
+            bar.style.display = 'none'; msg.textContent = ''; msg.style.animation = '';
+            if (msgTimer) { clearTimeout(msgTimer); msgTimer = null; }
+        }
+
+        /* === 待機遮罩 === */
+        function showStandby() { const ov = document.getElementById('closing-overlay'); if (ov) ov.classList.add('show'); }
+        function hideStandby() { const ov = document.getElementById('closing-overlay'); if (ov) ov.classList.remove('show'); }
+        function manualWake() { hideStandby(); }
+
+        /* === 同步播放：啟播 + 微調 === */
+        let driftFixTimer = null; function clearDriftFix() { if (driftFixTimer) { clearInterval(driftFixTimer); driftFixTimer = null; } }
+        function startDriftFix(targetStartTs, baseSeek, tolerance = 0.4) {
+            clearDriftFix();
+            const m = document.getElementById('m'); if (!m) return;
+            driftFixTimer = setInterval(() => {
+                if (!m || m.paused || m.ended) return;
+                const now = Date.now() / 1000;
+                const expected = Math.max(0, (now - targetStartTs) + (baseSeek || 0));
+                const actual = Number.isFinite(m.currentTime) ? m.currentTime : 0;
+                const delta = expected - actual;
+                const abs = Math.abs(delta);
+                if (!Number.isFinite(expected) || !Number.isFinite(actual)) return;
+                if (abs > tolerance) {
+                    try { m.currentTime = Math.max(0, expected); } catch { }
+                    try { m.playbackRate = 1.0; } catch { }
+                    return;
+                }
+                let rate = 1.0 + (delta / 6);
+                rate = Math.max(0.95, Math.min(1.05, rate));
+                try { m.playbackRate = rate; } catch { }
+            }, 800);
+        }
+
+        async function applySyncPlay(url, type, seek_to, speed, at_ts, tolerance_ms) {
+            const m = document.getElementById('m'); if (!m) return;
+            // ★ 修改：正確比對 URL，忽略 _cb 參數，避免不必要的重新載入 (m.load() 會重置 currentTime)
+            const curSrc = m.currentSrc || m.src || '';
+            if (url && cleanUrl(curSrc) !== cleanUrl(url)) { await applyMedia(url, type); }
+
+            // ★ 修改：防止重複 seek (若 at_ts 沒變，就不要強制重設時間，交給 driftFix 微調即可)
+            const lastTs = m.dataset.syncTs;
+            const isSameParams = (lastTs && Number(lastTs) === Number(at_ts));
+            m.dataset.syncTs = at_ts;
+
+            const nowSec = Math.floor(Date.now() / 1000);
+            const waitMs = Math.max(0, (at_ts - nowSec) * 1000 - 10);
+            if (waitMs > 0) await new Promise(r => setTimeout(r, waitMs));
+
+            if (Number.isFinite(seek_to)) {
+                if (isNaN(m.duration) || !isFinite(m.duration)) { try { await once(m, 'loadedmetadata', 8000); } catch { } }
+
+                // 只有當參數不同時，才強制 seek。否則交給 startDriftFix
+                if (!isSameParams) {
+                    try { m.currentTime = Math.max(0, seek_to); } catch { }
+                }
+            }
+            try { if (speed) { m.playbackRate = Number(speed) || 1; } } catch { }
+            hideStandby(); await safePlay(m);
+            const tol = (tolerance_ms || 400) / 1000; startDriftFix(at_ts, seek_to || 0, tol);
+        }
+
+        /* === 首次連線「壓縮」舊指令，避免重播歷史事件（含暫停/停止優先） === */
+        function squashInitialCmds(cmds) {
+            const keep = {};
+            for (let i = cmds.length - 1; i >= 0; i--) {
+                const a = cmds[i]?.cmd?.action;
+                if (!a) continue;
+                if (a === 'sync_play' && !keep.sync) keep.sync = cmds[i];
+                if (a === 'set_volume' && !keep.vol) keep.vol = cmds[i];
+                if (a === 'set_speed' && !keep.speed) keep.speed = cmds[i];
+                if (a === 'set_media' && !keep.media) keep.media = cmds[i];
+                if ((a === 'message' || a === 'message_clear' || a === 'message_off') && !keep.msg) keep.msg = cmds[i];
+                if ((a === 'play' || a === 'pause' || a === 'stop') && !keep.playctl) keep.playctl = cmds[i];
+                if (a === 'close_window' && !keep.close) keep.close = cmds[i];
+                if (a === 'controls_lock' && !keep.lock) keep.lock = cmds[i];
+                if (a === 'set_title' && !keep.title) keep.title = cmds[i];   // ★ 新增：保留最後一次標題
+            }
+            const out = [];
+            if (keep.media) out.push(keep.media);
+            if (keep.speed) out.push(keep.speed);
+            if (keep.vol) out.push(keep.vol);
+            if (keep.msg) out.push(keep.msg);
+            if (keep.lock) out.push(keep.lock);
+            if (keep.title) out.push(keep.title); // ★ 新增
+
+            const playAction = keep.playctl && keep.playctl.cmd && keep.playctl.cmd.action;
+
+            if (playAction === 'pause' || playAction === 'stop') {
+                if (keep.sync) out.push(keep.sync);
+                out.push(keep.playctl);
+            } else {
+                if (keep.playctl) out.push(keep.playctl);
+                if (keep.sync) out.push(keep.sync);
+            }
+
+            if (keep.close) out.push(keep.close);
+            return out;
+        }
+
+        /* === 動態鎖定控制（可開可關） === */
+        let __lockOn = false;
+        let __lockCleanup = null;
+
+        function enableLocks() {
+            if (__lockOn) return;
+            const m = document.getElementById('m');
+            if (!m) return;
+
+            try {
+                m.removeAttribute('controls');
+                m.controls = false;
+                m.setAttribute('controlslist', 'nodownload noplaybackrate noremoteplayback');
+            } catch { }
+
+            let lastGoodTime = 0;
+            let lockedVol = Math.round((m.volume || 1) * 100) / 100;
+
+            const onTime = () => { lastGoodTime = Number.isFinite(m.currentTime) ? m.currentTime : lastGoodTime; };
+            const onCtx = (e) => { e.preventDefault(); };
+            const onPause = () => { try { m.play().catch(() => { try { showUnlock(); } catch { } }); } catch { } };
+            const onSeek = () => { try { m.currentTime = Math.max(0, lastGoodTime); } catch { } };
+            const onRate = () => { try { m.playbackRate = 1.0; } catch { } };
+            const onVol = () => { try { m.volume = lockedVol; } catch { } };
+            const onKey = (e) => {
+                const block = ['Space', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'MediaPlayPause', 'MediaTrackNext', 'MediaTrackPrevious'];
+                if (block.includes(e.code)) { e.preventDefault(); e.stopPropagation(); }
+            };
+
+            m.addEventListener('timeupdate', onTime);
+            m.addEventListener('contextmenu', onCtx, { passive: false });
+            m.addEventListener('pause', onPause);
+            m.addEventListener('seeking', onSeek);
+            m.addEventListener('ratechange', onRate);
+            m.addEventListener('volumechange', onVol);
+            window.addEventListener('keydown', onKey, { capture: true });
+
+            window.__updateLockedVolume = function (v) { lockedVol = Math.max(0, Math.min(1, Number(v) || 0)); };
+
+            __lockCleanup = function () {
+                m.removeEventListener('timeupdate', onTime);
+                m.removeEventListener('contextmenu', onCtx);
+                m.removeEventListener('pause', onPause);
+                m.removeEventListener('seeking', onSeek);
+                m.removeEventListener('ratechange', onRate);
+                m.removeEventListener('volumechange', onVol);
+                window.removeEventListener('keydown', onKey, { capture: true });
+                window.__updateLockedVolume = null;
+            };
+
+            __lockOn = true;
+        }
+
+        function disableLocks() {
+            if (!__lockOn) return;
+            const m = document.getElementById('m');
+            if (m) {
+                try {
+                    m.setAttribute('controls', '');
+                    m.controls = true;
+                    m.removeAttribute('controlslist');
+                } catch { }
+            }
+            if (typeof __lockCleanup === 'function') { try { __lockCleanup(); } catch { } }
+            __lockCleanup = null;
+            __lockOn = false;
+        }
+
+        /* === 指令處理 === */
+        function setGroupTitle(txt) {
+            const el = document.getElementById('grpTitle');
+            if (!el) return;
+            el.textContent = txt ? `｜${txt}` : '';
+        }
+
+        async function handleCmd(c) {
+            const a = (c.cmd || {}).action; const p = c.cmd && c.cmd.payload || {};
+            if (a === 'set_media') { hideStandby(); await applyMedia(p.url, p.type); }
+            if (a === 'play') {
+                const m = document.getElementById('m'); if (!m) return;
+                hideStandby();
+                if (p.url && (!m.currentSrc || m.currentSrc.split('#')[0] !== p.url.split('#')[0])) { await applyMedia(p.url, p.type); }
+                if (typeof p.speed === 'number') { try { m.playbackRate = p.speed; } catch { } }
+                if (typeof p.seek_to === 'number') {
+                    if (isNaN(m.duration) || !isFinite(m.duration)) { try { await once(m, 'loadedmetadata', 8000); } catch { } }
+                    try { m.currentTime = Math.max(0, p.seek_to); } catch { }
+                }
+                clearDriftFix(); await safePlay(m);
+            }
+            if (a === 'pause') { const m = document.getElementById('m'); if (m) { try { m.pause(); } catch { } } }
+            if (a === 'stop') {
+                const m = document.getElementById('m');
+                if (m) { try { m.pause(); } catch { } try { m.currentTime = 0; } catch { } }
+                clearDriftFix();
+                try { if (document.fullscreenElement) { await document.exitFullscreen(); } } catch { }
+            }
+            if (a === 'set_speed') { const m = document.getElementById('m'); if (m) try { m.playbackRate = Number(p.speed || 1) || 1; } catch { } }
+            if (a === 'set_volume') { const m = document.getElementById('m'); if (m) m.volume = Math.max(0, Math.min(1, Number(p.volume || 1))); }
+            if (a === 'sync_play') { hideStandby(); await applySyncPlay(p.url, p.type, p.seek_to, p.speed, p.at_ts, p.tolerance_ms || 400); }
+            if (a === 'message') { if (p.close || p.stop || p.clear) { hideBanner(); } else { showBanner(p.text || '', (typeof p.duration === 'number') ? { duration: p.duration } : undefined); } }
+            if (a === 'message_clear' || a === 'message_off') { hideBanner(); }
+
+            // ★ 新增：即時控制鎖定/解除
+            if (a === 'controls_lock') {
+                if (p && p.on === true) enableLocks(); else disableLocks();
+            }
+
+            // ★ 新增：卡片標題同步
+            if (a === 'set_title') {
+                setGroupTitle(String(p.title || '').trim());
+            }
+
+            if (a === 'close_window') {
+                try { const v = document.getElementById('m'); if (v) { try { v.pause(); } catch { } try { v.removeAttribute('src'); } catch { } try { Array.from(v.querySelectorAll('source')).forEach(s => s.remove()); } catch { } try { v.load(); } catch { } } } catch { }
+                clearDriftFix();
+                showStandby();
+            }
+        }
+
+        // 啟動若帶 ?locks=1，直接先鎖一次
+        if (LOCKS_ENABLED) enableLocks();
+
+        /* === 長輪詢（首次壓縮） === */
+        let ver = 0; let backoff = 500; let firstPoll = true;
+        function poll() {
+            const badge = document.getElementById('conn');
+            const url = '/poll?g=' + gidNum + '&since=' + ver + (firstPoll ? '&catchup=1' : '');
+            fetch(url, { cache: 'no-store' })
+                .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(async j => {
+                    if (!j) return;
+                    if (j.ok) {
+                        badge.textContent = '在線';
+                        // 站台標題
+                        if (j.title) { try { document.title = j.title; document.getElementById('siteTitle').textContent = j.title; } catch { } }
+                        // ★ 新增：初始從 state 帶入卡片標題
+                        try {
+                            if (j.state && typeof j.state.title === 'string') setGroupTitle(j.state.title);
+                        } catch { }
+
+                        let cmds = j.cmds || [];
+                        if (firstPoll && cmds.length) {
+                            cmds = squashInitialCmds(cmds);
+                        }
+                        for (let i = 0; i < cmds.length; i++) { try { await handleCmd(cmds[i]); } catch { } }
+
+                        // ★ 新增：若有 live_sync 且未在播放或未同步，則補救
+                        if (j.live_sync) {
+                            const ls = j.live_sync;
+                            const m = document.getElementById('m');
+                            const curUrl = (m && m.currentSrc) ? m.currentSrc.split('#')[0] : '';
+                            const tgtUrl = (ls.url || '').split('#')[0];
+                            const isPlaying = m && !m.paused && !m.ended; // ★ 修改：移除 readyState > 2 檢查，避免緩衝被當作停止
+                            // 需補救條件：URL 不同 OR 沒在播 OR 沒有 driftFixTimer (代表可能是 play 但沒 sync，或此 client 剛連上)
+                            // 注意：applySyncPlay 會啟動 driftFixTimer。若 teacher 端是 play 指令，
+                            // 這裡也會收到 live_sync，就會變成強制 sync 模式，這符合「掉隊自動跟上」需求。
+                            const needSync = (tgtUrl && curUrl !== tgtUrl) || !isPlaying || !driftFixTimer;
+
+                            if (needSync) {
+                                // console.log('Catch-up sync:', ls);
+                                await applySyncPlay(ls.url, ls.type, ls.seek_to, ls.speed, ls.at_ts, ls.tolerance_ms);
+                            }
+                        }
+
+                        if (firstPoll) { firstPoll = false; if (window.__onFirstPoll) window.__onFirstPoll(); }  /* 首次收到後觸發全螢幕再試一次 */
+                        ver = j.version || ver; backoff = 500;
+                    } else { badge.textContent = '錯誤'; }
+                })
+                .catch(() => { badge.textContent = '離線，重試中…'; backoff = Math.min(backoff * 1.7, 5000); })
+                .finally(() => { setTimeout(poll, backoff); });
+        }
+        poll();
+
+        /* === 心跳 === */
+        function heartbeat() {
+            try {
+                const m = document.getElementById('m');
+                const has = !!(m && (m.src || m.currentSrc));
+                const playing = !!(m && !m.paused && !m.ended);
+                const ct = has ? Math.round(m.currentTime || 0) : 0;
+                const dur = has ? Math.round(m.duration || 0) : 0;
+                const url = has ? (m.currentSrc || m.src || '') : '';
+                const ended = !!(m && m.ended);
+                const muted = !!(m && m.muted);
+                const vol = has ? Math.round((m.volume || 0) * 100) : 0;
+                fetch('/api/heartbeat/' + gidNum, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playing, ct, dur, url, ended, muted, vol }) }).catch(() => { });
+            } catch { }
+        }
+        heartbeat(); setInterval(heartbeat, 5000);
+
+        /* === 尺寸/方向/全螢幕/載入/新媒體 就緒時，同步跑道並重算動畫 === */
+        function resyncBanner() { syncBannerToVideo(); applyMarquee(); }
+        window.addEventListener('resize', resyncBanner);
+        window.addEventListener('orientationchange', resyncBanner);
+        window.addEventListener('load', resyncBanner);
+        document.addEventListener('fullscreenchange', resyncBanner);
+        try {
+            const v = document.getElementById('m');
+            v.addEventListener('loadedmetadata', resyncBanner);
+            v.addEventListener('loadeddata', resyncBanner);
+            v.addEventListener('resize', resyncBanner);
+        } catch { }
+    </script>
+
+    <!-- 全螢幕保險：載入 / 互動 / 回前景 / 首次輪詢後再嘗試 -->
+    <script>
+        (function () {
+            const el = document.documentElement;
+            let triedOnce = false;
+
+            async function goFullscreen() {
+                try {
+                    if (!document.fullscreenElement && el.requestFullscreen) {
+                        await el.requestFullscreen();
+                    }
+                } catch (e) { /* ignore */ }
+            }
+            function ensureFullscreen() { if (!triedOnce) { triedOnce = true; goFullscreen(); } }
+
+            window.addEventListener('load', ensureFullscreen, { once: true });
+            ['click', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, ensureFullscreen, { once: true }));
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) goFullscreen(); });
+
+            window.__onFirstPoll = function () { goFullscreen(); };
+
+            // ★ 自動播放：參考 watch.html 的邏輯，無條件嘗試播放
+            window.addEventListener('load', () => {
+                console.log("[AUTO-PLAY] Auto-starting playback...");
+                setTimeout(async () => {
+                    try {
+                        // 直接嘗試解鎖播放
+                        await unlockAudio();
+                        console.log("[AUTO-PLAY] Optimistic play successful!");
+                    } catch (e) {
+                        console.log("[AUTO-PLAY] Optimistic play failed, showing unlock UI:", e);
+                        showUnlock();
+                    }
+                }, 500); // Small delay to ensure page is ready
+            });
+        })();
+
+        /* === Auto-Standby: Fail-safe to ensure unlock button appears even if no video === */
+        const SILENT_WAV = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+        window.addEventListener('load', () => {
+            const m = document.getElementById('m');
+            // If no source set yet (poll hasn't returned media), load silent audio to trigger unlock UI
+            setTimeout(() => {
+                if ((!m.currentSrc || m.currentSrc === window.location.href) && !m.getAttribute('src')) {
+                    console.log("[Standby] Loading silent audio to trigger interaction...");
+                    applyMedia(SILENT_WAV, 'audio/wav').then(() => {
+                        m.loop = true; // Loop silent audio to maintain "playing" state
+                        // Even if silent audio plays (some browsers allow silent auto-play),
+                        // we FORCE the unlock UI if AUTO_UNLOCK is enabled to ensure we get a user gesture
+                        // which is required for subsequent unmuted audio.
+                        // if (AUTO_UNLOCK) { showUnlock(); } // Removed to match watch.html's optimistic behavior
+                        return safePlay(m);
+                    });
+                }
+            }, 500); // Small delay to let poll() try first
+        }, { once: true });
+    </script>
+
+
+</body>
+
+</html>

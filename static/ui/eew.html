@@ -1,0 +1,1422 @@
+﻿<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>&#127755; EEW 地震（獨立頁）</title>
+  <link rel="icon" href="favicon.png">
+  <style>
+    /* ====== 與 index.html 一致的橫幅與版型 ====== */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, "Microsoft JhengHei", Segoe UI, Roboto, Arial;
+      background: #f5f8fb;
+      color: #0b2239;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #1e7bd8;
+      color: #fff;
+    }
+
+    header .title {
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    header .links a {
+      color: #dff1ff;
+      text-decoration: none;
+      margin-left: 12px;
+      font-size: 13px;
+    }
+
+    header .links .sep {
+      color: rgba(255, 255, 255, 0.4);
+      margin: 0 2px 0 10px;
+      font-size: 11px;
+    }
+
+    main {
+      padding: 12px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* 狀態條 */
+    .status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      background: #eaf3ff;
+      border: 1px solid #cfe5ff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+
+    .status .left {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .badge {
+      padding: 4px 8px;
+      background: #fff;
+      border: 1px solid #d8e7fb;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #1f3b57;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .muted {
+      color: #5c738f;
+    }
+
+    /* 12欄網格（桌機雙欄、行動單欄） */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 12px;
+      width: 100%;
+    }
+
+    .left-col {
+      grid-column: span 4;
+      min-width: 0;
+    }
+
+    .right-col {
+      grid-column: span 8;
+      min-width: 0;
+    }
+
+    @media (max-width: 1200px) {
+
+      .left-col,
+      .right-col {
+        grid-column: 1 / -1;
+      }
+    }
+
+    /* 卡片 */
+    .card {
+      background: #fff;
+      border: 1px solid #e7f0fb;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 1px 0 rgba(16, 24, 40, 0.03);
+    }
+
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: #0b2239;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 表單/按鈕 */
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin: 8px 0;
+    }
+
+    .row.stretch>* {
+      flex: 1 1 auto;
+      min-width: 220px;
+    }
+
+    label.small {
+      font-size: 12px;
+      color: #445b78;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      font-size: 14px;
+      padding: 8px 10px;
+      border: 1px solid #d6e3f7;
+      border-radius: 10px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    /* ★ 按鈕：加上 hover/active 手感效果 ★ */
+    button {
+      appearance: none;
+      border: 1px solid #cfe1fb;
+      background: #f6faff;
+      color: #0a2b5a;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .16);
+      transition: transform .08s ease, box-shadow .08s ease, filter .08s ease;
+    }
+
+    button.primary {
+      background: #1e7bd8;
+      border-color: #1e7bd8;
+      color: #fff;
+    }
+
+    button.warn {
+      background: #ffe9e9;
+      border-color: #ffd0d0;
+      color: #8b1a1a;
+    }
+
+    button.ghost {
+      background: #fff;
+    }
+
+    button:hover {
+      filter: brightness(1.03);
+      box-shadow: 0 3px 6px rgba(15, 23, 42, .22);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, .2);
+    }
+
+    .btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .hint {
+      color: #5c738f;
+      font-size: 12px;
+    }
+
+    /* 表格 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #f3f8ff;
+      border-bottom: 1px solid #e4eefc;
+      padding: 8px;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    tbody td {
+      border-top: 1px solid #f1f4fb;
+      padding: 8px;
+      font-size: 13px;
+    }
+
+    tbody tr:hover {
+      background: #f8fbff;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 3px 7px;
+      border: 1px solid #cfe1fb;
+      border-radius: 12px;
+      font-size: 12px;
+      background: #fff;
+      color: #1f3b57;
+    }
+
+    /* 兩欄內部區 */
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    @media (max-width: 900px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <script defer src="auth.js"></script>
+</head>
+
+<body>
+  <!-- 與主控台一致的橫幅 -->
+  <header>
+    <div class="title">&#127755; 地震</div>
+    <div class="links">
+      <span id="nowText"
+        style="margin-right:12px;opacity:.9;display:inline-block;min-width:140px;text-align:right">--:--:--</span>
+      <a href="index.html">🎛 主控台</a>
+      <a href="sched.html">🕐 排程</a>
+      <a href="single_reservation.html">📅 預約</a>
+      <a href="tt.html">📚 課表</a>
+      <span class="sep">|</span>
+      <a href="taigi_edu.html">🇹🇼 本土語</a>
+      <a href="eew.html">🌋 地震</a>
+      <a href="relay4.html">📣 分區</a>
+      <a href="silent-dashboard.html">🔇 無聲</a>
+      <span class="sep">|</span>
+      <a href="broadcast.html" target="_blank">🎙️ 行動</a>
+      <a href="live.html">🔴 直播</a>
+      <a href="teacher_call.html" target="_blank">📹 通話</a>
+      <a href="shortcuts.html">⚡ 快捷</a>
+      <a href="buddha.html">🕌 佛教</a>
+      <span class="sep">|</span>
+      <a href="clients.html" target="_blank">👥 設備</a>
+      <a href="/teacher?key=teacher" target="_blank">🎵 媒體</a>
+      <a href="logs.html">🗒 紀錄</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- 頂部狀態列 -->
+    <div class="status">
+      <div class="left">
+        <span class="badge">廣播：<span id="broadcastBadge" class="mono">開啟</span></span>
+        <span class="badge">輪詢：<span id="pollBadge" class="mono">關閉</span></span>
+        <span class="badge">來源：<span id="feedBadge" class="mono">CWA</span></span>
+        <span class="badge">位置：<span id="locBadge" class="mono">偵測中...</span></span>
+        <span class="badge">推送帳號：<span id="tcpAccBadge" class="mono">--</span></span>
+        <span class="badge">推送狀態：<span id="tcpStatBadge" class="mono">--</span></span>
+        <span class="badge">授權單位：<span id="siteBadge" class="mono">--</span></span>
+      </div>
+      <div class="right">
+        <span class="muted">伺服器時間：</span><span id="srvTime" class="mono">—</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- 左欄：主要控制 -->
+      <section class="left-col">
+        <div class="card">
+          <h3>&#127755; EEW 地震（自動偵測 → 主控台廣播）</h3>
+
+          <div class="row">
+            <!-- Source Selection Removed -->
+            <!-- <div style="max-width:220px;">...</div> -->
+          </div>
+
+          <div class="two-col">
+            <div>
+              <div class="row">
+                <div style="min-width:220px;">
+                  <label class="small">是否啟用「地震警報廣播」</label>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <input id="broadcastEnable" type="checkbox" checked />
+                    <span class="hint">關閉時仍可觀看清單與手動推播，但不會自動推播。</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <label class="small">啟用輪詢</label>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <input id="eewEnable" type="checkbox" />
+                    <span class="hint">勾選後依間隔向資料源抓最新事件</span>
+                  </div>
+                </div>
+                <div style="max-width:140px;">
+                  <label class="small">輪詢間隔（秒）</label>
+                  <input id="eewPollSec" type="number" value="60" min="15" max="300" />
+                </div>
+                <div style="max-width:140px;">
+                  <label class="small">最小在地震度</label>
+                  <select id="eewMinInt">
+                    <option value="0">0級 (無感)</option>
+                    <option value="1">1級</option>
+                    <option value="2">2級</option>
+                    <option value="3" selected>3級</option>
+                    <option value="4">4級</option>
+                    <option value="5-">5弱</option>
+                    <option value="5+">5強</option>
+                    <option value="6-">6弱</option>
+                    <option value="6+">6強</option>
+                    <option value="7">7級</option>
+                  </select>
+                </div>
+                <div style="max-width:160px;">
+                  <label class="small">所在縣市</label>
+                  <input id="eewLocalCity" type="text" placeholder="留空則自動偵測" />
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="stretch">
+                  <label class="small">訊息模板</label>
+                  <input id="eewTpl" type="text" value="地震警報 預估震度{int}，{location} 規模{mag}，深度{depth}km，時間{time}。" />
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="stretch" style="max-width:260px;">
+                  <label class="small">警報 MP3</label>
+                  <input id="eewMp3" type="text" value="justEarthquakeAlarm.mp3" />
+                </div>
+                <div style="max-width:160px;">
+                  <label class="small">MP3 長度（ms）</label>
+                  <input id="eewMp3Ms" type="number" value="4500" />
+                </div>
+                <div style="max-width:130px;">
+                  <label class="small">自動推播</label>
+                  <select id="eewAutoSend">
+                    <option value="on" selected>開</option>
+                    <option value="off">關</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="small">發送前</label>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <input id="eewStopAll" type="checkbox" checked />
+                    <span class="hint">先送出 CancelALL</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="btns">
+                <button class="primary" id="btnPushLatest">🚀 推播最新一筆</button>
+                <button id="btnSaveSettings">💾 儲存設定</button>
+                <button id="btnEewTest">🧪 送出測試警報</button>
+                <!-- ★ 新增：強制取消按鍵 ★ -->
+                <button class="warn" id="btnForceCancel">⛔ 強制取消</button>
+              </div>
+              <div class="hint" style="margin-top:6px;">資料來源：USGS 2.5+ / day；僅用於示範，實際警報以官方管道為準。</div>
+            </div>
+
+            <div>
+              <!-- Speech rate settings removed as per request -->
+            </div>
+          </div>
+        </div>
+
+        <details id="diagPanel" style="margin-top:10px">
+          <summary style="cursor:pointer">診斷輸出</summary>
+          <pre id="cwaDiagOut"
+            style="background:#f7f9fc;border:1px solid #d9e8fb;padding:8px;white-space:pre-wrap"></pre>
+        </details>
+      </section>
+
+      <!-- 右欄：先顯示事件清單，再放說明與快速檢查 -->
+      <aside class="right-col">
+        <!-- Weather Warnings Card (Moved to Top) -->
+        <div class="card" style="margin-bottom:12px;">
+          <h3>🌪️ 天氣警特報（所在縣市）</h3>
+          <div id="weatherWarningBox" style="font-size:13px;line-height:1.6;color:#1f2933;">
+            載入中...
+          </div>
+          <div
+            style="margin-top:8px;font-size:12px;color:#64748b;display:flex;justify-content:space-between;align-items:center;">
+            <span>資料來源：CWA W-C0033-001</span>
+            <button id="btnRefreshWeather" class="ghost" style="padding:2px 8px;font-size:12px;">🔄 重新整理</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>&#129374; 事件清單（最新在上）</h3>
+          <div id="cwaKeyBox"
+            style="font-size:12px;margin:4px 0 6px 0;display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+            <span>🇹🇼 CWA 授權碼：</span>
+            <input id="cwaKeyInput" type="text"
+              style="flex:1 1 200px;min-width:160px;padding:3px 6px;border-radius:4px;border:1px solid #cbd5e1;font-size:12px;"
+              placeholder="CWB- / CWA- 開頭之授權碼" />
+            <button type="button" onclick="saveCwaKeySimple()"
+              style="padding:4px 10px;border-radius:4px;border:none;background:#2563eb;color:#fff;font-size:12px;cursor:pointer;">
+              儲存 / 測試
+            </button>
+            <span id="cwaKeyStatus" style="margin-left:4px;color:#64748b;"></span>
+          </div>
+          <div id="cwaRecentText" style="font-size:12px;margin-bottom:4px;line-height:1.5;color:#1f2933;">
+            最近地震（CWA）載入中…
+          </div>
+          <!-- Table Removed as per user request -->
+          <div style="display:none">
+            <table id="eewTable">
+              <thead>
+                <tr>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+    </div>
+
+    <!-- User Guide Removed -->
+
+    <div class="card" style="margin-top:12px;">
+      <h3>🔧 連線檢查</h3>
+      <div class="row">
+        <button id="btnPing" class="ghost">🔍 檢查 /state</button>
+        <span id="pingResult" class="mono muted">—</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;display:none;">
+      <h3>🇹🇼 台灣 CWA（後端）</h3>
+      <div class="row">
+        <div style="min-width:120px;">
+          <span class="pill">狀態：<span id="cwaStatus" class="mono">—</span></span>
+        </div>
+        <div style="min-width:120px;">
+          <span class="pill">輪詢：<span id="cwaPoll" class="mono">—</span></span>
+        </div>
+        <div style="min-width:120px;">
+          <span class="pill">API Key：<span id="cwaKey" class="mono">—</span></span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="stretch" style="max-width:360px;">
+          <label class="small">CWA API Key</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="cwaKeyInput" type="text" placeholder="CWB-xxxxxxxx" />
+            <button id="btnCwaSaveKey">儲存</button>
+            <span id="cwaKeyMask" class="mono muted" style="font-size:12px;"></span>
+          </div>
+        </div>
+        <div style="max-width:120px;">
+          <label class="small">啟用</label>
+          <input id="cwaEnable" type="checkbox" />
+        </div>
+        <div style="max-width:150px;">
+          <label class="small">輪詢（秒）</label>
+          <input id="cwaPollSec" type="number" min="15" max="600" step="5" value="60" />
+        </div>
+        <div class="btns">
+          <button id="btnCwaApply">套用</button>
+          <button id="btnCwaRefresh">重新整理</button>
+          <button id="btnCwaPush">🚀 推播台灣最新</button>
+        </div>
+      </div>
+      <div class="hint">此區由伺服器 <code>/quake/state</code> 提供；推播會走後端現有流程（/special 與 /cmd）。</div>
+      <div id="cwaLastWrap" style="margin-top:8px;display:none;">
+        <div class="muted">最新一筆（伺服器記錄）：</div>
+        <div id="cwaLast" class="mono"
+          style="white-space:pre-wrap;background:#f9fbff;border:1px solid #e5efff;border-radius:8px;padding:8px;">
+        </div>
+      </div>
+    </div>
+    </aside>
+
+    </div>
+
+    <!-- ==== CWA 授權與輪詢（覆蓋版｜含立即驗證） ==== -->
+    <section class="card" id="cwaCard" style="display:none;">
+      <h3>🇹🇼 台灣 CWA（後端）</h3>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <label for="cwaKey">授權碼：</label>
+        <input id="cwaKey" type="text" inputmode="latin" autocomplete="off" placeholder="CWA- / CWB- 開頭之授權碼"
+          style="min-width:360px" />
+        <button id="btnSaveKey" type="button">儲存授權碼</button>
+        <span id="cwaMasked" style="color:#5a6b80">（未設定）</span>
+        <span id="cwaApiBadge" style="margin-left:8px;padding:2px 8px;border-radius:999px;
+      font-size:12px;border:1px solid #d9e8fb;background:#f7fbff;color:#5a6b80">API 未驗證</span>
+      </div>
+
+      <div style="margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <label><input id="cwaEnabled" type="checkbox" /> 啟用輪詢</label>
+        <label>輪詢（秒）<input id="cwaPollSec" type="number" min="15" value="60" style="width:100px" /></label>
+        <button id="btnApplyState" type="button">套用</button>
+        <button id="btnPushLatest" type="button">🚀 推播台灣最新</button>
+        <button id="btnTestNow" type="button" title="立刻用目前 Key 試打一筆 CWA">立即測試</button>
+        <button id="btnDiag" type="button" title="列出詳細測試結果">診斷</button>
+        <span id="cwaStatus" style="margin-left:auto;color:#0b2239">狀態：初始化中…</span>
+      </div>
+
+      <pre id="cwaLast"
+        style="margin-top:10px;background:#f7f9fc;border:1px solid #d9e8fb;padding:8px;white-space:pre-wrap">
+  </pre>
+    </section>
+
+  </main>
+
+  <script type="module">
+    // 輕量 helpers
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+    const toast = (msg) => { console.log(msg); };
+    async function http(url, { method = "GET", form = null, headers = {}, json, cache = "no-store" } = {}) {
+      let body, hdr = Object.assign({}, headers);
+      if (form) {
+        body = new URLSearchParams();
+        Object.entries(form).forEach(([k, v]) => body.append(k, String(v)));
+        hdr["Content-Type"] = "application/x-www-form-urlencoded";
+      }
+      if (json) {
+        body = JSON.stringify(json);
+        hdr["Content-Type"] = "application/json";
+      }
+      const r = await fetch(url, { method, headers: hdr, body, cache });
+      return r;
+    }
+
+    // ==== 元件參照與狀態 ====
+    const el = {
+      broadcastEnable: $('#broadcastEnable'),
+      broadcastBadge: $('#broadcastBadge'),
+      eewEnable: $('#eewEnable'),
+      pollBadge: $('#pollBadge'),
+      feedBadge: $('#feedBadge'),
+      locBadge: $('#locBadge'), // New
+      eewPollSec: $('#eewPollSec'),
+      eewMinInt: $('#eewMinInt'), // Changed
+      eewLocalCity: $('#eewLocalCity'), // New
+      tcpAccBadge: $('#tcpAccBadge'), // New
+      tcpStatBadge: $('#tcpStatBadge'), // New
+      siteBadge: $('#siteBadge'), // New
+      eewTpl: $('#eewTpl'),
+      eewMp3: $('#eewMp3'),
+      eewMp3Ms: $('#eewMp3Ms'),
+      eewStopAll: $('#eewStopAll'),
+      eewAutoSend: $('#eewAutoSend'),
+      btnEewTest: $('#btnEewTest'),
+      btnPushLatest: $('#btnPushLatest'),
+      btnSaveSettings: $('#btnSaveSettings'), // New
+      eewTableBody: $('#eewTable tbody'),
+      srvTime: $('#srvTime'),
+      btnPing: $('#btnPing'),
+      pingResult: $('#pingResult'),
+      btnForceCancel: $('#btnForceCancel')
+    };
+
+    const LSKEY = "eew_settings_v6"; // Bump version
+    let timer = null, lastId = null;
+    let cachedRows = [];
+
+    function loadSettings() {
+      try {
+        const s = JSON.parse(localStorage.getItem(LSKEY) || "{}");
+        if (s.broadcastEnable !== undefined) el.broadcastEnable.checked = !!s.broadcastEnable;
+        if (s.eewEnable !== undefined) el.eewEnable.checked = !!s.eewEnable;
+        if (s.eewPollSec) el.eewPollSec.value = s.eewPollSec;
+        if (s.eewMinInt) el.eewMinInt.value = s.eewMinInt; // Load Int
+        if (s.eewLocalCity) el.eewLocalCity.value = s.eewLocalCity; // Load City
+        if (s.eewTpl) el.eewTpl.value = s.eewTpl;
+        if (s.eewMp3) el.eewMp3.value = s.eewMp3;
+        if (s.eewMp3Ms) el.eewMp3Ms.value = s.eewMp3Ms;
+        if (s.eewAutoSend) el.eewAutoSend.value = s.eewAutoSend;
+        if (s.eewStopAll !== undefined) el.eewStopAll.checked = !!s.eewStopAll;
+      } catch { }
+      el.broadcastBadge.textContent = el.broadcastEnable.checked ? '開啟' : '關閉';
+      el.pollBadge.textContent = el.eewEnable.checked ? '開啟' : '關閉';
+
+      // Sync from Backend (Source of Truth for CWA Polling)
+      fetch('/quake/state').then(r => r.json()).then(j => {
+        if (j.ok) {
+          if (el.eewEnable.checked !== j.enabled) {
+            el.eewEnable.checked = j.enabled;
+            el.pollBadge.textContent = j.enabled ? '開啟' : '關閉';
+            el.pollBadge.style.color = j.enabled ? '#059669' : '#dc2626';
+            togglePolling(j.enabled);
+          }
+          if (j.broadcast_enabled !== undefined && el.broadcastEnable.checked !== j.broadcast_enabled) {
+            el.broadcastEnable.checked = j.broadcast_enabled;
+            el.broadcastBadge.textContent = j.broadcast_enabled ? '開啟' : '關閉';
+          }
+          // Sync backend settings if present
+          if (j.local_city) el.eewLocalCity.value = j.local_city;
+          if (j.intensity_threshold) el.eewMinInt.value = j.intensity_threshold;
+
+          // Status Badges
+          if (el.locBadge) el.locBadge.textContent = j.local_city || '自動偵測';
+          if (el.tcpAccBadge) el.tcpAccBadge.textContent = j.tcp_account || '--';
+          if (el.siteBadge) el.siteBadge.textContent = j.license_site || '--';
+          if (el.tcpStatBadge) {
+            el.tcpStatBadge.textContent = j.tcp_status || '未知';
+            if (j.tcp_status === 'Connected') el.tcpStatBadge.style.color = '#059669';
+            else if (j.tcp_status && j.tcp_status.startsWith('Error')) el.tcpStatBadge.style.color = '#dc2626';
+            else el.tcpStatBadge.style.color = '#1f3b57';
+          }
+        }
+      }).catch(console.error);
+    }
+
+    function saveSettings() {
+      const s = {
+        broadcastEnable: el.broadcastEnable.checked,
+        eewEnable: el.eewEnable.checked,
+        eewPollSec: el.eewPollSec.value,
+        eewMinInt: el.eewMinInt.value, // Save Int
+        eewLocalCity: el.eewLocalCity.value, // Save City
+        eewTpl: el.eewTpl.value,
+        eewMp3: el.eewMp3.value,
+        eewMp3Ms: el.eewMp3Ms.value,
+        eewAutoSend: el.eewAutoSend.value,
+        eewStopAll: el.eewStopAll.checked
+      };
+      localStorage.setItem(LSKEY, JSON.stringify(s));
+
+      // Sync to Backend
+      fetch('/quake/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enabled: el.eewEnable.checked,
+          poll_sec: el.eewPollSec.value,
+          broadcast_enabled: el.broadcastEnable.checked,
+          local_city: el.eewLocalCity.value, // Send City
+          intensity_threshold: el.eewMinInt.value // Send Threshold
+        })
+      }).then(r => r.json()).then(j => {
+        if (j.ok) toast('設定已儲存至後端');
+      }).catch(console.error);
+    }
+
+    // 綁定一般變更 → 存設定
+    $$('input,select,textarea').forEach(x => {
+      x.addEventListener('change', saveSettings);
+    });
+
+    if (el.btnSaveSettings) {
+      el.btnSaveSettings.addEventListener('click', () => {
+        saveSettings();
+        alert('設定已儲存');
+      });
+    }
+
+    // 顯示徽章與啟停輪詢
+    el.broadcastEnable.addEventListener('change', () => {
+      el.broadcastBadge.textContent = el.broadcastEnable.checked ? '開啟' : '關閉';
+      saveSettings();
+    });
+
+    el.eewEnable.addEventListener('change', () => {
+      el.pollBadge.textContent = el.eewEnable.checked ? '開啟' : '關閉';
+      saveSettings();
+      togglePolling(el.eewEnable.checked);
+    });
+
+    function togglePolling(on) {
+      if (on) {
+        pollOnce();
+        const sec = Math.max(5, parseInt(el.eewPollSec.value || '10'));
+        clearInterval(timer); timer = setInterval(pollOnce, sec * 1000);
+      } else {
+        clearInterval(timer); timer = null;
+      }
+    }
+
+    // [Added] Auto-refresh text view during poll
+    async function pollOnce() {
+      // Always update CWA text view
+      if (typeof loadCwaRecentSimple === 'function') {
+        await loadCwaRecentSimple(true);
+      }
+
+      const mode = "cwa";
+      let allRows = [];
+
+      // Fetch CWA for broadcasting check
+      try {
+        const r = await fetch("/eew/cwa_feed", { cache: "no-store" });
+        const j = await r.json();
+        if (j.ok && j.events) {
+          const cwaRows = j.events.map(e => {
+            let tStr = e.time.replace(" ", "T");
+            if (!tStr.includes("T")) tStr = tStr.replace(" ", "T");
+            const d = new Date(tStr);
+            return {
+              id: e.id,
+              mag: e.mag,
+              time: isNaN(d) ? new Date() : d,
+              lat: e.lat,
+              lon: e.lon,
+              depth: e.depth,
+              title: e.title,
+              src: e.src,
+              intensity: e.intensity, // Max Int
+              shaking_areas: e.shaking_areas // Area Ints
+            };
+          });
+          allRows = allRows.concat(cwaRows);
+        }
+      } catch (e) { console.error("CWA fetch error:", e); }
+
+      // Sort
+      allRows.sort((a, b) => b.time - a.time);
+
+      cachedRows = allRows;
+
+      // 自動推播（需同時滿足：廣播總開關=開、自動推播=開、有新事件、強度達門檻、且未過期）
+      // Logic mostly moved to backend, but frontend can still do it if needed.
+      // Since backend handles it, frontend just updates UI.
+      // But if user relies on frontend polling?
+      // Let's keep frontend logic but update it to use Intensity.
+
+      const minIntStr = el.eewMinInt.value || '3';
+      const targetCity = el.eewLocalCity.value || ''; // If empty, backend handles it, or we can't do local check here easily without location.
+
+      // If we want frontend to trigger, we need local intensity.
+      // But we don't have easy local location in frontend JS unless we fetch it.
+      // We'll rely on backend for the actual alarm trigger.
+      // Frontend just updates the list.
+    }
+
+    function fillTpl(it) {
+      const tpl = el.eewTpl.value || '地震警報 預估震度{int}，{location} 規模{mag}，深度{depth}km，時間{time}。';
+      // Determine local intensity if possible, else max
+      // For template, {int} usually means Max Intensity or Local Intensity?
+      // Let's use Max Intensity from `it.intensity`
+      return tpl
+        .replace('{mag}', it.mag)
+        .replace('{lat}', it.lat)
+        .replace('{lon}', it.lon)
+        .replace('{depth}', it.depth)
+        .replace('{time}', it.time.toLocaleString())
+        .replace('{int}', it.intensity || '?')
+        .replace('{location}', it.title || ''); // title often contains location
+    }
+
+    async function pushOne(it) {
+      if (!el.broadcastEnable.checked) {
+        toast('廣播已關閉，未推送'); return;
+      }
+      const msg = fillTpl(it);
+      try {
+        if (el.eewStopAll.checked) {
+          await http('/cmd', { method: 'POST', form: { cmd: 'CancelALL' } });
+        }
+        await http('/special', { method: 'POST', form: { msg: 'ShowMsg:' + msg } });
+        await http('/cmd', { method: 'POST', form: { cmd: 'PlayMP3:' + (el.eewMp3.value || 'justEarthquakeAlarm.mp3') } });
+        toast('已推送事件：' + it.id);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // 手動推播最新一筆
+    el.btnPushLatest.addEventListener('click', async () => {
+      if (!el.broadcastEnable.checked) {
+        toast('廣播已關閉，未推送');
+        return;
+      }
+      // 先從 CWA 最近地震文字區塊抓最後一筆 bullet
+      let cwaLine = null;
+      try {
+        const box = document.getElementById('cwaRecentText');
+        if (box) {
+          const txt = (box.innerText || box.textContent || '').trim();
+          // Logic to extract text from new HTML structure
+          // The new structure uses divs, not bullets.
+          // We can just grab the first child div's text?
+          // Or rely on cachedRows[0] which is better.
+          if (cachedRows.length > 0) {
+            await pushOne(cachedRows[0]);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error('parse CWA recent text error:', e);
+      }
+
+      if (!cachedRows.length) {
+        toast('尚無 CWA 列表資料');
+        return;
+      }
+      await pushOne(cachedRows[0]);
+    });
+
+    // 測試
+    el.btnEewTest.addEventListener('click', async () => {
+      try {
+        if (el.eewStopAll.checked) {
+          await http('/cmd', { method: 'POST', form: { cmd: 'CancelALL' } });
+        }
+        await http('/special', { method: 'POST', form: { msg: 'ShowMsg:【測試】地震警報，請保持冷靜並尋找掩蔽。' } });
+        await http('/cmd', { method: 'POST', form: { cmd: 'PlayMP3:' + (el.eewMp3.value || 'justEarthquakeAlarm.mp3') } });
+        toast('已推送測試警報');
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    // ★ 新增：強制取消按鍵事件（直接送 CancelALL）
+    if (el.btnForceCancel) {
+      el.btnForceCancel.addEventListener('click', async () => {
+        try {
+          await http('/cmd', { method: 'POST', form: { cmd: 'CancelALL' } });
+          toast('已送出 CancelALL 強制取消指令');
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    }
+
+    // /state ping（右欄）
+    el.btnPing.addEventListener('click', async () => {
+      try {
+        const r = await fetch('/state', { cache: 'no-store' });
+        const j = await r.json();
+        el.pingResult.textContent = j && j.ok ? 'OK' : 'FAIL';
+        if (j && j.ok && j.ts) el.srvTime.textContent = j.ts;
+      } catch (e) {
+        el.pingResult.textContent = 'FAIL';
+      }
+    });
+
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", "&gt;": "&gt;", "\"": "&quot;", "'": "&#39;" }[m])); }
+
+    // Init Location
+    async function initLocation() {
+      try {
+        const r = await fetch('/api/location');
+        const j = await r.json();
+        if (j.ok) {
+          const city = j.city || j.region || '未知';
+          el.locBadge.textContent = city;
+          if (!el.eewLocalCity.value) {
+            el.eewLocalCity.placeholder = `自動偵測: ${city}`;
+          }
+        } else {
+          el.locBadge.textContent = '未知';
+        }
+      } catch (e) {
+        el.locBadge.textContent = '錯誤';
+      }
+    }
+    initLocation();
+
+    // 初始化
+    loadSettings();
+    if (el.eewEnable.checked) togglePolling(true);
+  </script>
+
+  <!-- Rest of scripts (Clock, CWA Key, Diag, Force Cancel) kept as is -->
+  <script>
+    (function () {
+      function pad2(n) { return String(n).padStart(2, '0'); }
+      function fmt(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); }
+      function startClock() { function tick() { var el = document.getElementById('nowText'); if (el) el.textContent = fmt(new Date()); } tick(); setInterval(tick, 1000); }
+      document.addEventListener('DOMContentLoaded', startClock);
+    })();
+  </script>
+
+  <script>
+    (() => {
+      const CWA_KEY_RE = /^CW[AB]-[A-Z0-9-]{10,}$/;
+
+      const el = (id) => document.getElementById(id);
+      const $key = el('cwaKey');
+      const $save = el('btnSaveKey');
+      const $masked = el('cwaMasked');
+      const $badge = el('cwaApiBadge');
+      const $enabled = el('cwaEnabled');
+      const $poll = el('cwaPollSec');
+      const $apply = el('btnApplyState');
+      const $push = el('btnPushLatest');
+      const $test = el('btnTestNow');
+      const $status = el('cwaStatus');
+      const $last = el('cwaLast');
+
+      function toast(msg, ok = true) {
+        $status.textContent = msg;
+        $status.style.color = ok ? '#0b2239' : '#d64545';
+        (ok ? console.log : console.warn)(msg);
+      }
+      function setBadge(ok, msg) {
+        $badge.textContent = msg || (ok ? 'API 驗證成功' : 'API 驗證失敗');
+        $badge.style.background = ok ? '#e7f7ee' : '#fff2f2';
+        $badge.style.color = ok ? '#0a8754' : '#d64545';
+        $badge.style.borderColor = ok ? '#bfe9d2' : '#f3c2c2';
+      }
+      async function xfetch(url, opts = {}) {
+        const controller = new AbortController();
+        const t = setTimeout(() => controller.abort(), opts.timeoutMs || 10000);
+        try {
+          const r = await fetch(url, {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache', ...(opts.headers || {}) },
+            signal: controller.signal,
+            ...opts
+          });
+          return r;
+        } finally { clearTimeout(t); }
+      }
+      async function loadKey() {
+        try {
+          const r = await xfetch('/quake/key', { timeoutMs: 8000 });
+          const j = await r.json();
+          if (!j.ok) throw new Error(j.error || '取得授權碼失敗');
+          $masked.textContent = `目前：${j.value_masked || '（未設定）'}`;
+        } catch (err) {
+          $masked.textContent = '（讀取失敗）';
+          toast('授權碼狀態讀取失敗：' + err.message, false);
+        }
+      }
+      async function testOnce() {
+        try {
+          $test.disabled = true; $test.textContent = '測試中…';
+          const r = await fetch('/quake/test', { method: 'POST', cache: 'no-store', headers: { 'Cache-Control': 'no-cache' }, signal: (new AbortController()).signal });
+          const ctype = r.headers.get('Content-Type') || '';
+          const text = await r.text(); // 先以純文字讀
+          let j = null;
+          try { j = JSON.parse(text); } catch (_) { /* 非 JSON 時走下方錯誤顯示 */ }
+          if (j && j.ok) {
+            setBadge(true, 'API 驗證成功');
+            const s = j.sample || {};
+            const ts = s.time ? `時間：${s.time}
+` : '';
+            const src = s.source ? `來源：${s.source}
+` : '';
+            $last.textContent = `${ts}${src}${s.text || JSON.stringify(s)}`;
+            toast('CWA API 驗證成功');
+            return true;
+          } else {
+            setBadge(false, 'API 驗證失敗');
+            // 嘗試從錯誤輸出中抓片段
+            let msg = 'CWA 測試失敗';
+            if (j && j.error) msg += '：' + j.error;
+            else if (ctype && !ctype.toLowerCase().includes('json')) msg += '（收到非 JSON 回應：' + ctype + '）';
+            $last.textContent = (j ? JSON.stringify(j, null, 2) : text).slice(0, 1200);
+            toast(msg, false);
+            return false;
+          }
+        } catch (err) {
+          setBadge(false, 'API 驗證失敗');
+          toast('CWA 測試錯誤：' + err.message, false);
+          return false;
+        } finally {
+          $test.disabled = false; $test.textContent = '立即測試';
+        }
+      }
+      async function saveKey() {
+        const key = ($key.value || '').trim().toUpperCase();
+        if (!CWA_KEY_RE.test(key)) {
+          toast('授權碼格式不正確：需以 CWA- 或 CWB- 開頭，後接英數與連字號（長度需足夠）', false);
+          $key.focus(); return;
+        }
+        try {
+          $save.disabled = true; $save.textContent = '儲存中…';
+          const r = await xfetch('/quake/key', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key }),
+            timeoutMs: 10000
+          });
+          if (!r.ok) { throw new Error(`HTTP ${r.status} ${await r.text()}`); }
+          const j = await r.json();
+          if (!j.ok) throw new Error(j.error || '儲存失敗');
+          await loadKey();
+          $enabled.checked = true;
+          await applyState();
+          await testOnce(); // 儲存後立即驗證
+        } catch (err) {
+          toast('授權碼儲存失敗：' + err.message, false);
+          setBadge(false, 'API 驗證失敗');
+        } finally {
+          $save.disabled = false; $save.textContent = '儲存授權碼';
+        }
+      }
+      async function loadState() {
+        try {
+          const r = await xfetch('/quake/state', { timeoutMs: 8000 });
+          const j = await r.json();
+          if (!j.ok) throw new Error(j.error || '取得狀態失敗');
+          $enabled.checked = !!j.enabled;
+          $poll.value = j.poll_sec || 60;
+          $status.textContent = `狀態：${j.enabled ? '啟用中' : '停用'}｜已設定Key：${j.has_key ? '是' : '否'}`;
+          $status.style.color = '#0b2239';
+          const last = j.last;
+          if (last && last.text) {
+            const ts = last.time ? `時間：${last.time}\n` : '';
+            const src = last.source ? `來源：${last.source}\n` : '';
+            $last.textContent = `${ts}${src}${last.text}`;
+          } else {
+            $last.textContent = '（尚無最新資料或尚未輪詢到）';
+          }
+        } catch (err) {
+          toast('狀態讀取失敗：' + err.message, false);
+        }
+      }
+      async function applyState() {
+        let poll = parseInt($poll.value || '60', 10);
+        if (isNaN(poll) || poll < 15) poll = 60;
+        try {
+          $apply.disabled = true; $apply.textContent = '套用中…';
+          const r = await xfetch('/quake/state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: $enabled.checked, poll_sec: poll }),
+            timeoutMs: 10000
+          });
+          if (!r.ok) { throw new Error(`HTTP ${r.status} ${await r.text()}`); }
+          const j = await r.json();
+          if (!j.ok) throw new Error(j.error || '套用失敗');
+          toast(`已${j.enabled ? '啟用' : '停用'}（每 ${j.poll_sec}s）`);
+          await loadState();
+        } catch (err) {
+          toast('輪詢設定失敗：' + err.message, false);
+        } finally {
+          $apply.disabled = false; $apply.textContent = '套用';
+        }
+      }
+      async function pushLatest() {
+        try {
+          $push.disabled = true; $push.textContent = '推播中…';
+          const st = await xfetch('/quake/state', { timeoutMs: 8000 }).then(r => r.json());
+          if (!st.ok || !st.last || !st.last.text) {
+            throw new Error('沒有可推播的最新資料');
+          }
+          const text = st.last.text;
+          let r1 = await xfetch('/special', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ msg: `ShowMsg:【地震訊息】${text}` }),
+            timeoutMs: 8000
+          });
+          if (!r1.ok) throw new Error(`special HTTP ${r1.status}`);
+          let r2 = await xfetch('/cmd', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cmd: 'PlayMP3:justEarthquakeAlarm.mp3' }),
+            timeoutMs: 8000
+          });
+          if (!r2.ok) throw new Error(`cmd HTTP ${r2.status}`);
+          toast('已推播台灣最新地震訊息');
+        } catch (err) {
+          toast('推播失敗：' + err.message, false);
+        } finally {
+          $push.disabled = false; $push.textContent = '🚀 推播台灣最新';
+        }
+      }
+
+      // Bind
+      $save?.addEventListener('click', saveKey);
+      $apply?.addEventListener('click', applyState);
+      $push?.addEventListener('click', pushLatest);
+      $test?.addEventListener('click', testOnce);
+      $key?.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveKey(); });
+
+      // Init
+      (async () => {
+        await loadKey();
+        await loadState();
+        setBadge(false, 'API 未驗證');
+        setInterval(loadState, 30000);
+      })();
+    })();
+  </script>
+
+  <script>
+    (function attachDiag() {
+      const $diagBtn = document.getElementById('btnDiag');
+      const $diagOut = document.getElementById('cwaDiagOut');
+      const $badge = document.getElementById('cwaApiBadge');
+      const $status = document.getElementById('cwaStatus');
+
+      function setBadge(ok, msg) {
+        if (!$badge) return;
+        $badge.textContent = msg || (ok ? 'API 驗證成功' : 'API 驗證失敗');
+        $badge.style.background = ok ? '#e7f7ee' : '#fff2f2';
+        $badge.style.color = ok ? '#0a8754' : '#d64545';
+        $badge.style.borderColor = ok ? '#bfe9d2' : '#f3c2c2';
+      }
+      async function xfetch(url, opts = {}) {
+        const controller = new AbortController();
+        const t = setTimeout(() => controller.abort(), opts.timeoutMs || 12000);
+        try {
+          const r = await fetch(url, {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache', ...(opts.headers || {}) },
+            signal: controller.signal,
+            ...opts
+          });
+          return r;
+        } finally { clearTimeout(t); }
+      }
+      function fmtTried(tried) {
+        return tried.map(it => {
+          if (it.error) return `× ${it.url} [${it.auth_mode}] → ERROR: ${it.error}`;
+          return `${it.status == 200 && it.parsed_ok ? '✓' : '×'} ${it.url} [${it.auth_mode}] → HTTP ${it.status}\n` +
+            (it.body_snippet ? `└ body: ${it.body_snippet.replace(/\s+/g, ' ').slice(0, 220)}...\n` : '');
+        }).join('\n');
+      }
+      async function runDiag() {
+        if (!$diagBtn) return;
+        try {
+          $diagBtn.disabled = true; $diagBtn.textContent = '診斷中…';
+          const r = await xfetch('/quake/diag', { method: 'POST', timeoutMs: 15000 });
+          const j = await r.json();
+          if (j.ok) {
+            setBadge(true, 'API 驗證成功');
+            $status.textContent = '診斷完成：API 可用';
+          } else {
+            setBadge(false, 'API 驗證失敗');
+            $status.textContent = '診斷完成：API 不可用（詳見下方輸出）';
+          }
+          if ($diagOut) $diagOut.textContent = JSON.stringify(j, null, 2) + '\n\n' +
+            (j.tried ? fmtTried(j.tried) : '');
+          const $det = document.getElementById('diagPanel');
+          if ($det && !$det.open) $det.open = true;
+        } catch (err) {
+          setBadge(false, 'API 驗證失敗');
+          if ($diagOut) $diagOut.textContent = '診斷錯誤：' + err.message;
+        } finally {
+          $diagBtn.disabled = false; $diagBtn.textContent = '診斷';
+        }
+      }
+      $diagBtn && $diagBtn.addEventListener('click', runDiag);
+    })();
+  </script>
+
+  <script>
+    // 簡易 CWA Key + 最近地震顯示（不碰後端，只前端示範）
+    let CWA_API_KEY_SIMPLE = null;
+
+    async function loadCwaRecentSimple(forceReload) {
+      const box = document.getElementById('cwaRecentText');
+      const status = document.getElementById('cwaKeyStatus');
+      if (!box) return;
+
+      if (!forceReload && box.dataset.loaded === "1") return;
+
+      try {
+        box.textContent = "最近地震（CWA）載入中...";
+        // 改為呼叫後端 API (已整合 Key 與快取)
+        const res = await fetch("/eew/cwa_feed", { cache: "no-store" });
+        const j = await res.json();
+
+        if (!j.ok) {
+          throw new Error(j.error || "Backend Error");
+        }
+
+        const list = j.events || [];
+        if (list.length === 0) {
+          box.textContent = "目前沒有可顯示的 CWA 最近地震資料。";
+          if (status) status.textContent = "目前沒有資料。";
+          return;
+        }
+
+        const parts = list.slice(0, 6).map(e => {
+          const hasImg = e.img && (e.img.startsWith('http') || e.img.startsWith('/'));
+          return `<div style="margin-bottom:12px;border-bottom:1px solid #eee;padding-bottom:8px;">
+            <div style="font-weight:bold;color:#334155;">• ${e.time} ${e.location}</div>
+            <div style="display:flex;gap:8px;margin-top:2px;">
+              <span style="background:#ef4444;color:white;padding:1px 5px;border-radius:4px;font-size:0.85em;">規模 ${e.mag}</span>
+              <span style="color:#64748b;font-size:0.9em;">深度 ${e.depth}km</span>
+              <span style="background:#f59e0b;color:white;padding:1px 5px;border-radius:4px;font-size:0.85em;">最大震度 ${e.intensity || '?'}</span>
+            </div>
+            <div style="font-size:0.9em;color:#475569;margin-top:4px;line-height:1.4;">${e.title || ''}</div>
+            ${hasImg ? `<div style="margin-top:6px;"><img src="${e.img}" style="max-width:100%;border-radius:4px;border:1px solid #e2e8f0;" alt="地震報告圖"></div>` : ''}
+          </div>`;
+        });
+
+        box.innerHTML = '<div style="font-weight:600;margin-bottom:2px;">最近地震（CWA 資料 - 來自後端）</div>'
+          + '<div>' + parts.join('<br>') + '</div>';
+        box.dataset.loaded = "1";
+
+        if (status) {
+          status.textContent = "已更新";
+          status.style.color = "#15803d";
+        }
+      } catch (err) {
+        box.textContent = "CWA 資料讀取錯誤：" + err.message;
+        if (status) {
+          status.textContent = "讀取錯誤";
+          status.style.color = "#b91c1c";
+        }
+      }
+    }
+
+    async function saveCwaKeySimple() {
+      const inp = document.getElementById('cwaKeyInput');
+      const status = document.getElementById('cwaKeyStatus');
+      if (!inp) return;
+      const v = (inp.value || "").trim();
+      if (!v) {
+        if (status) { status.textContent = "請輸入授權碼。"; status.style.color = "#b91c1c"; }
+        return;
+      }
+      if (!/^CWB-[0-9A-Fa-f\-]{10,}$/.test(v) && !/^CWA-[0-9A-Fa-f\-]{10,}$/.test(v)) {
+        if (status) { status.textContent = "格式看起來不太對（需 CWB- 或 CWA- 開頭）"; status.style.color = "#b91c1c"; }
+        return;
+      }
+
+      // Sync to Backend
+      try {
+        if (status) { status.textContent = "儲存中..."; status.style.color = "#555"; }
+        const r = await fetch('/quake/key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: v })
+        });
+        const j = await r.json();
+        if (j.ok) {
+          if (status) { status.textContent = "已儲存至伺服器。"; status.style.color = "#15803d"; }
+        } else {
+          if (status) { status.textContent = "儲存失敗：" + (j.error || "?"); status.style.color = "#b91c1c"; }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      const box = document.getElementById('cwaRecentText');
+      if (box) box.dataset.loaded = "0";
+      loadCwaRecentSimple(true);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      // If polling is enabled, pollOnce will handle the first load.
+      // If not, we trigger it once here.
+      if (!el.eewEnable.checked) {
+        loadCwaRecentSimple(false);
+      }
+    });
+  </script>
+
+  <!-- ⛔ Force Cancel Floating Button -->
+  <div id="force-cancel-btn"
+    style="position:fixed;bottom:20px;right:20px;z-index:9999;cursor:pointer;background:#ef4444;color:white;padding:12px 24px;border-radius:50px;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-weight:bold;display:flex;align-items:center;gap:8px;transition:transform 0.1s;font-family:system-ui;">
+    <span style="font-size:18px">⛔</span>
+    <span>強制取消</span>
+  </div>
+  <script>
+    document.getElementById('force-cancel-btn').addEventListener('click', async () => {
+      // if (!confirm('確定要強制取消所有播放嗎？\n(將送出 CancelALL 指令)')) return;
+      try {
+        const btn = document.getElementById('force-cancel-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span>⏳ 處理中...</span>';
+        btn.style.opacity = '0.8';
+
+        // Use relative path by default, or API_BASE if defined globally
+        const apiBase = (typeof API_BASE !== 'undefined') ? API_BASE : '';
+        const r = await fetch(apiBase + '/cmd', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'cmd=CancelALL'
+        });
+
+        if (r.ok) {
+          btn.innerHTML = '<span>✅ 已取消</span>';
+          setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 1500);
+          return;
+        } else {
+          btn.innerHTML = '<span>❌ 失敗</span>';
+          setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 2000);
+          return;
+        }
+
+        btn.innerHTML = originalText;
+        btn.style.opacity = '1';
+      } catch (e) {
+        console.error(e);
+        const btn = document.getElementById('force-cancel-btn');
+        btn.innerHTML = '<span>❌ 錯誤</span>';
+        setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 2000);
+        return;
+        document.getElementById('force-cancel-btn').innerHTML = originalText;
+        document.getElementById('force-cancel-btn').style.opacity = '1';
+      }
+    });
+    // Add hover effect
+    const fcb = document.getElementById('force-cancel-btn');
+    fcb.addEventListener('mousedown', () => fcb.style.transform = 'scale(0.95)');
+    fcb.addEventListener('mouseup', () => fcb.style.transform = 'scale(1)');
+    fcb.addEventListener('mouseleave', () => fcb.style.transform = 'scale(1)');
+  </script>
+  <script>
+    // Weather Warning Logic (Appended)
+    document.addEventListener('DOMContentLoaded', function () {
+      // Initial load
+      setTimeout(loadWeatherWarnings, 1000);
+
+      // Refresh periodically
+      setInterval(loadWeatherWarnings, 300000); // 5 mins
+
+      // Bind refresh button
+      const btn = document.getElementById('btnRefreshWeather');
+      if (btn) btn.addEventListener('click', loadWeatherWarnings);
+
+      // Bind city change
+      const cityInput = document.getElementById('eewLocalCity');
+      if (cityInput) cityInput.addEventListener('change', loadWeatherWarnings);
+    });
+
+    async function loadWeatherWarnings() {
+      const box = document.getElementById('weatherWarningBox');
+      // Need to access 'el' from module scope? No, 'el' is not global.
+      // We need to re-select elements or make 'el' global. 
+      // 'el' is defined in type="module" script, so it's not available here.
+      // We must re-select.
+
+      const cityInput = document.getElementById('eewLocalCity');
+      const locBadge = document.getElementById('locBadge');
+      const targetCity = (cityInput ? cityInput.value : '') || (locBadge ? locBadge.textContent : '') || '';
+
+      if (!box) return;
+      box.innerHTML = '<span style="color:#64748b">載入中...</span>';
+
+      try {
+        const r = await fetch('/eew/weather_feed', { cache: 'no-store' });
+        const j = await r.json();
+        if (j.ok) {
+          const warnings = j.warnings || [];
+
+          let displayList = warnings;
+          if (targetCity && targetCity !== '偵測中...' && targetCity !== '未知') {
+            // Simple substring match
+            displayList = warnings.filter(w => targetCity.includes(w.location) || w.location.includes(targetCity));
+          }
+
+          if (displayList.length === 0) {
+            box.innerHTML = '<span style="color:#059669">目前無相關警特報。</span>';
+          } else {
+            const html = displayList.map(w => {
+              const color = w.phenomena === '颱風' ? '#dc2626' : '#d97706';
+              return `<div style="margin-bottom:6px;padding:6px;background:#fff7ed;border-left:4px solid ${color};border-radius:4px;">
+                <div style="font-weight:bold;color:#9a3412">${w.title}</div>
+                <div style="font-size:12px;color:#78350f">有效：${w.startTime} ~ ${w.endTime}</div>
+              </div>`;
+            }).join('');
+            box.innerHTML = html;
+          }
+        } else {
+          box.innerHTML = '<span style="color:#dc2626">載入失敗：' + (j.error || 'Unknown') + '</span>';
+        }
+      } catch (e) {
+        box.innerHTML = '<span style="color:#dc2626">連線錯誤</span>';
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+
+</html>

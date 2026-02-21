@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班級端視訊 | Class Call</title>
+    <link href="app.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --primary: #3b82f6;
+            --success: #22c55e;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            color: white;
+        }
+
+        video {
+            background: #000;
+            object-fit: contain;
+            /* Ensure video is fully visible */
+        }
+
+        #remoteVideo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #localVideo {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            width: 240px;
+            height: 160px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            z-index: 2;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            background: #222;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s;
+        }
+
+        #btnAllow {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 1.5rem 4rem;
+            font-size: 2rem;
+            border-radius: 4rem;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        #btnAllow:hover {
+            transform: scale(1.05);
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(34, 197, 94, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
+        }
+
+        #statusText {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            color: #ddd;
+        }
+
+        /* Modal for Permissions */
+        #mic-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            text-align: left;
+            color: #333;
+        }
+
+        .url-box {
+            background: #eee;
+            padding: 8px;
+            border-radius: 6px;
+            word-break: break-all;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 13px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <video id="remoteVideo" autoplay playsinline></video>
+    <video id="localVideo" autoplay playsinline muted></video>
+
+    <div id="overlay">
+        <button id="btnAllow" onclick="start()">點此開始</button>
+        <div id="statusText">系統待命...</div>
+    </div>
+
+    <!-- Audio Visualizer Canvas -->
+    <canvas id="audioVisualizer"
+        style="position:absolute; bottom:0; left:0; width:100%; height:100px; pointer-events:none; z-index:5;"></canvas>
+
+    <!-- Permission Modal -->
+    <div id="mic-modal">
+        <div class="modal-content">
+            <h3 style="color:#d32f2f;margin-top:0">⚠️ 無法使用麥克風/攝影機</h3>
+            <p>因瀏覽器安全限制，非 HTTPS 環境需手動開啟權限。</p>
+            <ol style="padding-left:20px; font-size:14px; line-height:1.5;">
+                <li>複製下方網址：<br>
+                    <div class="url-box" id="flag-url">chrome://flags/#unsafely-treat-insecure-origin-as-secure</div>
+                </li>
+                <li>開新分頁貼上並前往。</li>
+                <li>填入本站網址：<br>
+                    <div class="url-box" id="site-url" style="color:#2196F3;font-weight:bold;"></div>
+                </li>
+                <li>設為 <b>Enabled</b> 並 Relaunch。</li>
+            </ol>
+            <div style="text-align:right">
+                <button onclick="copyUrl()"
+                    style="padding:8px 16px;background:#2196F3;color:white;border:none;border-radius:4px;">複製 Flag
+                    網址</button>
+                <button onclick="copySiteUrl()"
+                    style="padding:8px 16px;background:#4CAF50;color:white;border:none;border-radius:4px;margin-left:8px;">複製本站網址</button>
+                <button onclick="document.getElementById('mic-modal').style.display='none'"
+                    style="padding:8px 16px;background:#ddd;border:none;border-radius:4px;margin-left:8px;">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <script>
+        const overlay = document.getElementById('overlay');
+        const statusText = document.getElementById('statusText');
+        const btnAllow = document.getElementById('btnAllow');
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const canvas = document.getElementById('audioVisualizer');
+        const canvasCtx = canvas.getContext('2d');
+
+        let localStream;
+        let peerConnection;
+        let ws;
+        let audioContext;
+        let analyser;
+        let ringerInterval;
+        let ringerCtx;
+        let iceCandidateQueue = [];
+
+        // Auto-resize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = 100;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const params = new URLSearchParams(location.search);
+        const MY_ID = params.get('id') || 'student-' + Math.floor(Math.random() * 1000);
+        const TARGET_ID = params.get('target') || 'teacher';
+
+        const config = {
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        };
+
+        // Global shared context to maintain "unlocked" state
+        let sharedAudioCtx = null;
+
+        function getSharedAudioCtx() {
+            if (!sharedAudioCtx) {
+                sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (sharedAudioCtx.state === 'suspended') {
+                sharedAudioCtx.resume().catch(e => console.log(e));
+            }
+            return sharedAudioCtx;
+        }
+
+        // Auto-click / Auto-start logic (Aligned with watch.html)
+        window.addEventListener('load', () => {
+            console.log("Auto-start check initiated...");
+
+            // Unconditionally attempt to start after delay
+            // This ensures the student is online (WS connected) even if URL params are missing
+            setTimeout(() => {
+                const btn = document.getElementById('btnAllow');
+                if (btn && btn.innerText.includes("點此開始")) {
+                    console.log("Auto-starting (Initial Login)...");
+                    btn.click();
+                }
+            }, 1000);
+        });
+
+        function tryRinging() {
+            if (ringerInterval) return; // Prevent double ringing
+
+            try {
+                // Use shared context to benefit from previous user activation
+                const ctx = getSharedAudioCtx();
+                ringerCtx = ctx;
+
+                let ringCount = 0;
+
+                // Create a louder digital phone ring loop
+                const playBeep = () => {
+                    ringCount++;
+                    if (ringCount > 3) {
+                        console.log("Auto-answering after 3 rings...");
+                        if (btnAllow) btnAllow.click();
+                        return;
+                    }
+
+                    if (!ctx) return;
+                    if (ctx.state === 'suspended') ctx.resume();
+
+                    const t = ctx.currentTime;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc.type = 'square';
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    // Double Ring Pattern: Ring... Ring... Pause
+                    // First pulse
+                    osc.frequency.setValueAtTime(880, t);
+                    osc.frequency.linearRampToValueAtTime(1200, t + 0.1);
+                    gain.gain.setValueAtTime(0.4, t);
+                    gain.gain.setValueAtTime(0.4, t + 0.3);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.35);
+
+                    // Second pulse (starting at +0.4s)
+                    osc.frequency.setValueAtTime(880, t + 0.4);
+                    osc.frequency.linearRampToValueAtTime(1200, t + 0.5);
+                    gain.gain.setValueAtTime(0.4, t + 0.4);
+                    gain.gain.setValueAtTime(0.4, t + 0.7);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.75);
+
+                    osc.start(t);
+                    osc.stop(t + 0.8);
+                };
+
+                // Play immediately then loop
+                playBeep();
+                ringerInterval = setInterval(playBeep, 2000);
+
+                // Unlocker (just in case it's the very first run without interaction)
+                const resumeAudio = () => {
+                    if (ctx.state === 'suspended') ctx.resume();
+                    document.removeEventListener('click', resumeAudio);
+                };
+                document.addEventListener('click', resumeAudio);
+
+            } catch (e) {
+                console.error("Ringtone failed:", e);
+            }
+        }
+
+        function stopRinging() {
+            if (ringerInterval) {
+                clearInterval(ringerInterval);
+                ringerInterval = null;
+            }
+            // Do NOT close the shared context, just stop the scheduling
+            // ringerCtx is just a reference to sharedAudioCtx now
+            if (ringerCtx) {
+                // We just let the oscillators stop naturally via their stop() time
+                // or we could disconnect exact nodes if we tracked them, 
+                // but pure setInteval clearing is enough for the loop.
+                ringerCtx = null;
+            }
+        }
+
+        async function start() {
+            stopRinging();
+
+            try {
+                // Determine getUserMedia constraints
+                // Reuse localStream if active to prevent flicker/prompt
+                // Reuse localStream if active to prevent flicker/prompt
+                if (!localStream || !localStream.active) {
+
+                    // Explicit permissions check 
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        throw new Error("MediaDevices API not supported");
+                    }
+
+                    localStream = await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: { echoCancellation: true, noiseSuppression: true }
+                    });
+                    localVideo.srcObject = localStream;
+                }
+
+                // Ensure Shared Audio Context is unlocked by this user gesture
+                getSharedAudioCtx();
+
+                overlay.classList.add('hidden');
+
+                connectWS();
+
+                // Setup Visualization
+                // Close old context if exists
+                if (audioContext) { try { audioContext.close(); } catch (e) { } audioContext = null; }
+                setupVisualizer(localStream);
+
+                // If offer was pending, handle it now
+                if (window.pendingOffer) {
+                    acceptCall();
+                }
+
+            } catch (e) {
+                console.error(e);
+                showPermissionModal();
+            }
+        }
+
+        function setupVisualizer(stream) {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                source.connect(analyser);
+                drawVisualizer();
+            } catch (e) {
+                console.error("Visualizer Error", e);
+            }
+        }
+
+        function drawVisualizer() {
+            if (!analyser) return;
+
+            requestAnimationFrame(drawVisualizer);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteTimeDomainData(dataArray);
+
+            canvasCtx.fillStyle = 'rgba(0, 0, 0, 0)'; // Transparent
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+            canvasCtx.lineWidth = 2;
+            canvasCtx.strokeStyle = 'rgba(74, 222, 128, 0.8)'; // Light Green
+            canvasCtx.beginPath();
+
+            const sliceWidth = canvas.width * 1.0 / bufferLength;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0; // 128 is zero level
+                const y = v * canvas.height / 2 + (canvas.height / 4); // Centered roughly
+
+                if (i === 0) {
+                    canvasCtx.moveTo(x, y);
+                } else {
+                    canvasCtx.lineTo(x, y);
+                }
+
+                x += sliceWidth;
+            }
+
+            canvasCtx.lineTo(canvas.width, canvas.height / 2);
+            canvasCtx.stroke();
+        }
+
+        function connectWS() {
+            if (ws && ws.readyState === 1) return; // Already connected
+
+            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${proto}//${location.host}/ws/call`);
+
+            ws.onopen = () => {
+                console.log('WS Connected');
+                ws.send(JSON.stringify({ type: 'login', id: MY_ID }));
+
+                // Notify teacher we are here
+                ws.send(JSON.stringify({ type: 'ready', target: TARGET_ID, from: MY_ID }));
+            };
+
+            ws.onmessage = async (event) => {
+                const msg = JSON.parse(event.data);
+
+                if (msg.type === 'ping') {
+                    // Teacher checks if we are alive
+                    ws.send(JSON.stringify({ type: 'ready', target: TARGET_ID, from: MY_ID }));
+                } else if (msg.type === 'offer') {
+                    handleOffer(msg);
+                } else if (msg.type === 'candidate') {
+                    const candidate = new RTCIceCandidate(msg.candidate);
+                    // Check if we are ready to add candidate
+                    if (peerConnection && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+                        try {
+                            await peerConnection.addIceCandidate(candidate);
+                        } catch (e) { console.error('AddIceCandidate error', e); }
+                    } else {
+                        // Buffer candidate
+                        iceCandidateQueue.push(candidate);
+                    }
+                } else if (msg.type === 'text_message') {
+                    showDataChannelMessage(msg.text, false);
+                    if (msg.speak) {
+                        speakText(msg.text);
+                    }
+                }
+            };
+        }
+
+        // --- TTS Helper ---
+        function speakText(text) {
+            try {
+                if (!window.speechSynthesis) return;
+                const ut = new SpeechSynthesisUtterance(text);
+                ut.lang = 'zh-TW';
+                ut.rate = 1.0;
+                window.speechSynthesis.speak(ut);
+            } catch (e) {
+                console.error("TTS Error:", e);
+            }
+        }
+
+        // --- Chat UI Functions ---
+        let chatContainer = null;
+        let chatBody = null;
+        let isChatOpen = false;
+
+        function createChatUI() {
+            if (chatContainer) return;
+
+            // Chat Container
+            chatContainer = document.createElement('div');
+            chatContainer.id = 'chatContainer';
+            chatContainer.className = 'chat-container';
+            chatContainer.style.position = 'absolute';
+            chatContainer.style.bottom = '120px'; // Above controls/visualizer
+            chatContainer.style.left = '20px'; // Left side for student
+            chatContainer.style.width = '300px';
+            chatContainer.style.height = '400px';
+            chatContainer.style.background = 'rgba(15, 23, 42, 0.95)';
+            chatContainer.style.backdropFilter = 'blur(12px)';
+            chatContainer.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+            chatContainer.style.borderRadius = '12px';
+            chatContainer.style.display = 'none'; // Hidden by default
+            chatContainer.style.flexDirection = 'column';
+            chatContainer.style.zIndex = '50';
+            chatContainer.style.overflow = 'hidden';
+            chatContainer.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+
+            // Header
+            const header = document.createElement('div');
+            header.style.padding = '12px 16px';
+            header.style.background = 'rgba(255, 255, 255, 0.05)';
+            header.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
+            header.style.display = 'flex';
+            header.style.justifyContent = 'space-between';
+            header.style.alignItems = 'center';
+            header.innerHTML = '<span style="font-weight:600; color:white;">💬 文字訊息</span>';
+            const closeBtn = document.createElement('button');
+            closeBtn.innerText = '✕';
+            closeBtn.style.background = 'none';
+            closeBtn.style.border = 'none';
+            closeBtn.style.color = '#94a3b8';
+            closeBtn.style.fontSize = '1.2rem';
+            closeBtn.style.cursor = 'pointer';
+            closeBtn.onclick = toggleChat;
+            header.appendChild(closeBtn);
+            chatContainer.appendChild(header);
+
+            // Body
+            chatBody = document.createElement('div');
+            chatBody.className = 'chat-body';
+            chatBody.style.flex = '1';
+            chatBody.style.overflowY = 'auto';
+            chatBody.style.padding = '12px';
+            chatBody.style.display = 'flex';
+            chatBody.style.flexDirection = 'column';
+            chatBody.style.gap = '8px';
+            chatContainer.appendChild(chatBody);
+
+            // Input Area
+            const footer = document.createElement('div');
+            footer.style.padding = '12px';
+            footer.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)';
+            footer.style.display = 'flex';
+            footer.style.gap = '8px';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = '輸入訊息...';
+            input.style.flex = '1';
+            input.style.background = 'rgba(0, 0, 0, 0.3)';
+            input.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+            input.style.borderRadius = '20px';
+            input.style.padding = '8px 12px';
+            input.style.color = 'white';
+            input.style.outline = 'none';
+            input.onkeydown = (e) => { if (e.key === 'Enter') sendChatMessage(input); };
+
+            const sendBtn = document.createElement('button');
+            sendBtn.innerText = '➤';
+            sendBtn.style.background = 'var(--primary)';
+            sendBtn.style.color = 'white';
+            sendBtn.style.border = 'none';
+            sendBtn.style.borderRadius = '50%';
+            sendBtn.style.width = '36px';
+            sendBtn.style.height = '36px';
+            sendBtn.style.cursor = 'pointer';
+            sendBtn.style.display = 'flex';
+            sendBtn.style.alignItems = 'center';
+            sendBtn.style.justifyContent = 'center';
+            sendBtn.onclick = () => sendChatMessage(input);
+
+            footer.appendChild(input);
+            footer.appendChild(sendBtn);
+            chatContainer.appendChild(footer);
+
+            document.body.appendChild(chatContainer);
+
+            // Floating Toggle Button (if chat is closed)
+            const floatBtn = document.createElement('button');
+            floatBtn.innerText = '💬';
+            floatBtn.style.position = 'absolute';
+            floatBtn.style.bottom = '20px';
+            floatBtn.style.left = '20px';
+            floatBtn.style.width = '50px';
+            floatBtn.style.height = '50px';
+            floatBtn.style.borderRadius = '50%';
+            floatBtn.style.background = 'var(--primary)';
+            floatBtn.style.color = 'white';
+            floatBtn.style.fontSize = '24px';
+            floatBtn.style.border = 'none';
+            floatBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+            floatBtn.style.cursor = 'pointer';
+            floatBtn.style.zIndex = '45';
+            floatBtn.onclick = toggleChat;
+            document.body.appendChild(floatBtn);
+        }
+
+        function toggleChat() {
+            if (!chatContainer) createChatUI();
+            isChatOpen = !isChatOpen;
+            chatContainer.style.display = isChatOpen ? 'flex' : 'none';
+        }
+
+        function sendChatMessage(inputEl) {
+            const txt = inputEl.value.trim();
+            if (!txt || !ws) return;
+
+            ws.send(JSON.stringify({
+                type: 'text_message',
+                target: TARGET_ID,
+                text: txt
+            }));
+
+            showDataChannelMessage(txt, true);
+            inputEl.value = '';
+        }
+
+        function showDataChannelMessage(text, isSelf) {
+            if (!chatContainer) createChatUI();
+
+            // Auto-open if closed and receiving message
+            if (!isSelf && !isChatOpen) {
+                toggleChat();
+            }
+
+            const msgDiv = document.createElement('div');
+            msgDiv.style.maxWidth = '80%';
+            msgDiv.style.padding = '8px 12px';
+            msgDiv.style.borderRadius = '12px';
+            msgDiv.style.fontSize = '0.9rem';
+            msgDiv.style.lineHeight = '1.4';
+            msgDiv.style.wordBreak = 'break-word';
+
+            if (isSelf) {
+                msgDiv.style.alignSelf = 'flex-end';
+                msgDiv.style.background = 'var(--primary)';
+                msgDiv.style.color = 'white';
+                msgDiv.style.borderBottomRightRadius = '2px';
+            } else {
+                msgDiv.style.alignSelf = 'flex-start';
+                msgDiv.style.background = 'rgba(255, 255, 255, 0.1)';
+                msgDiv.style.color = '#f1f5f9';
+                msgDiv.style.borderBottomLeftRadius = '2px';
+            }
+
+            msgDiv.textContent = text;
+            chatBody.appendChild(msgDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        async function handleOffer(msg) {
+            console.log('Received Offer');
+
+            // Critical Fix: Force close old connection so incoming candidates 
+            // are queued instead of being applied to a dead connection.
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            iceCandidateQueue = [];
+
+            // Allow ringing again for new calls if page is reused
+            overlay.classList.remove('hidden');
+            statusText.innerText = "教師來電中...";
+            btnAllow.innerText = "接聽通話";
+            tryRinging();
+
+            // Store the offer and wait for user to click Answer (start())
+            window.pendingOffer = msg;
+        }
+
+        async function acceptCall() {
+            if (!window.pendingOffer) return;
+            const msg = window.pendingOffer;
+
+            console.log('Accepting call...');
+            if (peerConnection) peerConnection.close();
+            peerConnection = new RTCPeerConnection(config);
+
+            if (localStream) {
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            }
+
+            peerConnection.ontrack = (event) => {
+                console.log("Remote Track Received");
+                const stream = event.streams[0];
+                remoteVideo.srcObject = stream;
+                remoteVideo.play().catch(e => console.error("Remote Play Error", e));
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    ws.send(JSON.stringify({
+                        type: 'candidate',
+                        target: TARGET_ID,
+                        candidate: event.candidate
+                    }));
+                }
+            };
+
+            // 1. Set Remote Description
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+
+            // 2. Process Buffered Candidates
+            while (iceCandidateQueue.length > 0) {
+                const c = iceCandidateQueue.shift();
+                try {
+                    await peerConnection.addIceCandidate(c);
+                } catch (e) { console.error("Queue AddCand Error", e); }
+            }
+
+            // 3. Create Answer
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+
+            ws.send(JSON.stringify({
+                type: 'answer',
+                target: TARGET_ID,
+                sdp: answer
+            }));
+
+            // Cleanup
+            window.pendingOffer = null;
+        }
+
+        // --- Permission Modal Helpers ---
+        function showPermissionModal() {
+            const currentUrl = window.location.href;
+            document.getElementById('site-url').textContent = currentUrl;
+            document.getElementById('mic-modal').style.display = 'flex';
+        }
+
+        function copyText(txt) {
+            const ta = document.createElement("textarea");
+            ta.value = txt;
+            ta.style.position = "fixed"; ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.focus(); ta.select();
+            try {
+                document.execCommand('copy');
+                alert("已複製！");
+            } catch (e) {
+                prompt("請手動複製:", txt);
+            }
+            document.body.removeChild(ta);
+        }
+
+        function copyUrl() {
+            copyText(document.getElementById('flag-url').textContent);
+        }
+
+        function copySiteUrl() {
+            copyText(document.getElementById('site-url').textContent);
+        }
+    </script>
+</body>
+
+</html>

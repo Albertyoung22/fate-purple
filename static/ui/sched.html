@@ -1,0 +1,1333 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🕒 排程 · 接收端</title>
+  <style>
+    :root {
+      --brand: #1e7bd8;
+      --panel: #f3f9ff;
+      --card: #ffffff;
+      --br: #d9e8fb;
+      --text: #0b2239;
+      --muted: #5a6b80;
+      /* 固定欄位寬度（已移除內容欄，內容改下一行跨欄） */
+      --w-enable: 52px;
+      --w-time: 86px;
+      --w-dow: 64px;
+      --w-type: 92px;
+      --w-title: 160px;
+      --w-actions: 150px;
+    }
+
+    html,
+    body {
+      margin: 0;
+      background: #f5f8fb;
+      font-family: system-ui, -apple-system, "Microsoft JhengHei", Segoe UI, Roboto, Arial
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--brand);
+      color: #fff
+    }
+
+    header .links a {
+      color: #dff1ff;
+      text-decoration: none;
+      margin-left: 12px;
+      font-size: 13px
+    }
+
+    header .links .sep {
+      color: rgba(255, 255, 255, 0.4);
+      margin: 0 2px 0 10px;
+      font-size: 11px;
+    }
+
+    main {
+      padding: 12px;
+      max-width: 1280px;
+      margin: 0 auto
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(0, clamp(460px, 36vw, 620px)) minmax(0, 1fr)
+    }
+
+    @media (max-width: 980px) {
+      .grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--br);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 1px 0 rgba(16, 24, 40, .03)
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 6px 0
+    }
+
+    .row.stretch>* {
+      flex: 1 1 140px
+    }
+
+    label.small {
+      font-size: 12px;
+      color: #45607d
+    }
+
+    input[type="text"],
+    input[type="time"],
+    select,
+    textarea {
+      width: 100%;
+      font-size: 14px;
+      padding: 7px 9px;
+      border: 1px solid #d6e3f7;
+      border-radius: 10px;
+      background: #fff
+    }
+
+    textarea {
+      min-height: 80px
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid #cfe1fb;
+      background: #f6faff;
+      color: #0a2b5a;
+      padding: 7px 10px;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer
+    }
+
+    button.primary {
+      background: #1e7bd8;
+      border-color: #1e7bd8;
+      color: #fff
+    }
+
+    button.warn {
+      background: #ffe9e9;
+      border-color: #ffd0d0;
+      color: #8b1a1a
+    }
+
+    button.ghost {
+      background: #fff
+    }
+
+    .btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .hint {
+      color: #5c738f;
+      font-size: 12px
+    }
+
+    .mono {
+      font-family: ui-monospace, Consolas, Menlo, monospace
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid var(--br);
+      background: #fff;
+      border-radius: 12px;
+      table-layout: fixed
+    }
+
+    th,
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #edf3fb;
+      font-size: 13px;
+      text-align: left
+    }
+
+    .tight * {
+      font-size: 12px
+    }
+
+    tbody tr:hover {
+      background: #f7fbff
+    }
+
+    .pill {
+      display: inline-block;
+      border: 1px solid #cfe1fb;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      background: #fff
+    }
+
+    .switch {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center
+    }
+
+    .kbd {
+      padding: 1px 6px;
+      border: 1px solid #cfe;
+      border-radius: 6px;
+      background: #f9fcff;
+      font-size: 12px
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box
+    }
+
+    .grid,
+    .card,
+    .row {
+      min-width: 0;
+      max-width: 100%
+    }
+
+    .card {
+      overflow: hidden
+    }
+
+    .row>* {
+      min-width: 0;
+    }
+
+    input[type="text"],
+    input[type="time"],
+    select,
+    textarea {
+      max-width: 100%
+    }
+
+    #dow-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px
+    }
+
+    /* 欄寬：6 欄（啟用/時間/週/類型/標題/動作） */
+    col#col-enable {
+      width: var(--w-enable)
+    }
+
+    col#col-time {
+      width: var(--w-time)
+    }
+
+    col#col-dow {
+      width: var(--w-dow)
+    }
+
+    col#col-type {
+      width: var(--w-type)
+    }
+
+    col#col-title {
+      width: var(--w-title)
+    }
+
+    col#col-actions {
+      width: var(--w-actions)
+    }
+
+    /* 對齊：啟用/時間/週/類型置中，標題靠左，動作靠右 */
+    tbody td:nth-child(1),
+    thead th:nth-child(1) {
+      text-align: center
+    }
+
+    tbody td:nth-child(2),
+    thead th:nth-child(2) {
+      text-align: center
+    }
+
+    tbody td:nth-child(3),
+    thead th:nth-child(3) {
+      text-align: center
+    }
+
+    tbody td:nth-child(4),
+    thead th:nth-child(4) {
+      text-align: center
+    }
+
+    td.actions {
+      white-space: nowrap
+    }
+
+    /* 這三欄左右內距縮小（啟用、時間、類型） */
+    tbody td:nth-child(1),
+    tbody td:nth-child(2),
+    tbody td:nth-child(4) {
+      padding-left: 8px;
+      padding-right: 6px;
+    }
+
+    /* 動作欄縮小按鈕 */
+    td.actions .ops {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-xs {
+      padding: 2px 6px;
+      font-size: 12px;
+      border-radius: 8px;
+      line-height: 1.2;
+    }
+
+    td.actions .pill {
+      margin-left: 6px;
+    }
+
+    /* 明細（下一行跨欄） */
+    tr.detail-row td {
+      background: #fbfdff;
+      border-top: 1px dashed #e6effa;
+      padding-top: 10px;
+      padding-bottom: 12px;
+      text-align: left !important;
+    }
+
+    .detail-wrap {
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      color: #24415c;
+      font-size: 13px;
+      line-height: 1.5
+    }
+
+    .detail-wrap .mono {
+      font-family: ui-monospace, Consolas, Menlo, monospace;
+    }
+  </style>
+
+  <style>
+    input[type="time"]::-webkit-datetime-edit-ampm-field {
+      display: none;
+    }
+
+    input[type="time"]::-webkit-clear-button,
+    input[type="time"]::-webkit-inner-spin-button {
+      display: none;
+    }
+
+    input[type="time"] {
+      letter-spacing: .5px;
+    }
+  </style>
+  <script defer src="auth.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="title">🕒 排程 · 接收端</div>
+    <div class="links">
+      <span id="nowText"
+        style="margin-right:12px;opacity:.9;display:inline-block;min-width:140px;text-align:right">--:--:--</span>
+      <a href="index.html">🎛 主控台</a>
+      <a href="sched.html">🕐 排程</a>
+      <a href="single_reservation.html">📅 預約</a>
+      <a href="tt.html">📚 課表</a>
+      <span class="sep">|</span>
+      <a href="taigi_edu.html">🇹🇼 本土語</a>
+      <a href="eew.html">🌋 地震</a>
+      <a href="relay4.html">📣 分區</a>
+      <a href="silent-dashboard.html">🔇 無聲</a>
+      <span class="sep">|</span>
+      <a href="broadcast.html" target="_blank">🎙️ 行動</a>
+      <a href="live.html">🔴 直播</a>
+      <a href="teacher_call.html" target="_blank">📹 通話</a>
+      <a href="shortcuts.html">⚡ 快捷</a>
+      <a href="buddha.html">🕌 佛教</a>
+      <span class="sep">|</span>
+      <a href="clients.html" target="_blank">👥 設備</a>
+      <a href="/teacher?key=teacher" target="_blank">🎵 媒體</a>
+      <a href="logs.html">🗒 紀錄</a>
+    </div>
+  </header>
+  <main>
+
+
+
+
+    <div class="grid">
+      <!-- 左：新增/編輯 -->
+      <div>
+
+
+
+        <div class="card">
+          <h3>➕ 新增 / 編輯排程</h3>
+          <div class="row stretch">
+            <div>
+              <label class="small">標題</label>
+              <input id="sc-title" type="text" placeholder="例如：第1節上課鈴" />
+            </div>
+            <div>
+              <label class="small">時間</label>
+              <div id="time24" class="time24" style="display:inline-flex;gap:4px;align-items:center;">
+                <input id="t24-hh" type="number" min="0" max="23" step="1" style="width:3.2em;text-align:center" /> :
+                <input id="t24-mi" type="number" min="0" max="59" step="1" style="width:3.2em;text-align:center" /> :
+                <input id="t24-ss" type="number" min="0" max="59" step="1" style="width:3.2em;text-align:center" />
+              </div>
+              <input id="sc-time" type="hidden" />
+            </div>
+          </div>
+          <div class="row">
+            <label class="small">星期</label>
+            <span id="dow-box"></span>
+          </div>
+          <div class="row stretch">
+            <div>
+              <label class="small">動作類型</label>
+              <select id="sc-type" style="width:65%">
+                <option value="cmd">/cmd 指令</option>
+                <option value="send">/send 文字播報</option>
+                <option value="special">/special</option>
+              </select>
+              <select id="sc-lang" style="width:30%">
+                <option value="zh">國語</option>
+                <option value="tw">台語</option>
+              </select>
+            </div>
+            <div>
+              <label class="small">常用</label>
+              <select id="quick">
+                <option value="">（選取插入）</option>
+                <option value="CancelALL">CancelALL</option>
+                <option value="Bell:ClassStart">Bell:ClassStart</option>
+                <option value="Bell:ClassEnd">Bell:ClassEnd</option>
+                <option value="Bell:EarthquakeAlarm">Bell:EarthquakeAlarm</option>
+                <option value="WeatherReport">WeatherReport</option>
+              </select>
+            </div>
+          </div>
+          <div class="row stretch">
+            <div>
+              <label class="small">內容 / 指令</label>
+              <textarea id="sc-payload" placeholder="例如：PlayMP3:flagsong.mp3 或 要播報的文字…"></textarea>
+            </div>
+          </div>
+          <div class="row stretch">
+            <div>
+              <label class="small">插入 MP3（從 /files）</label>
+              <select id="mp3-list"></select>
+            </div>
+            <div>
+              <label class="small">觸發容忍（秒）</label>
+              <input id="sc-jitter" type="text" value="5" />
+            </div>
+          </div>
+          <div class="row">
+            <label class="switch"><input id="sc-enabled" type="checkbox" checked /> 啟用</label>
+            <label class="switch"><input id="sc-autounmute" type="checkbox" checked /> 播放前自動解靜音</label>
+            <label class="switch"><input id="sc-cancel" type="checkbox" /> 先送 CancelALL</label>
+          </div>
+          <div class="btns">
+            <button id="btn-save" class="primary">💾 儲存（新增或更新）</button>
+            <button id="btn-clear" class="ghost">🧹 清空表單</button>
+            <button id="btn-try" title="立即試播，不寫入排程">▶️ 試播</button>
+          </div>
+          <div class="btns" style="margin-top:8px; padding-top:8px; border-top:1px dashed #ddd">
+            <span class="hint" style="margin-right:4px">台語工具：</span>
+            <button id="btn-taigi-trans" class="secondary" title="將輸入內容翻譯成台語">📝 先翻成台文</button>
+            <button id="btn-taigi-say" class="secondary" title="試聽目前內容 (TTS)">🗣️ 講台語</button>
+            <button id="btn-taigi-dl" class="secondary" title="產生並下載語音檔">💾 下載台語語音檔</button>
+            <div id="taigi-dl-area" style="display:none; margin-left:8px; align-items:center; gap:4px">
+              <a id="taigi-dl-link" href="#" download>下載</a>
+              <audio id="taigi-preview-audio" controls style="height:30px"></audio>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3>🗂 檔案 / 設定</h3>
+          <div class="btns">
+            <button id="btn-load-remote">⬇️ 從伺服器讀取 /schedules</button>
+            <button id="btn-save-remote">⬆️ 上傳到 /schedules</button>
+          </div>
+          <div class="btns" style="margin-top:6px">
+            <button id="btn-export">📤 匯出 JSON</button>
+            <input id="import-file" type="file" accept="application/json" style="display:none" />
+            <button id="btn-import" class="ghost">📥 匯入 JSON</button>
+            <span class="hint">伺服器失敗時會自動改用 localStorage（離線可用）。</span>
+          </div>
+          <div class="row">
+            <label><input id="srv-sched" type="checkbox" checked /> 由伺服器排程（建議）</label>
+            <span id="srv-next" class="hint" style="margin-left:10px">🔔 下一次：—</span>
+          </div>
+        </div>
+
+
+
+      </div>
+
+      <!-- 右：清單 -->
+      <div>
+        <div class="card">
+          <h3>📋 排程清單 <span id="count" class="pill">0</span></h3>
+          <table>
+            <colgroup>
+              <col id="col-enable">
+              <col id="col-time">
+              <col id="col-dow">
+              <col id="col-type">
+              <col id="col-title">
+              <col id="col-actions">
+            </colgroup>
+            <thead>
+              <tr style="height:0;visibility:collapse">
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+              </tr>
+              <tr>
+                <th>啟用</th>
+                <th>時間</th>
+                <th>週</th>
+                <th>類型</th>
+                <th>標題</th>
+                <th>動作</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const $ = (sel, root = document) => root.querySelector(sel);
+      const h = (tag, attrs = {}, ...kids) => {
+        const el = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) {
+          if (k === 'class') el.className = v; else if (k === 'html') el.innerHTML = v; else el.setAttribute(k, v);
+        } kids.flat().forEach(k => el.appendChild(typeof k === 'string' ? document.createTextNode(k) : k)); return el;
+      };
+
+      // ===== API BASE =====
+      // If running on file:// or not on port 5000, assume backend is at http://localhost:5000
+      // You can change this default if your backend runs elsewhere.
+      const API_BASE = (location.protocol === 'file:' || location.port !== '5050')
+        ? 'http://localhost:5050'
+        : '';
+
+      // Helper for fetch with API_BASE
+      const apiFetch = (path, opts) => fetch(API_BASE + path, opts);
+      window.apiFetch = apiFetch;
+
+
+
+
+
+      // ===== State =====
+      let items = []; // in-memory schedules
+      let editingId = null; // uuid string
+      let lastFiredKey = null; // 防重
+      const DOW = ['一', '二', '三', '四', '五', '六', '日'];
+
+      // ===== UI build =====
+      const dowBox = $('#dow-box');
+      DOW.forEach((ch, i) => {
+        const id = `dow${i + 1}`;
+        const wrap = h('label', { class: 'switch' });
+        wrap.appendChild(Object.assign(h('input', { type: 'checkbox', id }), { checked: [0, 1, 2, 3, 4].includes(i) }));
+        wrap.append(` 週${ch}`);
+        dowBox.appendChild(wrap);
+      });
+
+      // load mp3 list
+      async function loadFiles() {
+        try {
+          const r = await apiFetch('/files');
+          const j = await r.json();
+          const sel = $('#mp3-list'); sel.innerHTML = '';
+          const def = h('option', { value: '' }); def.textContent = '（從清單插入 PlayMP3:xxx）'; sel.appendChild(def);
+          if (j && j.ok && Array.isArray(j.files)) {
+            j.files.forEach(f => {
+              const op = h('option', { value: `PlayMP3:${f.name}` });
+              op.textContent = `${f.name} (${(f.size / 1024).toFixed(0)} KB)`;
+              sel.appendChild(op);
+            });
+          }
+        } catch { /* ignore */ }
+      }
+      loadFiles();
+
+      $('#mp3-list').addEventListener('change', e => {
+        const v = e.target.value; if (!v) return; const t = $('#sc-payload');
+        if (t.value && !t.value.endsWith('\n')) t.value += '\n';
+        t.value += v;
+        e.target.value = '';
+      });
+
+      $('#quick').addEventListener('change', e => {
+        if (!e.target.value) return; const t = $('#sc-payload');
+        if (t.value && !t.value.endsWith('\n')) t.value += '\n';
+        t.value += e.target.value; e.target.value = '';
+      });
+
+      // ===== CRUD helpers =====
+      const uid = () => 's_' + Math.random().toString(36).slice(2, 9);
+      const saveLocal = () => localStorage.setItem('schedules', JSON.stringify(items));
+      const loadLocal = () => { try { return JSON.parse(localStorage.getItem('schedules') || '[]'); } catch { return [] } };
+
+      function formToItem() {
+        const days = DOW.map((_, i) => $('#dow' + (i + 1)).checked ? (i + 1) : null).filter(Boolean);
+        return {
+          id: editingId || uid(),
+          title: $('#sc-title').value.trim() || '（未命名）',
+          time: (function () { const raw = $('#sc-time').value || '08:00:00'; return raw.length === 5 ? (raw + ':00') : raw; })(),
+          days,
+          type: $('#sc-type').value,
+          payload: (function () {
+            const raw = $('#sc-payload').value.trim();
+            const lang = $('#sc-lang').value;
+            if (lang === 'tw' && !raw.startsWith('lang:tw|')) return 'lang:tw|' + raw;
+            if (lang === 'zh' && raw.startsWith('lang:tw|')) return raw.replace(/^lang:tw\|/, '');
+            return raw;
+          })(),
+          enabled: $('#sc-enabled').checked,
+          auto_unmute: $('#sc-autounmute').checked,
+          cancel_all: $('#sc-cancel').checked,
+          jitter: Math.max(0, parseInt($('#sc-jitter').value || '0', 10) || 0)
+        };
+      }
+
+      function fillForm(it) {
+        editingId = it?.id || null;
+        $('#sc-title').value = it?.title || '';
+
+        // 只有在「新增」時才預填 now+1m；編輯時沿用現有 it.time
+        const want = (it && it.time)
+          ? ((it.time.length === 5) ? (it.time + ':00') : it.time)
+          : (function () { const d = new Date(); d.setMinutes(d.getMinutes() + 1); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`; })();
+        $('#sc-time').value = want;
+        try { t24_syncVisible(); } catch (e) { }
+
+        $('#dow-box').querySelectorAll('input').forEach((el, i) => el.checked = !!(it?.days || []).includes(i + 1));
+        $('#sc-type').value = it?.type || 'cmd';
+
+        const rawP = it?.payload || '';
+        if (rawP.startsWith('lang:tw|')) {
+          $('#sc-lang').value = 'tw';
+          $('#sc-payload').value = rawP.replace(/^lang:tw\|/, '');
+        } else {
+          $('#sc-lang').value = 'zh';
+          $('#sc-payload').value = rawP;
+        }
+
+        $('#sc-enabled').checked = !!it?.enabled;
+        $('#sc-autounmute').checked = it?.auto_unmute ?? true;
+        $('#sc-cancel').checked = !!it?.cancel_all;
+        $('#sc-jitter').value = it?.jitter ?? 5;
+      }
+
+      function clearForm() { editingId = null; fillForm({ days: [1, 2, 3, 4, 5], time: '08:00:00', type: 'cmd', enabled: true, auto_unmute: true, jitter: 5, payload: '' }); }
+
+      function sortItems() { items.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : (a.title || '').localeCompare(b.title || ''))); }
+
+      function render() {
+        sortItems();
+        const tb = $('#tbody'); tb.innerHTML = '';
+        const nowDow = (new Date().getDay() + 6) % 7 + 1; // 1..7, Monday=1
+
+        items.forEach(it => {
+          // 第一行：主列
+          const tr = h('tr');
+
+          // 啟用切換
+          const tdEnable = h('td');
+          const chk = h('input', { type: 'checkbox' });
+          chk.checked = !!it.enabled;
+          chk.title = '啟用/停用';
+          chk.addEventListener('change', () => { it.enabled = chk.checked; saveLocal(); render(); pushRemote(true); });
+          tdEnable.appendChild(chk);
+          tr.appendChild(tdEnable);
+
+          // 時間（顯示到秒）
+          const tShow = (it.time || '08:00:00').slice(0, 8);
+          tr.appendChild(h('td', { html: `<span class="mono">${tShow}</span>` }));
+
+          // 週
+          tr.appendChild(h('td', { html: (it.days || []).map(d => '一二三四五六日'[d - 1]).join('') }));
+
+          // 類型
+          tr.appendChild(h('td', { html: it.type }));
+
+          // 標題
+          const titleEsc = (it.title || '').replace(/</g, '&lt;');
+          tr.appendChild(h('td', { html: titleEsc || '—' }));
+
+          // 動作按鈕
+          const ops = h('div', { class: 'ops' });
+          ops.appendChild(btn('編輯', () => fillForm(it), 'btn-xs'));
+          ops.appendChild(btn('刪除', () => delItem(it.id), 'warn btn-xs'));
+          ops.appendChild(btn('試播', () => trySend(it), 'btn-xs'));
+          if (it.enabled && (it.days || []).includes(nowDow)) {
+            ops.appendChild(h('span', { class: 'pill' }, '今日'));
+          }
+          const tdOps = h('td', { class: 'actions' });
+          tdOps.appendChild(ops);
+          tr.appendChild(tdOps);
+
+          tb.appendChild(tr);
+
+          // 第二行：內容明細（跨 6 欄）
+          const tr2 = h('tr', { class: 'detail-row' });
+          const tdDetail = h('td', { colspan: '6' });
+          const payloadEsc = (it.payload || '').replace(/</g, '&lt;');
+
+          let displayPayload = payloadEsc;
+          if (it.payload && it.payload.startsWith('lang:tw|')) {
+            displayPayload = `<span class="pill" style="background:#fff3e0;border-color:#ffb74d;color:#e65100;margin-right:6px">台語</span>` +
+              payloadEsc.replace(/^lang:tw\|/, '');
+          }
+
+          const wrap = h('div', { class: 'detail-wrap' });
+          wrap.innerHTML = displayPayload || '<span style="opacity:.6">（無內容）</span>';
+          tdDetail.appendChild(wrap);
+          tr2.appendChild(tdDetail);
+          tb.appendChild(tr2);
+        });
+
+        $('#count').textContent = items.length;
+      }
+
+      function btn(text, fn, cls = '') {
+        const b = h('button', { class: cls ? cls : '' });
+        b.textContent = text; b.addEventListener('click', fn);
+        return b;
+      }
+
+      function upsert(it) {
+        const i = items.findIndex(x => x.id === it.id);
+        if (i >= 0) items[i] = it; else items.push(it);
+        saveLocal(); render();
+        pushRemote(true);
+      }
+      function delItem(id) { items = items.filter(x => x.id !== id); saveLocal(); render(); pushRemote(true); }
+
+      // ===== Remote sync (/schedules) =====
+      async function pullRemote(silent = false) {
+        try {
+          const r = await apiFetch('/schedules', { cache: 'no-store' });
+          if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+          const j = await r.json();
+          const arr = Array.isArray(j) ? j : (j.items || j.schedules || j.data || []);
+          if (Array.isArray(arr)) {
+            items = normalizeList(arr);
+            saveLocal(); render();
+            if (!silent) alert('✅ 已從伺服器讀取排程');
+          } else throw new Error('回應格式不含 items');
+        } catch (e) {
+          if (!silent) {
+            items = loadLocal(); render(); alert('⚠️ 伺服器不可用，已改用本機儲存的排程');
+          } else {
+            console.warn('Auto-load failed, keeping local items.', e);
+          }
+        }
+      }
+      async function pushRemote(silent = false) {
+        try {
+          const body = JSON.stringify(items);
+          const r = await apiFetch('/schedules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+          if (!r.ok) throw new Error(r.status + '');
+          if (!silent) alert('✅ 已上傳到伺服器');
+          else console.log('已自動同步到後端');
+        } catch (e) {
+          if (!silent) alert('⚠️ 上傳失敗，仍已保存在本機（localStorage）');
+          else console.warn('自動同步失敗', e);
+        }
+      }
+      function normalizeList(arr) {
+        return arr.map(x => ({
+          id: x.id || uid(),
+          title: x.title || x.label || '（未命名）',
+          time: (function (t) {
+            if (!t) return '08:00:00';
+            if (t.length === 5) return t + ':00';
+            const m = t.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+            if (!m) return '08:00:00';
+            const hh = String(Math.min(23, Math.max(0, parseInt(m[1], 10)))).padStart(2, '0');
+            const mi = String(Math.min(59, Math.max(0, parseInt(m[2], 10)))).padStart(2, '0');
+            const ss = String(Math.min(59, Math.max(0, parseInt(m[3] || '0', 10)))).padStart(2, '0');
+            return `${hh}:${mi}:${ss}`;
+          })(x.time),
+          days: x.days || x.dows || x.weekdays || [],
+          type: x.type || (x.action && guessType(x.action)) || 'cmd',
+          payload: x.payload || x.action || '',
+          enabled: x.enabled !== false,
+          auto_unmute: !!(x.auto_unmute ?? true),
+          cancel_all: !!x.cancel_all,
+          jitter: x.jitter ?? 5
+        }));
+      }
+      function guessType(s) {
+        if (!s) return 'cmd';
+        if (/^showmsg|^silentmsg/i.test(s)) return 'special';
+        if (/\s/.test(s) || !/^[A-Za-z]+:/.test(s)) return 'send';
+        return 'cmd';
+      }
+
+      // ===== Trigger (1s tick) =====
+      function tick() {
+        try { if (!tt_loadEnabled()) return; } catch (e) { }
+        try { if (hol_isTodayHoliday()) return; } catch (e) { }
+        try {
+          const chk = document.getElementById("srv-sched");
+          if (chk && chk.checked) return; // 交給伺服器排程
+        } catch (e) { }
+
+        try {
+          const now = new Date();
+          const hh = String(now.getHours()).padStart(2, '0');
+          const mm = String(now.getMinutes()).padStart(2, '0');
+          const ss = String(now.getSeconds()).padStart(2, '0');
+          const todayDow = (now.getDay() + 6) % 7 + 1;
+          items.forEach(it => {
+            if (!it.enabled) return;
+            if (it.days.length && !it.days.includes(todayDow)) return;
+            const t0 = it.time || '08:00:00';
+            const t = (t0.length === 5) ? (t0 + ':00') : t0;
+            const [th, tm, ts] = t.split(':').map(x => parseInt(x, 10));
+            if (parseInt(hh, 10) !== th || parseInt(mm, 10) !== tm) return;
+            const jitter = it.jitter || 0;
+            const diff = Math.abs(parseInt(ss, 10) - ts);
+            if (diff > jitter) return;
+            const key = `${it.id}@${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${hh}${mm}${String(ts).padStart(2, '0')}`;
+            if (lastFiredKey === key) return;
+            lastFiredKey = key;
+            trySend(it);
+          });
+        } catch { }
+      }
+      setInterval(tick, 1000);
+
+      // ===== Send helpers =====
+      function detectLang(s) {
+        if (/[\u3400-\u9FFF]/.test(s)) return 'zh';
+        if (/[áàâăāēíìîīóòôōúùûū][1-9]?|[ⁿ·]/i.test(s) && /[a-z]/i.test(s)) return 'nan';
+        return 'zh'; // Default safe fallback
+      }
+
+      // ===== Send helpers =====
+      async function trySend(it) {
+        const seq = [];
+        if (it.cancel_all) seq.push('CancelALL');
+        if (it.auto_unmute) seq.push('Unmute');
+
+        // 解析 payload，檢查是否有 lang:tw| 前綴
+        let rawPayload = it.payload || '';
+        let isTaigi = false;
+        if (rawPayload.startsWith('lang:tw|')) {
+          isTaigi = true;
+          rawPayload = rawPayload.replace(/^lang:tw\|/, '');
+        }
+
+        if (it.type === 'cmd') {
+          // If Taigi, re-add prefix for cmd type too
+          const finalVal = isTaigi ? ('lang:tw|' + rawPayload) : rawPayload;
+          seq.push({ type: 'cmd', val: finalVal });
+        }
+        else if (it.type === 'send') seq.push({ type: 'send', val: rawPayload, taigi: isTaigi });
+        else if (it.type === 'special') {
+          // If Taigi, we MUST re-add the prefix so backend handle_msg detects it
+          const finalVal = isTaigi ? ('lang:tw|' + rawPayload) : rawPayload;
+          const val = finalVal.startsWith('ShowMsg') || finalVal.startsWith('SilentMsg') ? finalVal : ('ShowMsg: ' + finalVal);
+          seq.push({ type: 'special', val: val });
+        }
+
+        for (const item of seq) {
+          const s = (typeof item === 'string') ? item : item.val;
+          if (!s) continue;
+
+          // 如果是 cmd 類 (CancelALL, Unmute)
+          if (typeof item === 'string') {
+            try { await apiFetch('/cmd', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ cmd: s }) }); } catch (_) { }
+            await sleep(60);
+            continue;
+          }
+
+          // 如果是物件
+          if (item.type === 'cmd') {
+            try { await apiFetch('/cmd', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ cmd: item.val }) }); } catch (_) { }
+          }
+          else if (item.type === 'special') {
+            try { await apiFetch('/special', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ msg: item.val }) }); } catch (_) { }
+          }
+          else if (item.type === 'send') {
+            if (item.taigi) {
+              // 台語模式：加上 prefix 後直接送去 /send，讓前端 (announce.html) 收到後自己處理 TTS
+              // 這樣所有連線的班級都能聽到，而不是只有 Server 把自己當 Client 播放
+              const finalMsg = 'lang:tw|' + (item.val || '');
+              try { await apiFetch('/send', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ msg: finalMsg }) }); } catch (_) { }
+            } else {
+              // 一般模式
+              try { await apiFetch('/send', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ msg: item.val }) }); } catch (_) { }
+            }
+          }
+          await sleep(60);
+        }
+      }
+      const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+      // ===== Wire buttons =====
+      $('#btn-save').addEventListener('click', () => { const it = formToItem(); upsert(it); clearForm(); });
+      $('#btn-clear').addEventListener('click', clearForm);
+      $('#btn-try').addEventListener('click', () => trySend(formToItem()));
+      $('#btn-load-remote').addEventListener('click', pullRemote);
+      $('#btn-save-remote').addEventListener('click', pushRemote);
+      $('#btn-export').addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob); const a = h('a', { href: url, download: 'schedules.json' }); document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      });
+      $('#btn-import').addEventListener('click', () => $('#import-file').click());
+      $('#import-file').addEventListener('change', async (e) => {
+        const f = e.target.files[0]; if (!f) return; const txt = await f.text();
+        try { items = normalizeList(JSON.parse(txt)); saveLocal(); render(); alert('✅ 已匯入'); } catch { alert('❌ JSON 格式不正確'); }
+        e.target.value = '';
+      });
+
+      // ===== init =====
+
+
+
+
+
+
+
+      items = loadLocal();
+      render();
+      clearForm();
+
+      // Auto-load from remote on startup
+      pullRemote(true);
+
+      // ===== Auto Sync & Server Status Logic =====
+      function itemsEqual(a, b) {
+        try { return JSON.stringify(a) === JSON.stringify(b); } catch (e) { return false; }
+      }
+
+      // Next Status Loop
+      (async function serverNextLoop() {
+        async function once() {
+          try {
+            const r = await apiFetch('/schedules/status');
+            if (!r.ok) return;
+            const j = await r.json();
+            const el = document.getElementById('srv-next');
+            if (!el) return;
+            const holStop = (function () { try { return hol_isTodayHoliday(); } catch (e) { return false; } })();
+            const ttStop = (function () { try { return !tt_loadEnabled(); } catch (e) { return false; } })();
+            if (ttStop) { el.textContent = '🔔 下一次：—（課表總開關：已停止）'; return; }
+            if (holStop) { el.textContent = '🔔 下一次：—（今日國定假日，本機已暫停）'; return; }
+            if (j && j.has_next && j.next && j.next.at) {
+              el.textContent = '🔔 下一次：' + j.next.at + (j.next.title ? '｜' + j.next.title : '');
+            } else {
+              el.textContent = '🔔 下一次：—';
+            }
+          } catch (e) { }
+        }
+        await once();
+        setInterval(once, 5000);
+      })();
+
+      // Background Sync Loop
+      (async function serverSyncLoop() {
+        async function once() {
+          try {
+            const chk = document.getElementById('srv-sched');
+            if (!chk || !chk.checked) return;
+            if (typeof editingId !== 'undefined' && editingId) return; // 正在編輯不更新
+
+            const r = await apiFetch('/schedules', { cache: 'no-store' });
+            if (!r.ok) return;
+            const j = await r.json();
+            const arr = Array.isArray(j) ? j : (j.items || j.schedules || j.data || []);
+            if (!Array.isArray(arr)) return;
+
+            const srvItems = normalizeList(arr);
+            if (!itemsEqual(items, srvItems)) {
+              items = srvItems;
+              saveLocal(); render();
+              console.log('Background sync updated items');
+            }
+          } catch (e) { }
+        }
+        setInterval(once, 5000);
+      })();
+    })();
+  </script>
+
+  <script>
+    (function () {
+      function pad2(n) { return String(n).padStart(2, '0'); }
+      function fmt(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); }
+      function startClock() { function tick() { var el = document.getElementById('nowText'); if (el) el.textContent = fmt(new Date()); } tick(); setInterval(tick, 1000); }
+      document.addEventListener('DOMContentLoaded', startClock);
+    })();
+  </script>
+
+  <script>
+    (function () {
+      function pad2(n) { return String(n).padStart(2, '0'); }
+      function clamp(v, min, max) { v = parseInt(v || 0, 10); if (isNaN(v)) v = min; return Math.min(max, Math.max(min, v)); }
+
+      function t24_syncHidden() {
+        var hh = clamp(document.getElementById('t24-hh')?.value, 0, 23);
+        var mi = clamp(document.getElementById('t24-mi')?.value, 0, 59);
+        var ss = clamp(document.getElementById('t24-ss')?.value, 0, 59);
+        var v = pad2(hh) + ':' + pad2(mi) + ':' + pad2(ss);
+        var hid = document.getElementById('sc-time');
+        if (hid) { hid.value = v; }
+      }
+      function t24_syncVisible() {
+        var hid = document.getElementById('sc-time');
+        var v = (hid && hid.value) ? hid.value : '08:00:00';
+        var m = v.split(':');
+        var hh = parseInt(m[0] || '8', 10), mi = parseInt(m[1] || '0', 10), ss = parseInt(m[2] || '0', 10);
+        var H = document.getElementById('t24-hh');
+        var M = document.getElementById('t24-mi');
+        var S = document.getElementById('t24-ss');
+        if (H) H.value = pad2(clamp(hh, 0, 23));
+        if (M) M.value = pad2(clamp(mi, 0, 59));
+        if (S) S.value = pad2(clamp(ss, 0, 59));
+      }
+      function t24_bind() {
+        var ids = ['t24-hh', 't24-mi', 't24-ss'];
+        ids.forEach(function (id) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          el.addEventListener('input', t24_syncHidden);
+          el.addEventListener('change', t24_syncHidden);
+          el.addEventListener('blur', function () { t24_syncHidden(); t24_syncVisible(); });
+          el.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+              var step = (e.key === 'ArrowUp') ? 1 : -1;
+              var min = parseInt(el.getAttribute('min'), 10);
+              var max = parseInt(el.getAttribute('max'), 10);
+              var val = clamp(el.value, min, max) + step;
+              if (val > max) val = min;
+              if (val < min) val = max;
+              el.value = pad2(val);
+              t24_syncHidden();
+              e.preventDefault();
+            }
+          });
+        });
+        t24_syncVisible();
+        t24_syncHidden();
+      }
+      window.t24_syncHidden = t24_syncHidden;
+      window.t24_syncVisible = t24_syncVisible;
+
+      document.addEventListener('DOMContentLoaded', t24_bind);
+    })();
+  </script>
+
+
+  <script>
+    const es = new EventSource(API_BASE + '/schedules/stream');
+    es.addEventListener('schedules', (ev) => {
+      const data = JSON.parse(ev.data); // { version, items }
+      // TODO: 可依 data.items 更新你的自訂排程清單 UI
+    });
+  </script>
+
+  <!-- Taigi integration: add 'tw' and reroute fetch for tw ＋ 防止 source/target 相同 -->
+  <script>
+    (function () {
+      const addTw = sel => {
+        sel.forEach(s => {
+          if (!s) return;
+          const exists = Array.from(s.options || []).some(o => (o.value || '').toLowerCase() === 'tw');
+          if (!exists) {
+            const opt = document.createElement('option');
+            opt.value = 'tw'; opt.textContent = '台語 (Taigi)';
+            s.appendChild(opt);
+          }
+        });
+      };
+      // For sched.html, we mainly care if any other selects need this, but we manually added 'tw' option to #sc-lang already.
+      // But we include this for consistency with index.html
+      addTw([
+        document.querySelector('#sc-lang') // Ensure it has it if we missed it
+      ]);
+
+      const _fetch = window.fetch;
+      window.fetch = async function (input, init) {
+        try {
+          const url = (typeof input === 'string') ? input : (input && input.url) || '';
+          const isTranslate = /\/translate(\b|$)/.test(url);
+          const isTTS = /\/(tts|speak)(\b|$)/.test(url);
+
+          if ((isTranslate || isTTS) && init && init.method && init.method.toUpperCase() === 'POST') {
+            let targetLang = '';
+            let bodyObj = {};
+            let ct = '';
+
+            if (init.headers && (init.headers['Content-Type'] || (init.headers.get && init.headers.get('Content-Type')))) {
+              ct = (init.headers['Content-Type'] || init.headers.get('Content-Type')).toLowerCase();
+              if (ct.includes('application/json')) {
+                try { bodyObj = JSON.parse(init.body); } catch (_) { bodyObj = {}; }
+              } else if (ct.includes('application/x-www-form-urlencoded')) {
+                const params = new URLSearchParams(init.body);
+                params.forEach((v, k) => { bodyObj[k] = v; });
+              }
+            }
+
+            const low = v => String(v || '').toLowerCase();
+            const normCode = c => {
+              c = low(c);
+              if (!c) return '';
+              return c.split(/[-_]/)[0];
+            };
+
+            targetLang = low(bodyObj.target || bodyObj.to || bodyObj.lang || '');
+            let sourceLang = low(bodyObj.source || bodyObj.from || bodyObj.src || '');
+            const srcNorm = normCode(sourceLang);
+            const tgtNorm = normCode(targetLang);
+
+            // 🔒 防呆：來源與目標一樣時，自動把 source 改成 auto，避免 PLEASE SELECT TWO DISTINCT LANGUAGES
+            if (srcNorm && tgtNorm && srcNorm === tgtNorm) {
+              if ('source' in bodyObj) bodyObj.source = 'auto';
+              if ('from' in bodyObj) bodyObj.from = 'auto';
+              if (!('source' in bodyObj) && !('from' in bodyObj)) bodyObj.source = 'auto';
+            }
+
+            if (ct.includes('application/json')) {
+              init.body = JSON.stringify(bodyObj);
+            } else if (ct.includes('application/x-www-form-urlencoded')) {
+              const p2 = new URLSearchParams();
+              Object.entries(bodyObj).forEach(([k, v]) => p2.append(k, v));
+              init.body = p2.toString();
+            }
+
+            // Taigi 特例轉接：target = tw 時改走 /taigi API
+            if (targetLang === 'tw') {
+              if (isTranslate) {
+                return _fetch('/taigi/translate', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    text: bodyObj.text || bodyObj.q || '',
+                    source: bodyObj.source || bodyObj.from || 'zhtw',
+                    target: 'tw'
+                  })
+                });
+              }
+              if (isTTS) {
+                return _fetch('/taigi/tts', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    text: bodyObj.text || bodyObj.q || '',
+                    lang: 'tw',
+                    gender: (bodyObj.gender || 'f')
+                  })
+                });
+              }
+            }
+          }
+        } catch (e) { console.warn('[Taigi fetch-wrap warn]', e); }
+        return _fetch(input, init);
+      };
+    })();
+  </script>
+
+
+
+
+  <script>
+    (function () {
+      const $ = (s) => document.querySelector(s);
+
+      // Helper: Detect Lang (simple version)
+      function detectLang(s) {
+        if (/[\u3400-\u9FFF]/.test(s)) return 'zh';
+        if (/[áàâăāēíìîīóòôōúùûū][1-9]?|[ⁿ·]/i.test(s) && /[a-z]/i.test(s)) return 'nan';
+        return 'zh'; // default
+      }
+
+      // Helper: Get cleaned text from payload
+      function getPayloadText() {
+        let raw = $('#sc-payload').value || '';
+        if (raw.startsWith('lang:tw|')) raw = raw.replace(/^lang:tw\|/, '');
+        if (raw.startsWith('lang:nan|')) raw = raw.replace(/^lang:nan\|/, '');
+        return raw.trim();
+      }
+
+      // 1. Translate
+      $('#btn-taigi-trans').addEventListener('click', async (e) => {
+        e.preventDefault();
+        const txt = getPayloadText();
+        if (!txt) return alert('請先輸入文字');
+
+        try {
+          const src = detectLang(txt);
+          const dir = (src === 'zh') ? 'zh2nan' : 'nan2zh';
+          // Use fetch directly to bypass interceptor overrides if needed, or just use apiFetch
+          const r = await fetch('/taigi/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: txt, direction: dir })
+          });
+          const j = await r.json();
+          if (j.ok && j.text) {
+            $('#sc-payload').value = j.text; // Replace with translation
+            $('#sc-lang').value = 'tw'; // Auto-switch to Taigi
+          } else {
+            alert('翻譯失敗：' + (j.error || '未知的錯誤'));
+          }
+        } catch (e) { alert('翻譯錯誤：' + e); }
+      });
+
+      // 2. Speak (Server)
+      $('#btn-taigi-say').addEventListener('click', async (e) => {
+        e.preventDefault();
+        const txt = getPayloadText();
+        if (!txt) return alert('請先輸入文字');
+
+        try {
+          // If already translated (romanization), use raw. If Chinese, user should click translate first?
+          // The button says "Speak", matching index.html 'sayTaigi'.
+          // index.html sayTaigi uses direction="raw". So we assume it's ready to read.
+          await fetch('/taigi/say', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: txt, gender: 'f', direction: 'raw', play: true })
+          });
+        } catch (e) { alert('播放請求失敗：' + e); }
+      });
+
+      // 3. Download (Preview)
+      $('#btn-taigi-dl').addEventListener('click', async (e) => {
+        e.preventDefault();
+        const txt = getPayloadText();
+        if (!txt) return alert('請先輸入文字');
+        const dlArea = $('#taigi-dl-area');
+        const dlLink = $('#taigi-dl-link');
+        const audio = $('#taigi-preview-audio');
+
+        try {
+          const r = await fetch('/taigi/say', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: txt, gender: 'f', direction: 'raw', play: false })
+          });
+          const j = await r.json();
+          const url = j.url || (j.file ? ('/taigi/audio/' + encodeURIComponent(j.file)) : '');
+          if (url) {
+            dlLink.href = url;
+            dlLink.textContent = j.file || '下載';
+            audio.src = url;
+            dlArea.style.display = 'flex';
+          } else {
+            alert('無法取得語音連結');
+          }
+        } catch (e) { alert('產生語音失敗：' + e); }
+      });
+
+    })();
+  </script>
+  <!-- ⛔ Force Cancel Floating Button -->
+  <div id="force-cancel-btn"
+    style="position:fixed;bottom:20px;right:20px;z-index:9999;cursor:pointer;background:#ef4444;color:white;padding:12px 24px;border-radius:50px;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-weight:bold;display:flex;align-items:center;gap:8px;transition:transform 0.1s;font-family:system-ui;">
+    <span style="font-size:18px">⛔</span>
+    <span>強制取消</span>
+  </div>
+  <script>
+    document.getElementById('force-cancel-btn').addEventListener('click', async () => {
+      // if (!confirm('確定要強制取消所有播放嗎？\n(將送出 CancelALL 指令)')) return;
+      try {
+        const btn = document.getElementById('force-cancel-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span>⏳ 處理中...</span>';
+        btn.style.opacity = '0.8';
+
+        // Use relative path by default, or API_BASE if defined globally
+        const apiBase = (typeof API_BASE !== 'undefined') ? API_BASE : '';
+        const r = await fetch(apiBase + '/cmd', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'cmd=CancelALL'
+        });
+
+        if (r.ok) {
+          btn.innerHTML = '<span>✅ 已取消</span>';
+          setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 1500);
+          return;
+        } else {
+          btn.innerHTML = '<span>❌ 失敗</span>';
+          setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 2000);
+          return;
+        }
+
+        btn.innerHTML = originalText;
+        btn.style.opacity = '1';
+      } catch (e) {
+        console.error(e);
+        const btn = document.getElementById('force-cancel-btn');
+        btn.innerHTML = '<span>❌ 錯誤</span>';
+        setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 2000);
+        return;
+        document.getElementById('force-cancel-btn').innerHTML = originalText;
+        document.getElementById('force-cancel-btn').style.opacity = '1';
+      }
+    });
+    // Add hover effect
+    const fcb = document.getElementById('force-cancel-btn');
+    fcb.addEventListener('mousedown', () => fcb.style.transform = 'scale(0.95)');
+    fcb.addEventListener('mouseup', () => fcb.style.transform = 'scale(1)');
+    fcb.addEventListener('mouseleave', () => fcb.style.transform = 'scale(1)');
+  </script>
+</body>
+
+</html>

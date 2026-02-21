@@ -1,0 +1,1112 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>📚 課表控管</title>
+  <style>
+    :root {
+      --brand: #1e7bd8;
+      --bg: #f5f8fb;
+      --card: #ffffff;
+      --border: #d9e8fb;
+      --muted: #5a6b80;
+      --text: #0f172a;
+      --shadow: 0 12px 30px rgba(22, 71, 130, .12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Microsoft JhengHei", Segoe UI, Roboto, Arial;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 16px;
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(21, 82, 150, .25);
+    }
+
+    header .title {
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      font-size: 18px;
+    }
+
+    header .links {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+
+    header .links a {
+      color: #dff1ff;
+      text-decoration: none;
+    }
+
+    header .links .sep {
+      color: rgba(255, 255, 255, 0.4);
+      margin: 0 2px 0 10px;
+      font-size: 11px;
+    }
+
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 1000px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .subtitle {
+      margin: 0 0 6px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: #1a4b8d;
+      font-size: 11px;
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: #f7fbff;
+      border: 1px solid var(--border);
+    }
+
+    .toggle strong {
+      font-size: 13px;
+    }
+
+    .toggle .muted {
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .toggle input {
+      width: 32px;
+      height: 16px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .toolbar .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform .1s ease, filter .1s ease;
+    }
+
+    button.primary {
+      background: var(--brand);
+      color: #fff;
+      border-color: var(--brand);
+    }
+
+    button.ghost {
+      background: #fff;
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    button.flat {
+      background: #eef4ff;
+      border-color: #d4e4ff;
+      color: #1f4a8c;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 12px;
+    }
+
+    th {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: left;
+      padding: 6px 8px;
+    }
+
+    tbody td {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      vertical-align: top;
+    }
+
+    .period-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .slot {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      padding: 6px 8px;
+      border-radius: 6px;
+    }
+
+    .slot:first-child {
+      background-color: #effcf6;
+      /* Light Green */
+      border-bottom: 1px dashed #c0dcc9;
+      padding-bottom: 6px;
+      margin-bottom: 6px;
+    }
+
+    .slot:last-child {
+      background-color: #fff8f0;
+      /* Light Orange */
+    }
+
+    .time-group {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .slot>* {
+      flex-shrink: 0;
+    }
+
+    .slot .tag {
+      display: none;
+    }
+
+    .slot select,
+    .slot input {
+      height: 26px;
+      font-size: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      padding: 0 6px;
+    }
+
+    .slot button.play {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 0 8px;
+      height: 24px;
+      font-size: 11px;
+    }
+
+    .period-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .period-label input {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 8px;
+      width: 60px;
+    }
+
+    .period-tools {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .period-tools button {
+      font-size: 11px;
+      padding: 2px 4px;
+      width: 100%;
+    }
+
+    .status-line {
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    dialog {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      padding: 20px;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.4);
+    }
+  </style>
+  <script defer src="auth.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="title">課表控管</div>
+    <div class="links">
+      <span id="nowText"
+        style="margin-right:12px;opacity:.9;display:inline-block;min-width:140px;text-align:right">--:--:--</span>
+      <a href="index.html">🎛 主控台</a>
+      <a href="sched.html">🕐 排程</a>
+      <a href="single_reservation.html">📅 預約</a>
+      <a href="tt.html">📚 課表</a>
+      <span class="sep">|</span>
+      <a href="taigi_edu.html">🇹🇼 本土語</a>
+      <a href="eew.html">🌋 地震</a>
+      <a href="relay4.html">📣 分區</a>
+      <a href="silent-dashboard.html">🔇 無聲</a>
+      <span class="sep">|</span>
+      <a href="broadcast.html" target="_blank">🎙️ 行動</a>
+      <a href="live.html">🔴 直播</a>
+      <a href="teacher_call.html" target="_blank">📹 通話</a>
+      <a href="shortcuts.html">⚡ 快捷</a>
+      <a href="buddha.html">🕌 佛教</a>
+      <span class="sep">|</span>
+      <a href="clients.html" target="_blank">👥 設備</a>
+      <a href="/teacher?key=teacher" target="_blank">🎵 媒體</a>
+      <a href="logs.html">🗒 紀錄</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2 class="subtitle">課表總覽</h2>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+        <div class="toggle">
+          <label style="display:flex;align-items:center;gap:10px;">
+            <input id="tt-enabled" type="checkbox" />
+            <span>
+              <strong>啟用自動打鐘</strong>
+              <div class="muted">依據課表自動播放 / 執行指令</div>
+            </span>
+          </label>
+          <span id="tt-pill" class="badge">狀態判定中</span>
+        </div>
+
+        <div class="toggle">
+          <label style="display:flex;align-items:center;gap:10px;">
+            <input id="tt-sat" type="checkbox" />
+            <span>
+              <strong>週六視為上課日</strong>
+              <div class="muted">勾選後，週六正常觸發</div>
+            </span>
+          </label>
+        </div>
+
+        <div class="toggle">
+          <label style="display:flex;align-items:center;gap:10px;">
+            <input id="tt-skip-holiday" type="checkbox" />
+            <span>
+              <strong>國定假日自動暫停</strong>
+              <div class="muted">
+                遇到清單中的日期不響鈴
+                <a href="#" id="btnOpenHoliday" style="margin-left:6px">設定清單</a>
+              </div>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="status-line muted" id="tt-last-sync">尚未與後端同步</div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="ghost" id="btn-tt-save-remote">同步通知後端</button>
+        <button class="flat" id="btnReload">重新載入</button>
+        <button class="primary" id="btnSave">儲存課表</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="toolbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div>
+            <div class="subtitle" style="margin-bottom:0">課表設定</div>
+            <div class="muted">共 11 節，支援週一至週日</div>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button class="flat" id="btnPrevWeek" title="上一週">◀</button>
+            <button class="flat" id="btnThisWeek">本週</button>
+            <button class="flat" id="btnNextWeek" title="下一週">▶</button>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="flat" id="btnExpandAll">全部展開</button>
+          <button class="flat" id="btnCollapseAll">全部收合</button>
+        </div>
+      </div>
+      <div style="overflow:auto">
+        <table id="ttTable">
+          <thead>
+            <tr>
+              <th style="width:100px">節次</th>
+              <th>週一</th>
+              <th>週二</th>
+              <th>週三</th>
+              <th>週四</th>
+              <th>週五</th>
+              <th>週六</th>
+              <th>週日</th>
+            </tr>
+          </thead>
+          <tbody id="ttBody"></tbody>
+        </table>
+      </div>
+    </section>
+    </section>
+  </main>
+
+  <dialog id="holidayDialog">
+    <h3 style="margin-top:0">📅 設定假日清單</h3>
+    <p class="muted">請輸入日期 (YYYY-MM-DD)，一行一個。</p>
+    <div style="margin-bottom:8px">
+      <button class="flat" id="btnImportDGPA" style="width:100%">⬇️ 從人事行政局網路匯入 (今年+明年)</button>
+    </div>
+    <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:12px">
+      <table id="holidayTable" style="width:100%;font-size:13px;border-spacing:0">
+        <thead style="position:sticky;top:0;background:#f5f8fb;z-index:1">
+          <tr>
+            <th style="width:40px;text-align:center">刪</th>
+            <th style="width:100px">日期</th>
+            <th style="width:50px">星期</th>
+            <th>假日名稱</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+      <button class="ghost" id="btnCloseHoliday">取消</button>
+      <button class="primary" id="btnSaveHoliday">確定</button>
+    </div>
+  </dialog>
+
+  <script>
+    const API_BASE = (location.protocol === 'file:' || location.port !== '5050')
+      ? 'http://localhost:5050'
+      : '';
+    const apiFetch = (path, opts) => fetch(API_BASE + path, opts);
+
+    const PERIODS = ['第 1 節', '第 2 節', '第 3 節', '第 4 節', '第 5 節', '第 6 節', '第 7 節', '第 8 節', '第 9 節', '第 10 節', '第 0 節'];
+    const DAYS = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+    const SLOT_TAGS = ['(上)', '(下)'];
+
+    const state = { mp3Options: [], enabled: true, weekOffset: 0 };
+
+    const $ = (id) => document.getElementById(id);
+
+    // ... (omitted parts)
+
+
+
+    function setClock() {
+      const el = $('nowText'); if (!el) return;
+      const tick = () => {
+        const d = new Date();
+        el.textContent = d.toLocaleTimeString('zh-TW', { hour12: false });
+        setTimeout(tick, 1000);
+      };
+      tick();
+    }
+
+    async function loadMp3List() {
+      try {
+        const r = await apiFetch('/files');
+        const j = await r.json();
+        if (!j.ok) throw 0;
+        state.mp3Options = (j.files || []).map(f => f.name);
+      } catch { state.mp3Options = []; }
+    }
+
+    function makeSelect(opts, selected) {
+      const sel = document.createElement('select');
+      opts.forEach(opt => {
+        const o = document.createElement('option');
+        const value = typeof opt === 'string' ? opt : opt.value;
+        const label = typeof opt === 'string' ? opt : opt.label;
+        o.value = value; o.textContent = label;
+        if (o.value === selected) o.selected = true;
+        sel.appendChild(o);
+      });
+      return sel;
+    }
+
+    function timeSelectors(initial) {
+      const [hh, mm] = /^\d{2}:\d{2}$/.test(initial || '') ? initial.split(':') : ['08', '00'];
+      const hhSel = makeSelect(Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')), hh);
+      hhSel.className = 'hh';
+      const mmSel = makeSelect(Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')), mm);
+      mmSel.className = 'mm';
+      return [hhSel, mmSel];
+    }
+
+    const ACTION_CHOICES = [
+      { value: 'none', label: '無動作' },
+      { value: 'Bell:ClassStart', label: '上課鈴' },
+      { value: 'Bell:ClassEnd', label: '下課鈴' },
+      { value: 'mp3', label: '播放 MP3' },
+      { value: 'custom', label: '自訂指令' },
+    ];
+
+    function actionToUi(action) {
+      if (action === 'Bell:ClassStart') return { mode: 'Bell:ClassStart' };
+      if (action === 'Bell:ClassEnd') return { mode: 'Bell:ClassEnd' };
+      if (!action) return { mode: 'none' };
+      if (action.startsWith('PlayMP3:')) return { mode: 'mp3', mp3: action.slice(8) };
+      return { mode: 'custom', cmd: action };
+    }
+
+    function uiToAction(mode, mp3, cmd) {
+      if (mode === 'Bell:ClassStart' || mode === 'Bell:ClassEnd') return mode;
+      if (mode === 'mp3') return mp3 ? `PlayMP3:${mp3}` : '';
+      if (mode === 'custom') return cmd?.trim() || '';
+      return '';
+    }
+
+    function actionSelectors(initialAction) {
+      const info = actionToUi(initialAction);
+      const sel = makeSelect(ACTION_CHOICES, info.mode || 'none');
+      sel.className = 'act';
+
+      const mp3Sel = makeSelect(['', ...state.mp3Options], info.mp3 || '');
+      mp3Sel.className = 'mp3';
+      mp3Sel.style.minWidth = '160px';
+
+      const cmd = document.createElement('input');
+      cmd.className = 'cmd';
+      cmd.placeholder = '輸入完整指令';
+      cmd.value = info.cmd || '';
+
+      const syncVisibility = () => {
+        mp3Sel.style.display = sel.value === 'mp3' ? 'inline-block' : 'none';
+        cmd.style.display = sel.value === 'custom' ? 'inline-block' : 'none';
+      };
+      sel.addEventListener('change', syncVisibility);
+      syncVisibility();
+
+      return [sel, mp3Sel, cmd];
+    }
+
+    function buildSlot(tag) {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.dataset.tag = tag;
+
+      const badge = document.createElement('span');
+      badge.className = 'tag';
+      badge.textContent = tag;
+      slot.appendChild(badge);
+
+      const timeGroup = document.createElement('div');
+      timeGroup.className = 'time-group';
+      const [hhSel, mmSel] = timeSelectors();
+      timeGroup.appendChild(hhSel);
+      timeGroup.appendChild(document.createTextNode(':'));
+      timeGroup.appendChild(mmSel);
+      slot.appendChild(timeGroup);
+
+      const [actSel, mp3Sel, cmdInput] = actionSelectors('');
+      slot.appendChild(actSel);
+      slot.appendChild(mp3Sel);
+      slot.appendChild(cmdInput);
+
+      const play = document.createElement('button');
+      play.type = 'button';
+      play.textContent = '播放';
+      play.className = 'play';
+      play.addEventListener('click', () => tryPlay(actSel.value, mp3Sel.value, cmdInput.value));
+      slot.appendChild(play);
+
+      slot.getValue = () => ({ time: `${hhSel.value}:${mmSel.value}`, action: uiToAction(actSel.value, mp3Sel.value, cmdInput.value) });
+
+      slot.setValue = ({ time, action }) => {
+        const [hh, mm] = time.split(':');
+        hhSel.value = hh; mmSel.value = mm;
+        const info = actionToUi(action);
+        actSel.value = info.mode || 'none';
+        actSel.dispatchEvent(new Event('change'));
+        if (info.mp3) mp3Sel.value = info.mp3;
+        if (info.cmd) cmdInput.value = info.cmd;
+      };
+
+      slot.refreshMp3 = () => {
+        const current = mp3Sel.value;
+        mp3Sel.innerHTML = '';
+        ['', ...state.mp3Options].forEach(name => {
+          const o = document.createElement('option');
+          o.value = name;
+          o.textContent = name ? name.split('/').pop() : '（未選 MP3）';
+          if (name === current) o.selected = true;
+          mp3Sel.appendChild(o);
+        });
+      };
+
+      return slot;
+    }
+
+    function buildCell(periodIndex, dow) {
+      const cell = document.createElement('div');
+      cell.className = 'period-cell';
+      cell.dataset.period = periodIndex;
+      cell.dataset.dow = dow;
+      SLOT_TAGS.forEach(tag => cell.appendChild(buildSlot(tag)));
+      return cell;
+    }
+
+    function buildTable() {
+      const tbody = $('ttBody');
+      tbody.innerHTML = '';
+      PERIODS.forEach((name, pIdx) => {
+        const tr = document.createElement('tr');
+        const labelTd = document.createElement('td');
+        const wrap = document.createElement('div');
+        wrap.className = 'period-label';
+        const input = document.createElement('input');
+        input.value = name;
+        wrap.appendChild(input);
+        const tools = document.createElement('div');
+        tools.className = 'period-tools';
+
+        const btnCopyWeek = document.createElement('button');
+        btnCopyWeek.textContent = '複製至全週';
+        btnCopyWeek.className = 'flat';
+        btnCopyWeek.addEventListener('click', () => copyRowToWeek(tr));
+
+        const btnCopyUp = document.createElement('button');
+        btnCopyUp.textContent = '複製上段';
+        btnCopyUp.className = 'ghost';
+        btnCopyUp.addEventListener('click', () => copyRowPart(tr, '(上)'));
+
+        const btnCopyDown = document.createElement('button');
+        btnCopyDown.textContent = '複製下段';
+        btnCopyDown.className = 'ghost';
+        btnCopyDown.addEventListener('click', () => copyRowPart(tr, '(下)'));
+
+        const btnClear = document.createElement('button');
+        btnClear.textContent = '清空節次';
+        btnClear.className = 'ghost';
+        btnClear.addEventListener('click', () => clearRow(tr));
+
+        tools.appendChild(btnCopyWeek);
+        tools.appendChild(btnCopyUp);
+        tools.appendChild(btnCopyDown);
+        tools.appendChild(btnClear);
+
+        labelTd.appendChild(wrap);
+        labelTd.appendChild(tools);
+        tr.appendChild(labelTd);
+
+        DAYS.forEach((_, dow) => {
+          const td = document.createElement('td');
+          td.appendChild(buildCell(pIdx, dow + 1));
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    function iterateCells(cb) {
+      document.querySelectorAll('#ttBody tr').forEach((tr, pIdx) => {
+        const name = tr.querySelector('.period-label input').value.trim();
+        tr.querySelectorAll('td').forEach((td, idx) => {
+          if (idx === 0) return;
+          const dow = idx;
+          const cell = td.firstElementChild;
+          cb({ tr, cell, periodName: name || PERIODS[pIdx], dow });
+        });
+      });
+    }
+
+    function copyRowToWeek(tr) {
+      const cells = Array.from(tr.querySelectorAll('td')).slice(1);
+      const source = cells[0];
+      // Only copy to Tue(1) ~ Sat(5), skipping Sun(6)
+      for (let i = 1; i < 6; i++) copyCell(source, cells[i], 'both');
+    }
+
+    function copyRowPart(tr, whichTag) {
+      const cells = Array.from(tr.querySelectorAll('td')).slice(1);
+      const source = cells[0];
+      for (let i = 1; i < cells.length; i++) copyCell(source, cells[i], whichTag);
+    }
+
+    function copyCell(fromTd, toTd, whichTag) {
+      const sourceSlots = fromTd.querySelectorAll('.slot');
+      const targetSlots = toTd.querySelectorAll('.slot');
+      const indexes = whichTag === '(上)' ? [0] : whichTag === '(下)' ? [1] : [0, 1];
+      indexes.forEach(i => {
+        const data = sourceSlots[i].getValue();
+        targetSlots[i].setValue(data);
+      });
+    }
+
+    function clearRow(tr) {
+      tr.querySelectorAll('.slot').forEach(slot => slot.setValue({ time: '08:00', action: '' }));
+    }
+
+    async function tryPlay(mode, mp3, cmd) {
+      const action = uiToAction(mode, mp3, cmd);
+      if (!action) return;
+      if (action.startsWith('PlayMP3:')) {
+        const fd = new FormData();
+        fd.append('mp3url', action.slice(8));
+        await apiFetch('/sendmp3', { method: 'POST', body: fd });
+      } else {
+        const fd = new FormData();
+        fd.append('cmd', action);
+        await apiFetch('/cmd', { method: 'POST', body: fd });
+      }
+    }
+
+    function collectPayload() {
+      const items = [];
+      iterateCells(({ cell, periodName, dow }) => {
+        cell.querySelectorAll('.slot').forEach(slot => {
+          const { time, action } = slot.getValue();
+          if (!action) return;
+          const label = `${periodName}${slot.dataset.tag}`;
+          items.push({ dow, time, action, label });
+        });
+      });
+
+      const ttSat = $('tt-sat');
+      const treatSatAsSchool = ttSat ? ttSat.checked : false;
+      const ttSkip = $('tt-skip-holiday');
+      const skipHolidays = ttSkip ? ttSkip.checked : true;
+      const holidays = state.holidays || [];
+      const holiday_names = state.holiday_names || {};
+
+      return {
+        enabled: state.enabled,
+        treat_saturday_as_school: treatSatAsSchool,
+        skip_holidays: skipHolidays,
+        holidays: holidays,
+        names: holiday_names,
+        items,
+      };
+    }
+
+    async function saveAll() {
+      const payload = collectPayload();
+      const res = await apiFetch('/timetable/set', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const j = await res.json();
+      alert(j.ok ? `已儲存 ${j.count || 0} 筆` : `儲存失敗?${j.error || '未知原因'}`);
+      if (j.ok) { $('tt-last-sync').textContent = `最後同步：${new Date().toLocaleString()}`; }
+    }
+
+    async function reload() {
+      try {
+        console.log('[TT] Fetching /timetable...');
+        const r = await apiFetch('/timetable');
+        const j = await r.json();
+        if (!j.ok) throw new Error(j.error || 'API error');
+
+        const enabled = typeof j.enabled === 'boolean' ? j.enabled : !!(j.data && j.data.enabled);
+        applyEnabled(enabled);
+
+        const treatSat = j.treat_saturday_as_school || (j.data && j.data.treat_saturday_as_school) || false;
+        const ttSat = $('tt-sat');
+        if (ttSat) ttSat.checked = !!treatSat;
+
+        const skipHolidays = (j.skip_holidays !== undefined) ? j.skip_holidays : (j.data?.skip_holidays !== undefined ? j.data.skip_holidays : true);
+        const ttSkip = $('tt-skip-holiday');
+        if (ttSkip) ttSkip.checked = !!skipHolidays;
+        state.holidays = j.holidays || j.data?.holidays || [];
+        state.holiday_names = j.names || j.holiday_names || {};
+
+        document.querySelectorAll('.slot').forEach(slot => slot.setValue({ time: '08:00', action: '' }));
+
+        const items = j.data?.items || [];
+        items.forEach(item => {
+          const periodIndex = PERIODS.findIndex(p => item.label?.startsWith(p));
+          if (periodIndex < 0 || item.dow < 1 || item.dow > 7) return;
+          const tr = document.querySelectorAll('#ttBody tr')[periodIndex];
+          const td = tr.querySelectorAll('td')[item.dow];
+          if (!td) return;
+          const tagIndex = item.label.includes('(下)') ? 1 : 0;
+          const slot = td.querySelectorAll('.slot')[tagIndex];
+          if (slot) slot.setValue({ time: item.time, action: item.action });
+        });
+
+        $('tt-last-sync').textContent = `最後同步：${new Date().toLocaleString()}`;
+      } catch (err) {
+        console.error('[TT] Reload error:', err);
+        alert('載入課表失敗：' + err.message);
+      }
+    }
+
+    function applyEnabled(flag) {
+      state.enabled = !!flag;
+      const ck = $('tt-enabled');
+      if (ck) ck.checked = state.enabled;
+      const pill = $('tt-pill');
+      if (pill) {
+        if (state.enabled) {
+          pill.textContent = '已啟用';
+          pill.style.background = '#eaf7ef';
+          pill.style.color = '#187a43';
+        } else {
+          pill.textContent = '已停用';
+          pill.style.background = '#ffecec';
+          pill.style.color = '#c23030';
+        }
+      }
+    }
+
+    async function notifyBackend(flag) {
+      try {
+        await apiFetch('/timetable/enable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: !!flag })
+        });
+      } catch { }
+    }
+
+    // --- Holiday Table UI Logic ---
+    function renderHolidays() {
+      const tbody = document.querySelector('#holidayTable tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      const list = state.holidays || [];
+      const names = state.holiday_names || {};
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999;padding:20px">無資料</td></tr>';
+        return;
+      }
+
+      list.forEach(dateStr => {
+        const tr = document.createElement('tr');
+
+        // Checkbox
+        const tdChk = document.createElement('td');
+        tdChk.style.textAlign = 'center';
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.className = 'holiday-del-chk';
+        chk.dataset.date = dateStr;
+        tdChk.appendChild(chk);
+
+        // Date
+        const tdDate = document.createElement('td');
+        tdDate.textContent = dateStr;
+
+        // Week
+        const tdWeek = document.createElement('td');
+        const dObj = new Date(dateStr);
+        const weekStr = isNaN(dObj.getTime()) ? '' : ['日', '一', '二', '三', '四', '五', '六'][dObj.getDay()];
+        tdWeek.textContent = weekStr;
+
+        // Name (editable input)
+        const tdName = document.createElement('td');
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = names[dateStr] || '';
+        nameInput.placeholder = '自訂名稱...';
+        nameInput.style.width = '100%';
+        nameInput.style.border = 'none';
+        nameInput.style.background = 'transparent';
+        nameInput.style.fontSize = '13px';
+        nameInput.addEventListener('change', e => {
+          if (!state.holiday_names) state.holiday_names = {};
+          state.holiday_names[dateStr] = e.target.value;
+        });
+        tdName.appendChild(nameInput);
+
+        tr.appendChild(tdChk);
+        tr.appendChild(tdDate);
+        tr.appendChild(tdWeek);
+        tr.appendChild(tdName);
+        tbody.appendChild(tr);
+      });
+    }
+
+    function bindEvents() {
+      $('btnSave').addEventListener('click', saveAll);
+      $('btnReload').addEventListener('click', reload);
+      $('btnExpandAll').addEventListener('click', () => document.querySelectorAll('.period-cell').forEach(cell => cell.style.display = 'flex'));
+      $('btnCollapseAll').addEventListener('click', () => document.querySelectorAll('.period-cell').forEach(cell => cell.style.display = 'none'));
+      $('btn-tt-save-remote').addEventListener('click', () => { notifyBackend(state.enabled); alert('已嘗試通知 /timetable/enable'); });
+      $('tt-enabled').addEventListener('change', e => {
+        applyEnabled(e.target.checked);
+        notifyBackend(e.target.checked);
+      });
+
+      const dlg = $('holidayDialog');
+      $('btnOpenHoliday').addEventListener('click', (e) => {
+        e.preventDefault();
+        renderHolidays();
+        dlg.showModal();
+      });
+      $('btnImportDGPA').addEventListener('click', async () => {
+        const btn = $('btnImportDGPA');
+        const oldText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '⏳ 下載匯入中...';
+        try {
+          const r = await apiFetch('/timetable/import_holidays', { method: 'POST' });
+          const j = await r.json();
+          if (j.ok) {
+            const currentDates = state.holidays || [];
+            if (!state.holiday_names) state.holiday_names = {};
+            const currentNames = state.holiday_names;
+
+            const remoteList = j.holidays || [];
+            let added = 0;
+            // Merge logic
+            remoteList.forEach(item => {
+              const d = item.date;
+              if (!currentDates.includes(d)) {
+                currentDates.push(d);
+                added++;
+              }
+              if (item.name) {
+                currentNames[d] = item.name;
+              }
+            });
+
+            state.holidays = currentDates.sort();
+            state.holiday_names = currentNames;
+
+            renderHolidays();
+            alert(`已成功合併 ${j.count} 筆資料 (新增或更新)！`);
+          } else {
+            alert('匯入失敗：' + (j.error || '不明錯誤'));
+          }
+        } catch (e) {
+          alert('匯入錯誤：' + e);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = oldText;
+        }
+      });
+
+      $('btnCloseHoliday').addEventListener('click', () => dlg.close());
+      $('btnSaveHoliday').addEventListener('click', () => {
+        // Filter out deleted items
+        const checks = document.querySelectorAll('.holiday-del-chk');
+        const toDelete = new Set();
+        checks.forEach(c => {
+          if (c.checked) toDelete.add(c.dataset.date);
+        });
+
+        state.holidays = (state.holidays || []).filter(d => !toDelete.has(d));
+        // Clean up names for deleted dates
+        toDelete.forEach(d => {
+          if (state.holiday_names) delete state.holiday_names[d];
+        });
+
+        dlg.close();
+        alert(`已更新設定 (刪除 ${toDelete.size} 筆)，請記得按下「儲存課表」以生效。`);
+      });
+
+      $('btnPrevWeek').addEventListener('click', () => { state.weekOffset--; updateDateHeaders(); });
+      $('btnNextWeek').addEventListener('click', () => { state.weekOffset++; updateDateHeaders(); });
+      $('btnThisWeek').addEventListener('click', () => { state.weekOffset = 0; updateDateHeaders(); });
+
+      window.addEventListener('focus', async () => {
+        const prev = JSON.stringify(state.mp3Options);
+        await loadMp3List();
+        updateDateHeaders();
+        if (JSON.stringify(state.mp3Options) !== prev) {
+          document.querySelectorAll('.slot').forEach(slot => slot.refreshMp3?.());
+        }
+      });
+    }
+
+    function updateDateHeaders() {
+      const headers = document.querySelectorAll('#ttTable thead th');
+      if (headers.length < 8) return;
+
+      const now = new Date();
+      // Apply offset
+      now.setDate(now.getDate() + (state.weekOffset || 0) * 7);
+
+      const day = now.getDay();
+      const dist = (day + 6) % 7;
+      const mondayTime = now.getTime() - dist * 24 * 60 * 60 * 1000;
+
+      const realToday = new Date(); // For highlighting "today"
+
+      DAYS.forEach((dName, i) => {
+        const d = new Date(mondayTime + i * 24 * 60 * 60 * 1000);
+        const m = d.getMonth() + 1;
+        const date = d.getDate();
+        const isToday = d.toDateString() === realToday.toDateString();
+
+        // Format YYYY-MM-DD for lookup
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+        const holidayName = (state.holiday_names && state.holiday_names[dateStr]) || '';
+
+        const th = headers[i + 1];
+        if (th) {
+          let html = `${dName} <span style="font-size:12px;font-weight:normal;color:${isToday ? '#d32f2f' : '#888'}">${m}/${date}</span>`;
+          if (holidayName) {
+            html += `<span style="font-size:11px;color:#e53935;margin-left:4px;font-weight:normal">${holidayName}</span>`;
+          }
+          th.innerHTML = html;
+
+          if (isToday) th.style.color = '#1e7bd8';
+          else th.style.color = '';
+        }
+      });
+
+      // Update "This Week" button text if offset != 0
+      const btnThis = $('btnThisWeek');
+      if (btnThis) {
+        if (state.weekOffset === 0) {
+          btnThis.textContent = '本週';
+          btnThis.style.fontWeight = 'bold';
+        } else {
+          btnThis.textContent = '回本週';
+          btnThis.style.fontWeight = 'normal';
+        }
+      }
+    }
+
+
+    async function init() {
+      setClock();
+      await loadMp3List();
+      buildTable();
+      updateDateHeaders();
+      bindEvents();
+      await reload();
+      // Periodically update date (for day change)
+      setInterval(updateDateHeaders, 60000);
+    }
+
+    init();
+  </script>
+  <!-- ⛔ Force Cancel Floating Button -->
+  <div id="force-cancel-btn"
+    style="position:fixed;bottom:20px;right:20px;z-index:9999;cursor:pointer;background:#ef4444;color:white;padding:12px 24px;border-radius:50px;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-weight:bold;display:flex;align-items:center;gap:8px;transition:transform 0.1s;font-family:system-ui;">
+    <span style="font-size:18px">⛔</span>
+    <span>強制取消</span>
+  </div>
+  <script>
+    document.getElementById('force-cancel-btn').addEventListener('click', async () => {
+      // if (!confirm('確定要強制取消所有播放嗎？\n(將送出 CancelALL 指令)')) return;
+      try {
+        const btn = document.getElementById('force-cancel-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span>⏳ 處理中...</span>';
+        btn.style.opacity = '0.8';
+
+        // Use relative path by default, or API_BASE if defined globally
+        const apiBase = (typeof API_BASE !== 'undefined') ? API_BASE : '';
+        const r = await fetch(apiBase + '/cmd', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'cmd=CancelALL'
+        });
+
+        if (r.ok) {
+          btn.innerHTML = '<span>✅ 已取消</span>';
+          setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 1500);
+          return;
+        } else {
+          btn.innerHTML = '<span>❌ 失敗</span>';
+          setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 2000);
+          return;
+        }
+
+        btn.innerHTML = originalText;
+        btn.style.opacity = '1';
+      } catch (e) {
+        console.error(e);
+        const btn = document.getElementById('force-cancel-btn');
+        btn.innerHTML = '<span>❌ 錯誤</span>';
+        setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 2000);
+        return;
+        document.getElementById('force-cancel-btn').innerHTML = originalText;
+        document.getElementById('force-cancel-btn').style.opacity = '1';
+      }
+    });
+    // Add hover effect
+    const fcb = document.getElementById('force-cancel-btn');
+    fcb.addEventListener('mousedown', () => fcb.style.transform = 'scale(0.95)');
+    fcb.addEventListener('mouseup', () => fcb.style.transform = 'scale(1)');
+    fcb.addEventListener('mouseleave', () => fcb.style.transform = 'scale(1)');
+  </script>
+</body>
+
+</html>

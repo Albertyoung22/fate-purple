@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏢 RelayBell Premium | 商場廣播主控台</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap');
+
+        :root {
+            --primary: #4f46e5;
+            /* Indigo */
+            --primary-light: #818cf8;
+            --secondary: #ec4899;
+            /* Pink */
+            --accent: #f59e0b;
+            /* Amber */
+            --bg-main: #f8fafc;
+            --bg-card: rgba(255, 255, 255, 0.85);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --danger: #ef4444;
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 8px 15px -6px rgba(0, 0, 0, 0.05);
+            --neon-blue: #0ea5e9;
+            --neon-purple: #8b5cf6;
+        }
+
+        body {
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+            background:
+                linear-gradient(135deg, rgba(249, 168, 212, 0.2) 0%, rgba(199, 210, 254, 0.2) 50%, rgba(165, 243, 252, 0.2) 100%),
+                #f8fafc;
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 40px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid white;
+            border-radius: 32px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        header::after {
+            content: "";
+            position: absolute;
+            bottom: 0px;
+            left: 15%;
+            right: 15%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-light), var(--secondary), var(--neon-blue));
+            border-radius: 3px 3px 0 0;
+            opacity: 0.6;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-icon {
+            width: 54px;
+            height: 54px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            box-shadow: 0 8px 15px rgba(79, 70, 229, 0.25);
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-6px);
+            }
+        }
+
+        .logo-text h1 {
+            margin: 0;
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #1e1b4b;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .system-status {
+            display: flex;
+            gap: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px 22px;
+            border-radius: 18px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid white;
+            border-radius: 35px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        /* Multilingual Presets */
+        .col-presets {
+            grid-column: span 8;
+        }
+
+        .col-settings {
+            grid-column: span 4;
+        }
+
+        .col-manual {
+            grid-column: span 12;
+        }
+
+        .col-sched {
+            grid-column: span 12;
+        }
+
+        .presets-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .preset-item {
+            background: #fff;
+            border-radius: 28px;
+            padding: 22px;
+            border: 1px solid #f1f5f9;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: 0.3s;
+        }
+
+        .preset-item:hover {
+            border-color: var(--primary-light);
+            background: #fdfdff;
+        }
+
+        .preset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preset-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #334155;
+        }
+
+        .pill {
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            background: #f1f5f9;
+            border-radius: 8px;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        .preset-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .btn-play {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
+            padding: 12px;
+            border-radius: 18px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-play:hover {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: transparent;
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px rgba(79, 70, 229, 0.2);
+        }
+
+        /* Manual TTS Area */
+        .manual-area {
+            display: flex;
+            gap: 60px;
+            /* Increased gap for better separation */
+            align-items: flex-start;
+        }
+
+        .text-input-wrap {
+            flex: 1;
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            height: 85px;
+            background: #fff;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 12px 15px 40px 15px;
+            color: #1e293b;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: none;
+            transition: 0.3s;
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .ai-assist-btn {
+            position: absolute;
+            right: 12px;
+            bottom: 8px;
+            background: linear-gradient(135deg, #4f46e5, #ec4899);
+            border: none;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 8px rgba(79, 70, 229, 0.15);
+            transition: 0.3s;
+        }
+
+        .ai-assist-btn:hover {
+            transform: translateY(-2px) scale(1.03);
+            filter: brightness(1.1);
+        }
+
+        .manual-controls {
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        select {
+            background: #fff;
+            border: 2px solid #e2e8f0;
+            color: #334155;
+            padding: 14px;
+            border-radius: 16px;
+            width: 100%;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-broadcast {
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 22px;
+            font-weight: 800;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-broadcast:hover {
+            transform: scale(1.02);
+            filter: brightness(1.05);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Translation Preview Styles */
+        .translation-preview-box {
+            margin-top: 15px;
+            background: rgba(239, 246, 255, 0.7);
+            border: 1.5px dashed var(--primary-light);
+            border-radius: 18px;
+            padding: 16px;
+            backdrop-filter: blur(10px);
+            animation: fadeInDown 0.4s ease;
+            position: relative;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .preview-title {
+            font-size: 0.85rem;
+            color: var(--primary);
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .preview-body {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #1e3a8a;
+            font-style: italic;
+            word-break: break-all;
+        }
+
+        .apply-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .apply-btn:hover {
+            background: var(--primary-light);
+            transform: translateY(-1px);
+        }
+
+        .discard-btn {
+            background: #f1f5f9;
+            color: #64748b;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        /* Schedule List */
+        .sched-table-wrap {
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 12px;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px;
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 22px 18px;
+            background: white;
+            border-top: 1px solid #f1f5f9;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        td:first-child {
+            border-left: 1px solid #f1f5f9;
+            border-top-left-radius: 24px;
+            border-bottom-left-radius: 24px;
+        }
+
+        td:last-child {
+            border-right: 1px solid #f1f5f9;
+            border-top-right-radius: 24px;
+            border-bottom-right-radius: 24px;
+        }
+
+        .time-badge {
+            background: #eef2ff;
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-family: 'Outfit';
+            font-size: 1.15rem;
+            font-weight: 800;
+        }
+
+        .btn-icon {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-icon:hover {
+            background: #fee2e2;
+            color: #ef4444;
+            border-color: #fecaca;
+            transform: rotate(8deg);
+        }
+
+        /* Switches */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 56px;
+            height: 30px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e2e8f0;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 24px;
+            width: 24px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input:checked+.slider {
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        .btn-stop {
+            grid-column: span 12;
+            background: #fff1f2;
+            border: 2px dashed #fecaca;
+            color: #e11d48;
+            padding: 18px;
+            border-radius: 24px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-stop:hover {
+            background: #e11d48;
+            color: white;
+            border-style: solid;
+            box-shadow: 0 10px 20px rgba(225, 29, 72, 0.2);
+        }
+
+        .vibrant-gradient-text {
+            background: linear-gradient(135deg, #4f46e5, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Dashboard Header -->
+        <header>
+            <div class="logo-area">
+                <div class="logo-icon">🏢</div>
+                <div class="logo-text">
+                    <h1><span class="vibrant-gradient-text">RelayBell</span> Premium</h1>
+                    <p>Professional Mall Intelligence Console</p>
+                </div>
+            </div>
+
+            <div class="system-status">
+                <div class="status-item">
+                    <a href="index.html" style="color: inherit; text-decoration: none;">🏠 <span
+                            style="margin-left:5px">Home</span></a>
+                </div>
+                <div class="status-item">
+                    <div class="dot"></div>
+                    <span id="currentTime">--:--:--</span>
+                </div>
+                <div class="status-item">
+                    <span style="color:var(--primary)">Next:</span>
+                    <span id="nextSchedInfo" style="font-weight:700">--:--</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Left Side: Presets -->
+            <div class="card col-presets">
+                <h2>
+                    <span style="font-size: 1.8rem">📢</span> 多國語言速控 (Voice Presets)
+                </h2>
+                <div class="presets-grid">
+                    <!-- Opening -->
+                    <div class="preset-item">
+                        <div class="preset-header">
+                            <span class="preset-title">🌅 開店儀式 (Opening)</span>
+                            <div class="lang-pills">
+                                <span class="pill">ZH</span><span class="pill">EN</span><span class="pill">JA</span>
+                            </div>
+                        </div>
+                        <div class="preset-actions">
+                            <button class="btn-play" onclick="speakPreset('zh_opening')">🇹🇼 中文</button>
+                            <button class="btn-play" onclick="speakPreset('en_opening')">🇺🇸 English</button>
+                            <button class="btn-play" onclick="speakPreset('ja_opening')">🇯🇵 日本語</button>
+                            <button class="btn-play" onclick="speakPreset('ko_opening')">🇰🇷 한국어</button>
+                        </div>
+                    </div>
+
+                    <!-- Closing -->
+                    <div class="preset-item">
+                        <div class="preset-header">
+                            <span class="preset-title">🌙 閉店廣播 (Closing)</span>
+                            <div class="lang-pills">
+                                <span class="pill">ZH</span><span class="pill">EN</span><span class="pill">JA</span>
+                            </div>
+                        </div>
+                        <div class="preset-actions">
+                            <button class="btn-play" onclick="speakPreset('zh_closing')">🇹🇼 中文</button>
+                            <button class="btn-play" onclick="speakPreset('en_closing')">🇺🇸 English</button>
+                            <button class="btn-play" onclick="speakPreset('ja_closing')">🇯🇵 日本語</button>
+                            <button class="btn-play" onclick="speakPreset('ko_closing')">🇰🇷 한국어</button>
+                        </div>
+                    </div>
+
+                    <!-- Lost Child -->
+                    <div class="preset-item">
+                        <div class="preset-header">
+                            <span class="preset-title">👦 尋人啟事 (Lost Person)</span>
+                            <div class="lang-pills">
+                                <span class="pill">4-LANG</span>
+                            </div>
+                        </div>
+                        <div class="preset-actions">
+                            <button class="btn-play" onclick="speakPreset('zh_lost')">🇹🇼 中文</button>
+                            <button class="btn-play" onclick="speakPreset('en_lost')">🇺🇸 English</button>
+                            <button class="btn-play" onclick="speakPreset('ja_lost')">🇯🇵 日本語</button>
+                            <button class="btn-play" onclick="speakPreset('ko_lost')">🇰🇷 한국어</button>
+                        </div>
+                    </div>
+
+                    <!-- Promotion -->
+                    <div class="preset-item">
+                        <div class="preset-header">
+                            <span class="preset-title">🎈 活動促銷 (Promotion)</span>
+                            <div class="lang-pills">
+                                <span class="pill">ZH</span><span class="pill">EN</span>
+                            </div>
+                        </div>
+                        <div class="preset-actions">
+                            <button class="btn-play" onclick="speakPreset('zh_sale')">🇹🇼 中文</button>
+                            <button class="btn-play" onclick="speakPreset('en_sale')">🇺🇸 English</button>
+                            <button class="btn-play" onclick="speakPreset('ja_sale')">🇯🇵 日本語</button>
+                            <button class="btn-play" onclick="speakPreset('ko_sale')">🇰🇷 한국어</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-stop" onclick="stopAll()">⛔ 停止當前所有播放 (EMERGENCY STOP)</button>
+            </div>
+
+            <!-- Right Side: Quick Settings -->
+            <div class="card col-settings">
+                <h2><span style="font-size: 1.8rem">⚙️</span> 系統控制 (Control)</h2>
+
+                <div class="settings-row" style="margin-bottom: 5px;">
+                    <span style="font-weight:700; color:#475569">系統音量 (Master Vol)</span>
+                    <span id="volVal" style="font-weight:800; color:var(--primary); font-size:1.3rem">80%</span>
+                </div>
+                <div style="padding: 10px 0 25px 0;">
+                    <input type="range" id="volSlider" min="0" max="100" value="80" oninput="updateVol(this.value)">
+                </div>
+
+                <div class="settings-row">
+                    <span style="font-weight:600">擴大機連動 (Auto Amp)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="ampToggle" onchange="toggleAmp(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="settings-row" style="margin-bottom: 35px;">
+                    <span style="font-weight:600">播放前導音 (Chime)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="chimeToggle" onchange="toggleChime(this.checked)" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div style="margin-top: 10px; border-top: 2px solid #f1f5f9; padding-top: 30px;">
+                    <h3 style="font-size:1rem; margin-bottom:15px; color:var(--text-muted)">⚡ 快捷音效 (Shortcuts)</h3>
+                    <div class="preset-actions" style="grid-template-columns: 1fr 1fr;">
+                        <button class="btn-play" style="flex-direction:row; padding:15px; gap:10px"
+                            onclick="postCmd('Bell:ClassStart')">🔔 提示 A</button>
+                        <button class="btn-play" style="flex-direction:row; padding:15px; gap:10px"
+                            onclick="postCmd('Bell:ClassEnd')">🔔 提示 B</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom: Manual TTS -->
+            <div class="card col-manual" style="position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h2><span style="font-size: 1.8rem">🎙️</span> 即時人工播報 (Live Console)</h2>
+                    <div id="broadcastStatus"
+                        style="display: flex; align-items: center; gap: 10px; background: #ecfdf5; border: 1px solid #10b981; padding: 8px 20px; border-radius: 99px; color: #065f46; font-weight: 700; font-size: 0.9rem;">
+                        <div class="dot" style="background: #10b981;"></div> SYSTEM READY (ON-AIR)
+                    </div>
+                </div>
+                <div class="manual-area">
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <div class="text-input-wrap">
+                            <textarea id="manualContent" placeholder="播報內容..."
+                                oninput="updateCharCount(this.value)"></textarea>
+                            <div
+                                style="position: absolute; left: 15px; bottom: 10px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
+                                <span id="charCount" style="color: var(--primary)">0</span> / 500
+                            </div>
+                            <button class="ai-assist-btn" onclick="generateAIScript()">
+                                <span>✨</span> AI 智能撰稿
+                            </button>
+                        </div>
+
+                        <!-- [NEW] Translation Preview Area -->
+                        <div id="transPreview" class="translation-preview-box" style="display: none;">
+                            <div class="preview-header">
+                                <span class="preview-title">🌐 翻譯預覽 (與原稿核對)</span>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="discard-btn" onclick="discardTranslation()">✖️ 關閉</button>
+                                    <button class="apply-btn" style="background:#f59e0b"
+                                        onclick="auditionPreviewContent()">🎧 試聽</button>
+                                    <button class="apply-btn" style="background:#ef4444" onclick="stopAudition()">⏹
+                                        停止</button>
+                                    <button class="apply-btn" id="btn-broadcast-preview" onclick="speakTranslation()">🚀
+                                        廣播</button>
+                                </div>
+                            </div>
+                            <div id="transPreviewText" class="preview-body"></div>
+                        </div>
+                    </div>
+                    <div class="manual-controls">
+                        <div
+                            style="background: #f8fafc; padding: 22px; border-radius: 25px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 15px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center">
+                                <label style="font-size: 0.9rem; color: #475569; font-weight:700">廣播語系</label>
+                                <span class="pill" id="langTag"
+                                    style="background:var(--primary); color:white">ZH-TW</span>
+                            </div>
+                            <select id="manualLang"
+                                onchange="document.getElementById('langTag').innerText = this.value.toUpperCase()">
+                                <option value="auto">自動偵測 (Auto)</option>
+                                <option value="zh-TW">中文 (Mandarin)</option>
+                                <option value="en-US">英文 (English)</option>
+                                <option value="ja-JP">日文 (Japanese)</option>
+                                <option value="ko-KR">韓文 (Korean)</option>
+                                <option value="vi-VN">越南語 (Vietnamese)</option>
+                                <option value="km-KH">柬埔寨/高棉 (Khmer)</option>
+                                <option value="lo-LA">寮國 (Lao)</option>
+                                <option value="th-TH">泰文 (Thai)</option>
+                                <option value="my-MM">緬甸 (Myanmar)</option>
+                                <option value="ms-MY">馬來西亞 (Malay)</option>
+                                <option value="id-ID">印尼語 (Indonesian)</option>
+                                <option value="tl-PH">菲律賓 (Filipino)</option>
+                                <option value="nan-TW">台語 (Hokkien)</option>
+                            </select>
+
+                            <label style="font-size: 0.9rem; color: #475569; font-weight:700">聲優風格</label>
+                            <select id="manualGender">
+                                <option value="female">溫柔女聲 (Standard)</option>
+                                <option value="male">專業男聲 (Professional)</option>
+                            </select>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <button class="btn-play" style="height: 55px; border-radius: 20px; font-weight:700"
+                                onclick="translateAndFill(event)">🌐 智慧翻譯</button>
+                            <div style="display:flex; gap:5px;">
+                                <button class="btn-play"
+                                    style="flex:1; height: 55px; border-radius: 20px; font-weight:700"
+                                    onclick="auditionMainContent()">🎧 試聽</button>
+                                <button class="btn-play"
+                                    style="width: 50px; height: 55px; border-radius: 20px; font-weight:700; color:#ef4444;"
+                                    onclick="stopAudition()">⏹</button>
+                            </div>
+                        </div>
+                        <button class="btn-broadcast" onclick="broadcastNow()"
+                            style="height: 75px; font-size: 1.4rem; letter-spacing: 2px;">
+                            🚀 立即廣播
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom: Schedule Management -->
+            <div class="card col-sched">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h2><span style="font-size: 1.8rem">📅</span> 定時廣播排程 (Smart Scheduler)</h2>
+                    <button class="ai-assist-btn" style="position:static; background:#594dff"
+                        onclick="openSchedModal()">
+                        ➕ 新增定時播報
+                    </button>
+                </div>
+                <div class="sched-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>啟用</th>
+                                <th>執行時間</th>
+                                <th>循環週期</th>
+                                <th>標題與內容預覽</th>
+                                <th style="text-align:right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schedList">
+                            <tr>
+                                <td colspan="5" style="text-align:center; padding:60px; color:var(--text-muted)">🛸
+                                    正在同步雲端與本地排程...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="schedModal" class="modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px">
+                <h3 style="margin:0; font-size:1.6rem; font-weight:800">建立定時廣播</h3>
+                <span style="font-size:32px; cursor:pointer; color:var(--text-muted)"
+                    onclick="closeSchedModal()">&times;</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label style="display:block; margin-bottom:10px; font-weight:700">任務簡稱</label>
+                    <input type="text" id="m-title" placeholder="例如：每日快閃特賣">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:10px; font-weight:700">時間 設定</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="number" id="m-hh" min="0" max="23" value="10" style="padding:15px"> :
+                        <input type="number" id="m-mm" min="0" max="59" value="00" style="padding:15px"> :
+                        <input type="number" id="m-ss" min="0" max="59" value="00" style="padding:15px">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:10px; font-weight:700">重複 週期</label>
+                    <div id="m-days" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <label><input type="checkbox" value="1" checked> 一</label>
+                        <label><input type="checkbox" value="2" checked> 二</label>
+                        <label><input type="checkbox" value="3" checked> 三</label>
+                        <label><input type="checkbox" value="4" checked> 四</label>
+                        <label><input type="checkbox" value="5" checked> 五</label>
+                        <label><input type="checkbox" value="6"> 六</label>
+                        <label><input type="checkbox" value="7"> 日</label>
+                    </div>
+                </div>
+                <button class="btn-broadcast" onclick="saveNewSched()" style="margin-top:15px">💾 確認儲存任務</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="preview-player" style="display:none"></audio>
+    <script>
+        const API_BASE = (location.port === '5050' || location.port === '5000') ? '' : 'http://localhost:5050';
+
+        const PRESETS = {
+            'zh_opening': { text: '各位貴賓您好，歡迎光臨。今日營業時間即將開始，祝您購物愉快。', lang: 'zh-TW' },
+            'en_opening': { text: 'Welcome! Our doors are now open. We wish you a wonderful shopping experience.', lang: 'en-US' },
+            'ja_opening': { text: 'お客様、本日はご来店いただき、誠にありがとうございます。間もなく開店いたします。', lang: 'ja-JP' },
+            'ko_opening': { text: '손님 여러분, 안녕하십니까. 지금부터 영업을 시작하오니 즐거운 쇼핑 되시기 바랍니다.', lang: 'ko-KR' },
+            'zh_closing': { text: '感謝您的光臨，本商場將於三十分鐘後結束今日營業，請您留意時間並至櫃台結帳。', lang: 'zh-TW' },
+            'en_closing': { text: 'The mall will be closing in 30 minutes. Please proceed to the checkout. Thank you!', lang: 'en-US' },
+            'ja_closing': { text: '当店はあと30分で閉店いたします。お買い忘れのないようご注意ください。', lang: 'ja-JP' },
+            'ko_closing': { text: '저희 쇼핑몰은 30분 후 영업을 종료할 예정입니다. 감사합니다.', lang: 'ko-KR' },
+            'zh_lost': { text: '各位貴賓請注意，目前有一位小朋友於服務台尋找家長，請有眷屬走失的貴賓立即前往。', lang: 'zh-TW' },
+            'en_lost': { text: 'Attention. We have a lost child at the information desk. Please come to the desk immediately.', lang: 'en-US' },
+            'ja_lost': { text: '迷子のお子様を服務台でお預かりしております。お心当たりの方はお越しください。', lang: 'ja-JP' },
+            'ko_lost': { text: '부모님을 찾는 어린이가 서비스 데스크에 있습니다. 확인 부탁드립니다.', lang: 'ko-KR' },
+            'zh_sale': { text: '限時特賣快報！多款熱門商品現正舉辦超低折扣特賣，名額有限，歡迎選購。', lang: 'zh-TW' },
+            'en_sale': { text: 'Flash Sale! Selected items are now up to 50% off. Hurry, limited quantities!', lang: 'en-US' },
+            'ja_sale': { text: 'タイムセール開催中！人気商品が特別価格です。ぜひお立ち寄りください。', lang: 'ja-JP' },
+            'ko_sale': { text: '타임 세일 안내! 인기 상품을 파격적인 할인가로 만나보세요.', lang: 'ko-KR' }
+        };
+
+        function $(id) { return document.getElementById(id); }
+
+        function updateClock() { $('currentTime').innerText = new Date().toLocaleTimeString(); }
+        setInterval(updateClock, 1000); updateClock();
+
+        async function speakPreset(key) {
+            const data = PRESETS[key];
+            if (data) doSpeak(data.text, data.lang, 'female');
+        }
+
+        async function broadcastNow() {
+            const text = $('manualContent').value.trim();
+            const lang = $('manualLang').value;
+            const gender = $('manualGender').value;
+            if (!text) return alert('請輸入內容');
+            doSpeak(text, lang, gender);
+        }
+
+        async function doSpeak(text, lang, gender) {
+            try {
+                const res = await fetch(`${API_BASE}/api/speak_v2`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, lang, gender })
+                });
+                const data = await res.json();
+                if (!data.ok) alert('錯誤: ' + data.error);
+            } catch (e) { }
+        }
+
+        async function translateAndFill(event) {
+            const text = $('manualContent').value.trim();
+            const target = $('manualLang').value.split('-')[0];
+            if (!text) return alert('請先輸入要翻譯的內容');
+
+            const btn = event.target;
+            const oldText = btn.innerText;
+            btn.innerText = '⌛ 翻譯中...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/translate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ q: text, target: target, source: 'auto' })
+                });
+
+                if (!res.ok) throw new Error(`HTTP 錯誤: ${res.status}`);
+
+                const data = await res.json();
+                if (data.ok) {
+                    // Show in preview for verification instead of direct overwrite
+                    $('transPreviewText').innerText = data.translatedText;
+                    $('transPreview').style.display = 'block';
+
+                    // Pulse animation
+                    $('transPreview').style.animation = 'none';
+                    $('transPreview').offsetHeight;
+                    $('transPreview').style.animation = 'fadeInDown 0.4s ease';
+                } else {
+                    alert('翻譯失敗: ' + (data.error || '位知錯誤'));
+                }
+            } catch (e) {
+                alert('翻譯請求發生錯誤: ' + e.message);
+            } finally {
+                btn.innerText = oldText;
+                btn.disabled = false;
+            }
+        }
+
+        async function speakTranslation() {
+            const text = $('transPreviewText').innerText;
+            const lang = $('manualLang').value;
+            const gender = $('manualGender').value;
+
+            if (text) {
+                // Keep the box, but change button to show success
+                const applyBtn = $('btn-broadcast-preview');
+                if (applyBtn) {
+                    const oldHtml = applyBtn.innerHTML;
+                    applyBtn.innerHTML = '🔊 正在播放...';
+                    applyBtn.style.background = '#10b981'; // Green
+
+                    await doSpeak(text, lang, gender);
+
+                    setTimeout(() => {
+                        applyBtn.innerHTML = oldHtml;
+                        applyBtn.style.background = '';
+                    }, 2000);
+                } else {
+                    await doSpeak(text, lang, gender);
+                }
+            }
+        }
+
+        function auditionPreviewContent() {
+            const text = $('transPreviewText').innerText;
+            const lang = $('manualLang').value;
+            const gender = $('manualGender').value;
+            if (text) auditionText(text, lang, gender);
+        }
+
+        function discardTranslation() {
+            $('transPreview').style.display = 'none';
+        }
+
+        async function generateAIScript() {
+            const keyword = $('manualContent').value.trim();
+            if (!keyword) return alert('請輸入促銷主題');
+            const btn = document.querySelector('.ai-assist-btn');
+            btn.innerHTML = '✨ AI 奮力撰寫中...';
+            try {
+                const res = await fetch(`${API_BASE}/api/ai_script`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keyword: keyword })
+                });
+                const data = await res.json();
+                if (data.ok) $('manualContent').value = data.script;
+            } finally { btn.innerHTML = '✨ AI 撰寫廣播稿'; }
+        }
+
+        async function updateVol(val) {
+            $('volVal').innerText = val + '%';
+            const params = new URLSearchParams(); params.append('vol', val);
+            fetch(`${API_BASE}/setvol`, { method: 'POST', body: params });
+        }
+
+        function toggleAmp(enabled) {
+            fetch(`${API_BASE}/api/relay_config`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ auto_on: enabled })
+            });
+        }
+
+        function toggleChime(enabled) {
+            fetch(`${API_BASE}/api/set_chime_config`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: enabled })
+            });
+        }
+
+        function postCmd(cmd) {
+            const params = new URLSearchParams(); params.append('cmd', cmd);
+            fetch(`${API_BASE}/cmd`, { method: 'POST', body: params });
+        }
+
+        function stopAll() { postCmd('CancelALL'); stopAudition(); }
+
+        let schedules = [];
+        async function loadSchedules() {
+            try {
+                const res = await fetch(`${API_BASE}/schedules`, { cache: 'no-store' });
+                const data = await res.json();
+                schedules = Array.isArray(data) ? data : (data.items || []);
+                renderSchedules();
+                updateNextSched();
+            } catch (e) { }
+        }
+
+        function renderSchedules() {
+            const tbody = $('schedList');
+            if (schedules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:60px">☕ 目前暫無任何排程任務</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            schedules.forEach(s => {
+                const tr = document.createElement('tr');
+                const daysMap = ['日', '一', '二', '三', '四', '五', '六', '日'];
+                const daysText = (s.days || []).map(d => daysMap[d]).join(',');
+                tr.innerHTML = `
+                    <td><label class="switch"><input type="checkbox" ${s.enabled ? 'checked' : ''} onchange="toggleSchedStatus('${s.id}', this.checked)"><span class="slider"></span></label></td>
+                    <td><span class="time-badge">${s.time}</span></td>
+                    <td>${daysText || '單次'}</td>
+                    <td><div style="font-weight:700; color:#1e293b">${s.title}</div><div style="font-size:0.85rem; color:var(--text-muted)">${s.payload.substring(0, 60)}...</div></td>
+                    <td style="text-align:right">
+                        <div style="display:flex; gap:10px; justify-content:flex-end">
+                            <button class="btn-icon" style="color:#10b981" onclick="trySched('${s.id}')">▶️</button>
+                            <button class="btn-icon" style="color:#ef4444" onclick="deleteSched('${s.id}')">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function updateNextSched() {
+            try {
+                const res = await fetch(`${API_BASE}/schedules/status`);
+                const data = await res.json();
+                $('nextSchedInfo').innerText = data.has_next ? `${data.next.time}` : 'None';
+            } catch (e) { }
+        }
+
+        function openSchedModal() { $('m-content'); $('schedModal').style.display = 'flex'; }
+        function closeSchedModal() { $('schedModal').style.display = 'none'; }
+
+        async function saveNewSched() {
+            const text = $('manualContent').value;
+            const hh = $('m-hh').value.padStart(2, '0');
+            const mm = $('m-mm').value.padStart(2, '0');
+            const ss = $('m-ss').value.padStart(2, '0');
+            const newSched = {
+                id: 's_' + Date.now(),
+                title: $('m-title').value || '新任務',
+                time: `${hh}:${mm}:${ss}`,
+                days: Array.from($('m-days').querySelectorAll('input:checked')).map(i => parseInt(i.value)),
+                type: 'send',
+                payload: text || '測試',
+                enabled: true
+            };
+            schedules.push(newSched); await pushSchedules(); closeSchedModal();
+        }
+
+        async function pushSchedules() {
+            await fetch(`${API_BASE}/schedules`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(schedules)
+            });
+            loadSchedules();
+        }
+
+        async function deleteSched(id) {
+            if (!confirm('確定刪除？')) return;
+            schedules = schedules.filter(x => x.id !== id); await pushSchedules();
+        }
+
+        async function toggleSchedStatus(id, enabled) {
+            const idx = schedules.findIndex(x => x.id === id);
+            if (idx !== -1) { schedules[idx].enabled = enabled; await pushSchedules(); }
+        }
+
+        async function trySched(id) {
+            const s = schedules.find(x => x.id === id);
+            if (s) doSpeak(s.payload, 'auto', 'female');
+        }
+
+        function updateCharCount(txt) {
+            document.getElementById('charCount').innerText = txt.length;
+        }
+
+        async function initSystemState() {
+            try {
+                // Fetch Volume
+                const resVol = await fetch(`${API_BASE}/state`);
+                const state = await resVol.json();
+                if (state.vol !== undefined) {
+                    $('volSlider').value = state.vol;
+                    $('volVal').innerText = state.vol + '%';
+                }
+
+                // Fetch Chime Config
+                const resChime = await fetch(`${API_BASE}/api/get_chime_config`);
+                const chime = await resChime.json();
+                if (chime.ok) {
+                    $('chimeToggle').checked = chime.enabled;
+                }
+
+                // Fetch Relay Config
+                const resRelay = await fetch(`${API_BASE}/api/get_relay_config`);
+                const relay = await resRelay.json();
+                if (relay.ok) {
+                    $('ampToggle').checked = relay.auto_on;
+                }
+            } catch (e) { console.error('Init error:', e); }
+        }
+
+        window.onclick = function (e) { if (e.target == $('schedModal')) closeSchedModal(); }
+
+        // Startup Sequence
+        initSystemState();
+        loadSchedules();
+        // [NEW] Audition Logic
+        async function auditionText(text, lang, gender) {
+            if (!text) return;
+            console.log("Audition:", text, lang);
+
+            // API Preview (Edge TTS)
+            try {
+                const res = await fetch(`${API_BASE}/api/tts_preview`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, lang, gender, rate: 0 })
+                });
+
+                if (!res.ok) throw new Error("Server Error");
+
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const player = $('preview-player');
+                if (player) {
+                    player.src = url;
+                    player.onended = () => URL.revokeObjectURL(url);
+                    player.play().catch(e => console.error(e));
+                }
+            } catch (e) {
+                console.warn("EdgeTTS Preview failed, fallback to native:", e);
+                // Fallback
+                const u = new SpeechSynthesisUtterance(text);
+                const langMap = {
+                    'zh': 'zh-TW', 'en': 'en-US', 'ja': 'ja-JP', 'ko': 'ko-KR',
+                    'zh-TW': 'zh-TW', 'en-US': 'en-US', 'ja-JP': 'ja-JP', 'ko-KR': 'ko-KR'
+                };
+                u.lang = langMap[lang] || lang;
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(u);
+            }
+        }
+
+        function stopAudition() {
+            window.speechSynthesis.cancel();
+            const player = $('preview-player');
+            if (player) {
+                player.pause();
+                player.currentTime = 0;
+            }
+        }
+
+        function auditionMainContent() {
+            const text = $('manualContent').value.trim();
+            const lang = $('manualLang').value;
+            const gender = $('manualGender').value;
+            if (!text) return alert("請輸入內容");
+            auditionText(text, lang, gender);
+        }
+
+        setInterval(updateNextSched, 15000);
+    </script>
+</body>
+
+</html>

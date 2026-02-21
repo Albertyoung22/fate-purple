@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📡 課堂廣播系統</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 動態背景粒子 */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+      animation: float 15s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0) scale(1);
+      }
+
+      50% {
+        transform: translateY(-20px) scale(1.05);
+      }
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 32px;
+      box-shadow:
+        0 30px 90px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+      padding: 60px 50px;
+      max-width: 900px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+      animation: slideUp 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    h1 {
+      font-size: 42px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 18px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #9ca3af;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 18px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 2px;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 18px 24px;
+      background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+      border: 2px solid #e5e7eb;
+      border-radius: 16px;
+      color: #1f2937;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 16px;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.08),
+        0 0 0 0 rgba(102, 126, 234, 0);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow:
+        0 12px 28px rgba(102, 126, 234, 0.25),
+        0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: #667eea;
+    }
+
+    .btn:active {
+      transform: translateY(-2px) scale(0.98);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      box-shadow:
+        0 8px 20px rgba(102, 126, 234, 0.4),
+        0 0 0 0 rgba(102, 126, 234, 0);
+      font-size: 18px;
+      padding: 24px 32px;
+    }
+
+    .btn-primary:hover {
+      box-shadow:
+        0 16px 36px rgba(102, 126, 234, 0.5),
+        0 0 0 4px rgba(102, 126, 234, 0.15);
+      transform: translateY(-6px) scale(1.03);
+    }
+
+    .student-section {
+      background: linear-gradient(135deg, #f0f9ff 0%, #f5f3ff 100%);
+      border: 2px solid #e0e7ff;
+      border-radius: 20px;
+      padding: 30px;
+      margin-top: 20px;
+    }
+
+    .emoji {
+      font-size: 24px;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 30px;
+      border-top: 2px solid #e5e7eb;
+    }
+
+    .footer-text {
+      font-size: 14px;
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    /* 響應式設計 */
+    @media (max-width: 768px) {
+      .container {
+        padding: 40px 30px;
+      }
+
+      h1 {
+        font-size: 32px;
+      }
+
+      .subtitle {
+        font-size: 16px;
+      }
+
+      .button-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+      }
+
+      .btn {
+        padding: 16px 20px;
+        font-size: 15px;
+      }
+
+      .btn-primary {
+        font-size: 17px;
+        padding: 20px 28px;
+      }
+
+      .student-section {
+        padding: 24px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 20px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .button-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .emoji {
+        font-size: 20px;
+      }
+    }
+
+    /* 載入動畫 */
+    .btn {
+      animation: fadeInUp 0.6s ease-out backwards;
+    }
+
+    .btn:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .btn:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    .btn:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .btn:nth-child(4) {
+      animation-delay: 0.25s;
+    }
+
+    .btn:nth-child(5) {
+      animation-delay: 0.3s;
+    }
+
+    .btn:nth-child(6) {
+      animation-delay: 0.35s;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+  <script defer src="auth.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📡 課堂廣播系統</h1>
+      <p class="subtitle">選擇您的身份以開始使用</p>
+    </div>
+
+    <!-- 教師端入口 -->
+    <div class="section">
+      <div class="section-title">
+        <span>教師專區</span>
+      </div>
+      <a class="btn btn-primary" href="/teacher">
+        <span class="emoji">👨‍🏫</span>
+        <span>教師控制台</span>
+      </a>
+    </div>
+
+    <!-- 學生端入口 -->
+    <div class="section">
+      <div class="section-title">
+        <span>學生專區</span>
+      </div>
+      <div class="student-section">
+        <div class="button-grid">
+          <a class="btn" href="/g/1">
+            <span class="emoji">1️⃣</span>
+            <span>組別 1</span>
+          </a>
+          <a class="btn" href="/g/2">
+            <span class="emoji">2️⃣</span>
+            <span>組別 2</span>
+          </a>
+          <a class="btn" href="/g/3">
+            <span class="emoji">3️⃣</span>
+            <span>組別 3</span>
+          </a>
+          <a class="btn" href="/g/4">
+            <span class="emoji">4️⃣</span>
+            <span>組別 4</span>
+          </a>
+          <a class="btn" href="/g/5">
+            <span class="emoji">5️⃣</span>
+            <span>組別 5</span>
+          </a>
+          <a class="btn" href="/g/6">
+            <span class="emoji">6️⃣</span>
+            <span>組別 6</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 頁腳 -->
+    <div class="footer">
+      <p class="footer-text">課堂廣播系統 · 智慧教室解決方案</p>
+    </div>
+  </div>
+</body>
+
+</html>

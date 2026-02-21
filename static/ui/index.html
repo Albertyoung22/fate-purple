@@ -1,0 +1,2095 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>📥 廣播主控台</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e7bd8">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, "Microsoft JhengHei", Segoe UI, Roboto, Arial;
+      background: #f5f8fb;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #1e7bd8;
+      color: #fff;
+    }
+
+    header .title {
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    header .links a {
+      color: #dff1ff;
+      text-decoration: none;
+      margin-left: 12px;
+      font-size: 13px;
+    }
+
+    main {
+      padding: 12px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    #fatal {
+      display: none;
+      margin: 12px 0;
+      padding: 10px 12px;
+      background: #fff3f3;
+      border: 1px solid #ffdada;
+      color: #7a1111;
+      border-radius: 10px;
+    }
+  </style>
+  <style>
+    /* Hold-to-Talk Button Styles */
+    .ann-btn.hold {
+      background: #0ea5e9;
+      /* Sky Blue */
+      min-width: 140px;
+      user-select: none;
+      /* Prevent text selection while holding */
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      /* Improve touch response */
+    }
+
+    .ann-btn.recording {
+      background: #ef4444 !important;
+      /* Red */
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+      }
+
+      70% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+      }
+    }
+  </style>
+  <script defer src="auth.js"></script>
+</head>
+
+<body>
+  <div id="auth-toolbar" style="position:fixed; top:72px; right:16px; z-index:9999;">
+    <button id="logoutBtn"
+      style="background:#f87171;border:none;border-radius:999px;color:white;padding:10px 14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);">登出</button>
+  </div>
+  <header>
+    <div class="title">📥 廣播主控台</div>
+    <style>
+      header .links .sep {
+        color: rgba(255, 255, 255, 0.4);
+        margin: 0 2px 0 10px;
+        font-size: 11px;
+      }
+    </style>
+    <div class="links">
+      <span id="nowText"
+        style="margin-right:12px;opacity:.9;display:inline-block;min-width:140px;text-align:right">--:--:--</span>
+      <a href="index.html">🎛 主控台</a>
+      <a href="/demo" style="color:#ffeb3b; font-weight:bold;">✨ 展示廳</a>
+      <a href="mall_dashboard.html">🏢 商場</a>
+      <a href="market.html">🍎 果菜市場</a>
+      <a href="sched.html">🕐 排程</a>
+      <a href="single_reservation.html">📅 預約</a>
+      <a href="tt.html">📚 課表</a>
+      <span class="sep">|</span>
+      <a href="taigi_edu.html">🇹🇼 本土語</a>
+      <a href="eew.html">🌋 地震</a>
+      <a href="relay4.html">📣 分區</a>
+      <a href="silent-dashboard.html">🔇 無聲</a>
+      <span class="sep">|</span>
+      <a href="broadcast.html" target="_blank">🎙️ 行動</a>
+      <a href="live.html">🔴 直播</a>
+      <a href="teacher_call.html" target="_blank">📹 通話</a>
+      <a href="shortcuts.html">⚡ 快捷</a>
+      <a href="buddha.html">🕌 佛教</a>
+      <span class="sep">|</span>
+      <a href="clients.html" target="_blank">👥 設備</a>
+      <a href="/teacher?key=teacher" target="_blank">🎵 媒體</a>
+      <a href="logs.html">🗒 紀錄</a>
+      <a href="features.html">📖 說明</a>
+    </div>
+  </header>
+  <main>
+
+
+    <div id="fatal"></div>
+    <udp-console></udp-console>
+    <noscript>
+      <div
+        style="margin:12px 0;padding:10px;border:1px solid #ffdada;background:#fff3f3;color:#7a1111;border-radius:10px;">
+        需要啟用 JavaScript 才能顯示主控台。</div>
+    </noscript>
+  </main>
+  <script>
+    (function () {
+      const fatalBox = document.getElementById('fatal');
+      function showFatal(msg) {
+        if (!fatalBox) return;
+        fatalBox.style.display = 'block';
+        fatalBox.textContent = '主控台載入失敗：' + msg + '（請按 F12 檢查 Console 錯誤，或確認後端 /state 是否可存取）';
+      }
+      window.addEventListener('error', (e) => showFatal(e.message || '未知錯誤'));
+
+      if (!('customElements' in window)) {
+        showFatal('瀏覽器不支援 Web Components，請改用 Chrome/Edge/Firefox 新版');
+        return;
+      }
+
+      class UDPConsole extends HTMLElement {
+        constructor() {
+          super();
+          this.attachShadow({ mode: "open" });
+          this.state = {
+            volume: 80, rate: "-20%", lang: "zh-TW", gender: "female",
+            muted: false, playing: "idle", progress: 0, ngrok_url: null,
+            timetable: { enabled: true, count: 0 },
+            relay: {},
+            auto_unmute_on_play: true,
+            edge_tts_status: "Checking..."
+          };
+          // 🆕 內部輪詢控制（YT 下載檢測用）
+          this._ytPoll = null;
+          this._ytTick = null;
+          this._ytStartNames = [];
+          this._lastLangSet = 0; // Prevent poll flickering
+          this._lastGenderSet = 0;
+        }
+
+        connectedCallback() {
+          this.render();
+          this.bind();
+          this.loadLocalSettings(); // 🆕 Load local preference
+          this.fetchRelayConfig();  // 🆕 Sync relay config
+          this.fetchChimeConfig();  // 🆕 Sync chime config
+          this.refreshState();
+          this._timer = setInterval(() => this.refreshState(), 2000);
+        }
+
+        disconnectedCallback() {
+          if (this._timer) clearInterval(this._timer);
+          if (this._ytPoll) clearInterval(this._ytPoll);
+          if (this._ytTick) clearInterval(this._ytTick);
+        }
+
+        async translateSimple() {
+          try {
+            const $ = (s) => this.shadowRoot.querySelector(s);
+            let srcSel = ($("#srcLangSimple")?.value || $("#srcLang")?.value || "").trim();
+            let tgtSel = ($("#tgtLangSimple")?.value || $("#tgtLang")?.value || "zh").trim();
+            const text = ($("#textSimple")?.value || $("#msg")?.value || "").trim();
+
+            if (!text) {
+              alert("請先輸入文字"); return;
+            }
+
+            const previewBox = $("#transPreview");
+            const previewText = $("#transPreviewText");
+
+            // Show status in preview
+            previewText.textContent = "⌛ 翻譯中...";
+            previewBox.style.display = "block";
+
+            const norm = (x) => (x || "").toLowerCase();
+            const canon = (x) => {
+              x = norm(x);
+              if (x === "zh-tw" || x === "zhtw" || x === "zh_hant") return "zh";
+              if (x === "tw" || x === "nan-tw" || x === "nan_tw") return "nan";
+              if (x === "" || x === "auto" || x === "detect") return "auto";
+              return x;
+            };
+
+            const detectLang = (s) => {
+              if (/[\u3400-\u9FFF\uF900-\uFAFF]/.test(s)) return "zh";
+              if (/^[\x00-\x7F\s., ; : !?'"()\-\d]+$/.test(s)) return "en";
+              return "auto";
+            };
+
+            let src = canon(srcSel);
+            let tgt = canon(tgtSel);
+            if (src === "auto") {
+              const det = detectLang(text);
+              src = (det && det !== tgt) ? det : "auto";
+            }
+            if (src === tgt) {
+              if (tgt === "auto") tgt = "zh";
+              src = "auto";
+            }
+
+            const isZh = (x) => x === "zh";
+            const isNan = (x) => x === "nan";
+
+            let translated = "";
+
+            if ((isZh(src) || src === "auto") && isNan(tgt)) {
+              const r = await fetch("/taigi/translate", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text, direction: "zh2nan" })
+              });
+              const j = await r.json();
+              if (!r.ok || j.ok === false) throw new Error(j.error || "taigi translate failed");
+              translated = j.text || "";
+            } else if (isNan(src) && isZh(tgt)) {
+              const r = await fetch("/taigi/translate", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text, direction: "nan2zh" })
+              });
+              const j = await r.json();
+              if (!r.ok || j.ok === false) throw new Error(j.error || "taigi translate failed");
+              translated = j.text || "";
+            } else {
+              const r = await fetch("/translate", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ q: text, source: src || "auto", target: tgt || "zh" })
+              });
+              const j = await r.json();
+              if (!r.ok || j.ok === false) throw new Error(j.error || "translate failed");
+              translated = j.translatedText || j.text || "";
+            }
+
+            if (translated) {
+              previewText.textContent = translated;
+              // Sync voice language if target is known
+              const mapLang = (x) => {
+                x = (x || "").toLowerCase();
+                if (x.startsWith("ja")) return "ja-JP";
+                if (x.startsWith("ko")) return "ko-KR";
+                if (x.startsWith("vi")) return "vi-VN";
+                if (x.startsWith("id")) return "id-ID";
+                if (x === "nan") return "nan-TW";
+                if (x === "en") return "en-US";
+                return "zh-TW";
+              };
+              const langSel = $("#lang");
+              if (langSel && tgt !== "auto") {
+                langSel.value = mapLang(tgt);
+                langSel.dispatchEvent(new Event("change"));
+              }
+            } else {
+              previewBox.style.display = "none";
+            }
+          } catch (e) {
+            console.error(e);
+            alert("翻譯失敗：" + (e.message || e));
+            this.shadowRoot.querySelector("#transPreview").style.display = "none";
+          }
+        }
+
+        css() {
+          return ` :host {
+        display:block; width:100%;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      .app {
+        --card-bg:#ffffff; --card-br:#e7f0fb; --text:#0b2239; width:100%;
+      }
+
+      .status {
+        display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
+        background: #eaf3ff; border:1px solid #cfe5ff; border-radius:14px; padding:10px 12px; margin-bottom:12px;
+      }
+
+      .status .left {
+        display:flex; align-items:center; flex-wrap:wrap; gap:10px;
+      }
+
+      .badge {
+        padding:4px 8px; background:#fff; border:1px solid #d8e7fb; border-radius:12px; font-size:12px; color:#1f3b57;
+      }
+
+      .progress-wrap {
+        display:flex; align-items:center; gap:8px; min-width:260px;
+      }
+
+      progress {
+        width: 220px; height: 14px;
+      }
+
+      /* ✅ 12 欄 Grid：桌機固定雙欄（7/5），窄螢幕改單欄 */
+      .grid {
+        display:grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap:12px;
+        width:100%;
+      }
+
+      .left-col {
+        grid-column: span 7; min-width:0;
+      }
+
+      .right-col {
+        grid-column: span 5; min-width:0;
+      }
+
+      @media (max-width: 1200px) {
+        .left-col, .right-col {
+          grid-column: 1 / -1;
+        }
+      }
+
+      .card {
+        background: var(--card-bg); border:1px solid var(--card-br); border-radius:16px; padding:14px;
+        box-shadow: 0 1px 0 rgba(16, 24, 40, 0.03); min-width:0;
+      }
+
+      .card h3 {
+        margin:0 0 12px; font-size:16px; color:var(--text); display:flex; align-items:center; gap:8px;
+      }
+
+      .row {
+        display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin: 8px 0;
+      }
+
+      .row > * {
+        flex: 0 1 auto; min-width:0;
+      }
+
+      .row.stretch > * {
+        flex: 1 1 auto;
+      }
+
+      label.small {
+        font-size:12px; color:#445b78;
+      }
+
+      input[type="text"], textarea, select {
+        width:100%; font-size:14px; padding:8px 10px;
+        border:1px solid #d6e3f7; border-radius:10px; background:#fff; min-width:0;
+      }
+
+      textarea {
+        min-height: 96px; resize: vertical;
+      }
+
+      button {
+        appearance:none;
+        border:1px solid #cfe1fb;
+        background:#f6faff;
+        color:#0a2b5a;
+        padding:8px 10px;
+        border-radius:10px;
+        font-size:14px;
+        cursor:pointer;
+        box-shadow:0 1px 2px rgba(15, 23, 42, .16);
+        transition:transform .08s ease, box-shadow .08s ease, filter .08s ease;
+      }
+
+      button.primary {
+        background:#1e7bd8; border-color:#1e7bd8; color:#fff;
+      }
+
+      button.warn {
+        background:#ffe9e9; border-color:#ffd0d0; color:#8b1a1a;
+      }
+
+      button.ghost {
+        background:#fff;
+      }
+
+      button:hover {
+        filter:brightness(1.03);
+        box-shadow:0 3px 6px rgba(15, 23, 42, .22);
+      }
+
+      button:active {
+        transform:translateY(1px);
+        box-shadow:0 1px 3px rgba(15, 23, 42, .2);
+      }
+
+      .btns {
+        display:flex; flex-wrap:wrap; gap:8px;
+      }
+
+      /* 內部兩欄（MP3/YouTube 區）也避免撐爆 */
+      .two-col {
+        display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px; width:100%;
+      }
+
+      @media (max-width: 900px) {
+        .two-col {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .hint {
+        color:#5c738f; font-size:12px;
+      }
+
+      .tight * {
+        font-size: 12px;
+      }
+
+      .select-inline {
+        display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+      }
+
+      .file-row {
+        display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+      }
+
+      .file-row .grow {
+        flex: 1 1 260px; min-width:0;
+      }
+
+      .right-col .card {
+        min-height: 0;
+      }
+
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+
+      .pulse {
+        animation: pulse-warn 1.5s infinite;
+      }
+      @keyframes pulse-warn {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.7; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+
+
+      `;
+        }
+
+        html() {
+          const s = this.state;
+          const $ = (sel) => this.shadowRoot.querySelector(sel);
+
+          // 🆕 Use local dropdown values for badges if available, otherwise fallback to server state
+          const activeLang = ($("#lang")?.value) || s.lang || "-";
+          const activeGender = ($("#gender")?.value) || s.gender || "-";
+
+          return `
+            <div class="app">
+              <div class="status">
+                <div class="left">
+                  <span class="badge">狀態：${this.escape(s.playing || "—")}</span>
+                  <div class="progress-wrap">
+                    <progress value="${Number(s.progress || 0)}" max="100"></progress>
+                    <span class="mono">${Number(s.progress || 0)}%</span>
+                  </div>
+                  <span class="badge">音量：${Number(s.volume || 0)}%</span>
+                  <span class="badge">語速：${this.escape(s.rate || "-")}</span>
+                  <span class="badge">語言：${this.escape(activeLang)}</span>
+                  <span class="badge">聲別：${this.escape(activeGender)}</span>
+                  <span class="badge" style="background:${this.getTtsColor(s.edge_tts_status)};">TTS：${this.escape(s.edge_tts_status || "Checking...")}</span>
+                  ${s.muted ? '<span class="badge" style="background:#ffecec;border-color:#ffcece;color:#8b1a1a">靜音</span>' : ""}
+                </div>
+                <div class="right tight">
+                  <span class="hint">ngrok：</span>
+                  <span class="mono">${s.ngrok_url ? this.escape(s.ngrok_url) : '（未啟動）'}</span>
+                </div>
+              </div>
+              <div class="grid">
+                <!-- Left -->
+                <div class="left-col">
+                  <div class="card">
+                    <h3>📝 傳送文字訊息</h3>
+                    <div class="row"><textarea id="msg" placeholder="要播報／顯示的內容…"></textarea></div>
+
+                    <div id="transPreview" style="display: none; background: #eff6ff; border: 2px solid #60a5fa; border-radius: 8px; padding: 12px; margin-bottom: 12px; margin-top: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #dbeafe; padding-bottom: 6px;">
+                            <span style="font-weight: bold; color: #1e40af; font-size: 14px;">🌐 翻譯預覽</span>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="ghost" style="font-size: 12px; padding: 4px 8px; border:1px solid #cbd5e1;" onclick="this.getRootNode().host.shadowRoot.querySelector('#transPreview').style.display='none'">✖ 關閉</button>
+                                <button class="secondary" style="font-size: 12px; padding: 4px 12px; background: #fff; border: 1px solid #cbd5e1;" onclick="const txt=this.getRootNode().host.shadowRoot.querySelector('#transPreviewText').textContent; const lang=this.getRootNode().host.shadowRoot.querySelector('#tgtLangSimple').value; this.getRootNode().host.auditionText(txt, lang);">🎧 試聽</button>
+                                <button class="ghost" style="font-size: 12px; padding: 4px 8px; border:1px solid #cbd5e1; color: #dc2626;" onclick="this.getRootNode().host.stopAudition()">⏹ 停止</button>
+                                <button class="primary" style="font-size: 12px; padding: 4px 12px;" onclick="this.getRootNode().host.sayText(this.getRootNode().host.shadowRoot.querySelector('#transPreviewText').textContent)">🚀 廣播</button>
+                            </div>
+                        </div>
+                        <div id="transPreviewText" style="font-size: 15px; line-height: 1.5; color: #1e293b; background: white; padding: 10px; border-radius: 6px; border: 1px solid #bfdbfe;"></div>
+                    </div>
+
+                    <div class="row tight" style="margin-top:0px; margin-bottom:8px;">
+                      <span class="hint">💡 <b>注音控制：</b> 在文字中插入 <code>[:ㄏㄠ3]</code> 可精準控制字音。</span>
+                      <span class="hint" style="margin-left:8px;">🎨 <b>指令控制 (Instruct)：</b> 使用 <code>[用開心的語氣]內容</code> 可控制風格。</span>
+                    </div>
+                    <div class="btns">
+                      <button id="btn-say" class="primary">🔊 直接播報</button>
+                      <!-- AI Button (Direct) -->
+                      <button id="btn-ai-direct" style="background:linear-gradient(45deg, #1e7bd8, #8a2be2); border:none; color:white;" title="輸入關鍵字後，直接點此按鈕">✨ AI 直接生成</button>
+
+                      <!-- 🆕 Taigi 快捷：先翻成台文 + 下載台語語音檔 + 講台語 -->
+                      <button id="btn-taigi-translate">🈶 先翻成台文</button>
+                      <button id="btn-taigi-say" class="secondary">🗣️ 講台語</button>
+                      <button id="btn-taigi-preview">🎧 試聽/下載</button>
+
+                      <button id="btn-weather-text" class="secondary" style="margin-left:4px;">🌥️ 氣象文字</button>
+                    </div>
+                    <!-- 🆕 台語語音試聽區 -->
+                    <div id="taigi-audio-preview" class="row tight" style="display:none;margin-top:4px;align-items:center;gap:8px;">
+                      <span class="hint">語音試聽：</span>
+                      <a id="taigi-download-link" href="#" target="_blank" class="mono"></a>
+                      <audio id="taigi-audio-player" controls style="flex:1;max-width:260px;"></audio>
+                    </div>
+                    <!-- 🆕 即時錄音廣播 -->
+                    <div class="btns" style="margin-top:12px; border-top:1px dashed #d6e3f7; padding-top:12px;">
+                       <!-- 🎤 Hold to Talk Button -->
+                       <button id="btn-hold-talk" class="ann-btn hold">🎤 按住廣播</button>
+                       <button id="btn-record-toggle" style="min-width:140px;">🔴 開始錄音</button>
+                       <span id="recStatus" class="hint" style="margin-left:8px; display:none;">錄音中...</span>
+                    </div>
+                    <!-- 🆕 錄音預覽與傳送區 -->
+                    <div id="recPreviewBox" style="display:none; margin-top:8px; align-items:center; gap:8px; flex-wrap:wrap;">
+                      <audio id="recAudio" controls style="height:32px; max-width:220px; vertical-align:middle;"></audio>
+                      <button id="btn-rec-send" class="primary">📤 傳送</button>
+                      <button id="btn-rec-cancel" class="warn">🗑 放棄</button>
+                    </div>
+                  </div>
+
+                  <div class="card" style="margin-top:12px;">
+                      <h3>🌐 翻譯助手（簡化）</h3>
+                      <div class="row">
+                        <div class="select-inline" style="gap:10px;">
+                          <label class="small">目標語言</label>
+                          <select id="tgtLangSimple" style="min-width:160px;">
+                            <option value="zh">中文</option>
+                            <option value="nan">台語</option>
+                            <option value="en">英文</option>
+                            <option value="ja">日文</option>
+                            <option value="ko">韓文</option>
+                            <option value="vi">越南語</option>
+                            <option value="km">柬埔寨/高棉</option>
+                            <option value="lo">寮國</option>
+                            <option value="th">泰國</option>
+                            <option value="my">緬甸</option>
+                            <option value="ms">馬來西亞</option>
+                            <option value="id">印尼語</option>
+                            <option value="tl">菲律賓</option>
+                          </select>
+                          <button id="btn-translate-simple">確定翻譯</button>
+                        </div>
+                      </div>
+                      <div class="row tight"><span class="hint">說明：前端先粗略偵測來源語言，避免同語言造成錯誤；成功後覆蓋上方文字框。</span></div>
+                    </div>
+
+
+                <div class="card" style="margin-top:12px;">
+                  <h3>🎵 MP3 / YouTube</h3>
+                  <div class="two-col">
+                    <div>
+                      <div class="row"><input id="mp3url" type="text" placeholder="貼上 MP3 或 YouTube 連結…" /></div>
+                      <div class="btns">
+                        <button id="btn-mp3url" class="primary">▶️ 播放音訊</button>
+                          <button id="btn-ytfs">🎬 全螢幕播放（YouTube）</button>
+                          <button id="btn-ytclose" class="ghost">⏹ 關閉全螢幕</button>
+                        </div>
+                      </div>
+                      <div>
+                        <div class="file-row">
+                          <input id="file" type="file" accept=".mp3" />
+                          <button id="btn-upload">⬆️ 上傳 MP3</button>
+                        </div>
+                        <div class="row stretch" style="margin-top:8px;">
+                          <select id="fileList"></select>
+                          <select id="fileAction">
+                            <option value="play">播放</option>
+                            <option value="download">下載</option>
+                            <option value="delete">刪除</option>
+                          </select>
+                          <button id="btn-file-go">執行</button>
+                        </div>
+                        <div class="btns" style="margin-top:8px;">
+                          <button id="btn-mp3pause">⏸ 暫停</button>
+                          <button id="btn-mp3resume">▶️ 繼續</button>
+                          <button id="btn-mp3stop" class="ghost">⏹ 停止</button>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- 🆕 下載進度/結果顯示 -->
+                    <div class="row tight" id="ytDlWait" style="margin-top:8px; display:none;">
+                       <span class="hint">YouTube 轉 MP3 下載中…</span>
+                       <span class="mono" id="ytDlTick"></span>
+                    </div>
+                    <div class="row tight" id="ytDlBox" style="margin-top:6px; display:none;">
+                       <span class="hint">下載完成：</span>
+                       <a id="ytDlLink" class="mono" href="#" target="_blank" rel="noopener"></a>
+                       <button id="btnCopyYtDl" class="ghost">複製連結</button>
+                    </div>
+                  </div>
+    
+                  <!-- ⚡ 快速指令 -->
+                  <div class="card" style="margin-top:12px;">
+                    <h3>⚡ 快速指令</h3>
+                    <div class="btns">
+                      <button data-cmd="Bell:ClassStart">🔔 上課鈴</button>
+                      <button data-cmd="Bell:ClassEnd">🔔 下課鈴</button>
+                      <button data-cmd="Bell:EarthquakeAlarm">🚨 地震警報</button>
+                      <button data-cmd="WeatherReport" class="secondary">🌤️ 氣象播報</button>
+                      <button data-cmd="CancelALL" class="warn">⏹ 強制取消</button>
+                    </div>
+                    <div class="btns" style="margin-top:8px;">
+                      <button data-cmd="PlayMP3:flagsong.mp3">🇹🇼 國旗歌</button>
+                      <button data-cmd="PlayMP3:countrysong.mp3">🎌 國歌（現行）</button>
+                      <button data-cmd="PlayMP3:countrysong_classic.mp3">🎌 國歌（經典）</button>
+                      <button data-cmd="PlayMP3:Award.mp3">🏅 Award</button>
+                      <button data-cmd="PlayMP3:DoubleHeadedEagle.mp3">🦅 Eagle</button>
+                      <button data-cmd="PlayMP3:MarchDrum.mp3">🥁 March</button>
+                    </div>
+                    <div class="row tight" style="margin-top:6px;">
+                      <span class="hint">提示：這些按鈕會送出 <code>PlayMP3:檔名.mp3</code> 到接收端；請確認接收端資料夾已有同名檔案，或先用「MP3 / YouTube」區塊上傳。</span>
+                    </div>
+                  </div>
+                </div>
+    
+                <!-- Right -->
+                <div class="right-col">
+                  <div class="card">
+                    <h3>🗣️ 語音設定</h3>
+                    <div class="row">
+                      <div class="select-inline">
+                        <label class="small">語言</label>
+                        <select id="lang">
+                          <option value="zh-TW">中文（台灣）</option>
+                          <option value="en-US">英文（美國）</option>
+                          <option value="ja-JP">日文（日本）</option>
+                          <option value="ko-KR">韓文（韓國）</option>
+                          <option value="vi-VN">越南語</option>
+                          <option value="km-KH">柬埔寨/高棉</option>
+                          <option value="lo-LA">寮國</option>
+                          <option value="th-TH">泰國</option>
+                          <option value="my-MM">緬甸</option>
+                          <option value="ms-MY">馬來西亞</option>
+                          <option value="id-ID">印尼語</option>
+                          <option value="tl-PH">菲律賓</option>
+                          <option value="nan-TW">台語</option>
+                        </select>
+                        <button id="btn-lang" style="display:none"></button>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="select-inline">
+                        <label class="small">聲別</label>
+                        <select id="gender">
+                          <option value="female">女聲</option>
+                          <option value="male">男聲</option>
+                        </select>
+                        <button id="btn-gender" style="display:none"></button>
+                      </div>
+                    </div>
+
+                    <div class="row">
+                      <label class="small" for="rate" style="margin-right:4px;">語速</label>
+                      <span class="hint">慢</span>
+                      <input id="rate" type="range" min="-50" max="50" step="10" value="0" style="flex:1" />
+                      <span class="hint">快</span>
+                      <span id="rateVal" class="mono" style="min-width:3.5em;text-align:right;">0%</span>
+                    </div>
+                    <div class="row">
+                      <label class="small">播放前自動解除靜音</label>
+                      <input id="autoUnmute" type="checkbox" />
+                    </div>
+                    <div class="row">
+                      <label class="small">播放前導/結束音</label>
+                      <input id="chkChime" type="checkbox" />
+                    </div>
+                  </div>
+    
+                  <div class="card" style="margin-top:12px;">
+                    <h3>🔊 音量 / 靜音</h3>
+                    <div class="row">
+                      <input id="volume" type="range" min="0" max="100" value="80" style="flex:1" />
+                      <span id="volVal" class="mono">80%</span>
+                    </div>
+                    <div class="btns">
+                      <button id="btn-volup">＋5</button>
+                      <button id="btn-voldown">－5</button>
+                      <button id="btn-mute">🔇 靜音</button>
+                      <button id="btn-unmute" class="ghost">🔊 解除靜音</button>
+                    </div>
+                  </div>
+    
+                  <div class="card" style="margin-top:12px;">
+                    <h3>📢 擴大機設定</h3>
+                    <div class="row">
+                      <label class="small" style="flex:1;">自動啟動擴大機</label>
+                      <input id="chkAutoRelay" type="checkbox" />
+                    </div>
+                    <div class="row tight"><span class="hint">說明：若勾選，播放時將自動開啟擴大機電源。</span></div>
+                  </div>
+
+                  <div class="card" style="margin-top:12px;">
+                    <h3>ℹ️ 系統資訊</h3>
+                    <div class="row tight"><span class="hint">課表：</span> <span id="ttInfo" class="mono">—</span></div>
+                    <div class="row tight"><span class="hint">Relay：</span> <span id="relayInfo" class="mono">—</span></div>
+
+                  </div>
+                </div>
+              </div>
+
+              <!-- 🔐 麥克風權限引導 Modal -->
+              <div id="mic-help-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+                <div class="card" style="width:500px; max-width:90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                  <h3 style="color:#d32f2f; margin-bottom:12px;">⚠️ 無法啟動麥克風</h3>
+                  <div style="font-size:14px; line-height:1.6; color:#333;">
+                    <p>瀏覽器限制 <b>getUserMedia</b> 只能在安全環境（HTTPS 或 localhost）下運作。</p>
+                    <p>若您是遠端連線，請依照以下步驟開啟權限：</p>
+                    <ol style="padding-left:20px; margin:10px 0;">
+                      <li>
+                        開啟新分頁，前往（或複製貼上）此網址：<br>
+                        <div class="row tight" style="margin-top:4px; align-items:center;">
+                           <a href="chrome://flags/#unsafely-treat-insecure-origin-as-secure" target="_blank" style="flex:1; font-family:monospace; font-size:13px; color:#0052cc; text-decoration:underline; word-break:break-all;">chrome://flags/#unsafely-treat-insecure-origin-as-secure</a>
+                           <button class="ghost" onclick="this.getRootNode().host.copyText('chrome://flags/#unsafely-treat-insecure-origin-as-secure')">📋 複製</button>
+                        </div>
+                        <div style="font-size:12px; color:#666; margin-top:2px;">(註：若點擊無效，請使用複製按鈕並手動貼上)</div>
+                      </li>
+                      <li style="margin-top:8px;">
+                        在 "Insecure origins treated as secure" 欄位中填入：<br>
+                        <div class="row tight" style="margin-top:4px;">
+                           <input type="text" readonly id="origin-url-input" style="flex:1; font-family:monospace; font-size:12px; padding:4px; font-weight:bold; color:#0052cc;">
+                           <button class="ghost" onclick="this.getRootNode().host.copyText(this.getRootNode().getElementById('origin-url-input').value)">📋 複製</button>
+                        </div>
+                      </li>
+                      <li style="margin-top:8px;">將右側選單改為 <b style="color:#008000;">Enabled</b>。</li>
+                      <li>點擊右下角 <b style="color:#0052cc;">Relaunch</b> 重啟瀏覽器。</li>
+                    </ol>
+                  </div>
+                  <div class="btns" style="margin-top:16px; justify-content:flex-end;">
+                    <button class="primary" onclick="this.getRootNode().getElementById('mic-help-modal').style.display='none'">我知道了</button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          `;
+        }
+
+        // Helper to copy text
+        copyText(txt) {
+          navigator.clipboard.writeText(txt).then(() => {
+            alert("已複製到剪貼簿！");
+          }).catch(() => {
+            prompt("請手動複製：", txt);
+          });
+        }
+
+        getTtsColor(status) {
+          if (!status || status === "OK") return "#ecfdf5";
+          if (status === "Testing...") return "#fffbeb";
+          if (status.includes("Error") || status.includes("Fail")) return "#fef2f2";
+          return "white";
+        }
+
+        async fetchRelayConfig() {
+          try {
+            const r = await fetch('/api/get_relay_config');
+            const j = await r.json();
+            if (j.ok) {
+              this.state.relay_auto = j.auto_on;
+              const chk = this.shadowRoot.getElementById('chkAutoRelay');
+              if (chk) chk.checked = !!j.auto_on;
+            }
+          } catch (e) { console.error("Fetch relay config failed", e); }
+        }
+
+        async setRelayConfig(enabled) {
+          try {
+            const r = await fetch('/api/set_relay_config', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ auto_on: enabled })
+            });
+            const j = await r.json();
+            if (j.ok) {
+              console.log("Relay config updated:", j.auto_on);
+              this.state.relay_auto = j.auto_on; // Update internal state
+            } else {
+              alert("更新設定失敗：" + (j.error || "Unknown"));
+              // Revert checkbox if failed
+              const chk = this.shadowRoot.getElementById('chkAutoRelay');
+              if (chk) chk.checked = !enabled;
+            }
+          } catch (e) {
+            console.error("Set relay config failed", e);
+            alert("網路錯誤，無法更新設定");
+          }
+        }
+
+        async fetchChimeConfig() {
+          try {
+            const r = await fetch('/api/get_chime_config');
+            const j = await r.json();
+            if (j.ok) {
+              const chk = this.shadowRoot.getElementById('chkChime');
+              if (chk) chk.checked = !!j.enabled;
+            }
+          } catch (e) { console.error("Fetch chime config failed", e); }
+        }
+
+        async setChimeConfig(enabled) {
+          try {
+            const r = await fetch('/api/set_chime_config', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ enabled: enabled })
+            });
+            const j = await r.json();
+            if (!j.ok) {
+              alert("更新提示音設定失敗");
+              const chk = this.shadowRoot.getElementById('chkChime');
+              if (chk) chk.checked = !enabled;
+            }
+          } catch (e) { console.error("Set chime config failed", e); }
+        }
+
+        render() {
+          this.shadowRoot.innerHTML = `<style>${this.css()}</style>` + this.html();
+        }
+
+        bind() {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          $("#btn-say").addEventListener("click", () => this.sayText($("#msg").value.trim()));
+
+          // 🆕 Chime Toggle
+          const chkChime = $("#chkChime");
+          if (chkChime) {
+            chkChime.addEventListener("change", (e) => {
+              this.setChimeConfig(e.target.checked);
+            });
+          }
+
+
+
+
+          // 🆕 錄音廣播 (Start/Stop Toggle)
+          const btnRec = $("#btn-record-toggle");
+          if (btnRec) {
+            btnRec.addEventListener("click", () => this.toggleRecording());
+          }
+
+          // 🆕 按住說話 (Hold to Talk) - 實現遠端麥克風
+          const btnHold = $("#btn-hold-talk");
+          if (btnHold) {
+            const startH = (e) => {
+              if (e.cancelable) e.preventDefault();
+              this._broadcastMode = 'instant';
+              this.startRecording();
+              btnHold.classList.add("recording");
+              btnHold.textContent = "🎙️ 放開即播";
+            };
+            const endH = (e) => {
+              if (e.cancelable) e.preventDefault();
+              if (!this._isRecording) return;
+              this.stopRecording();
+              btnHold.classList.remove("recording");
+              btnHold.textContent = "🎤 按住廣播";
+            };
+
+            // Mouse & Touch events
+            btnHold.addEventListener("mousedown", startH);
+            btnHold.addEventListener("mouseup", endH);
+            btnHold.addEventListener("mouseleave", endH);
+            btnHold.addEventListener("touchstart", startH);
+            btnHold.addEventListener("touchend", endH);
+          }
+
+          // 🆕 錄音預覽操作
+          $("#btn-rec-send").addEventListener("click", () => this.sendCurrentRecording());
+          $("#btn-rec-cancel").addEventListener("click", () => this.cancelCurrentRecording());
+
+          // 🆕 台語快捷鍵
+          const btnTaigiTrans = $("#btn-taigi-translate");
+          if (btnTaigiTrans) btnTaigiTrans.addEventListener("click", () => this.taigiTranslate());
+          // btn-taigi-say: 講台語
+          const btnTaigiSay = $("#btn-taigi-say");
+          if (btnTaigiSay) btnTaigiSay.addEventListener("click", () => this.sayTaigi(true));
+          // btn-taigi-preview: 試聽
+          const btnTaigiPreview = $("#btn-taigi-preview");
+          if (btnTaigiPreview) btnTaigiPreview.addEventListener("click", () => this.downloadTaigi());
+
+
+          // 🆕 AI Button (Direct)
+          const btnAiDirect = $("#btn-ai-direct");
+
+          // 🆕 Auto Relay Checkbox
+          const chkAutoRelay = $("#chkAutoRelay");
+          if (chkAutoRelay) {
+            chkAutoRelay.addEventListener("change", (e) => {
+              this.setRelayConfig(e.target.checked);
+            });
+          }
+          if (btnAiDirect) btnAiDirect.addEventListener("click", () => this.aiDirectGen());
+
+          // 🆕 氣象文字
+          $("#btn-weather-text").addEventListener("click", async () => {
+            const $ = (s) => this.shadowRoot.querySelector(s);
+            const txt = $("#msg");
+            try {
+              txt.value = "正在取得氣象資料...";
+              const r = await fetch("/api/weather");
+              const j = await r.json();
+              if (j.ok) {
+                txt.value = j.text;
+              } else {
+                txt.value = "取得氣象失敗：" + (j.error || "未知錯誤");
+              }
+            } catch (e) {
+              txt.value = "取得氣象錯誤：" + e.message;
+            }
+          });
+
+          // 🆕 Sync Language & Translate Target
+          const langSel = $("#lang");
+          const tgtSel = $("#tgtLangSimple");
+
+          if (langSel && tgtSel) {
+            const mapToSimple = (full) => {
+              if (full === "zh-TW") return "zh";
+              if (full === "nan-TW") return "nan";
+              if (full === "en-US") return "en";
+              if (full === "ja-JP") return "ja";
+              if (full === "ko-KR") return "ko";
+              if (full === "vi-VN") return "vi";
+              if (full === "id-ID") return "id";
+              if (full === "km-KH") return "km";
+              if (full === "lo-LA") return "lo";
+              if (full === "th-TH") return "th";
+              if (full === "my-MM") return "my";
+              if (full === "ms-MY") return "ms";
+              if (full === "tl-PH") return "tl";
+              return "zh";
+            };
+
+            const mapToFull = (simple) => {
+              if (simple === "zh") return "zh-TW";
+              if (simple === "nan") return "nan-TW";
+              if (simple === "en") return "en-US";
+              if (simple === "ja") return "ja-JP";
+              if (simple === "ko") return "ko-KR";
+              if (simple === "vi") return "vi-VN";
+              if (simple === "id") return "id-ID";
+              if (simple === "km") return "km-KH";
+              if (simple === "lo") return "lo-LA";
+              if (simple === "th") return "th-TH";
+              if (simple === "my") return "my-MM";
+              if (simple === "ms") return "ms-MY";
+              if (simple === "tl") return "tl-PH";
+              return "zh-TW";
+            };
+
+            // When Voice Lang changes -> Update Translate Target
+            langSel.addEventListener("change", () => {
+              const simple = mapToSimple(langSel.value);
+              if (tgtSel.value !== simple) {
+                tgtSel.value = simple;
+              }
+            });
+
+            // When Translate Target changes -> Update Voice Lang
+            tgtSel.addEventListener("change", () => {
+              const full = mapToFull(tgtSel.value);
+              if (langSel.value !== full) {
+                langSel.value = full;
+                // Trigger change on langSel to persist settings to backend
+                langSel.dispatchEvent(new Event("change"));
+              }
+            });
+          }
+
+          $("#btn-translate-simple").addEventListener("click", () => this.translateSimple());
+
+          // 🆕 智慧播放（YouTube 下載偵測）
+          $("#btn-mp3url").addEventListener("click", () => this.playMP3OrYT());
+
+          $("#btn-ytfs").addEventListener("click", () => {
+            const url = $("#mp3url").value.trim();
+            if (!url) return;
+            this.postForm("/cmd", { cmd: "YTFull:" + url });
+          });
+          $("#btn-ytclose").addEventListener("click", () => this.postForm("/cmd", { cmd: "YTClose" }));
+
+          $("#btn-upload").addEventListener("click", () => this.upload());
+          $("#btn-file-go").addEventListener("click", () => this.fileAction());
+
+          $("#btn-mp3pause").addEventListener("click", () => this.postForm("/cmd", { cmd: "MP3Pause" }));
+          $("#btn-mp3resume").addEventListener("click", () => this.postForm("/cmd", { cmd: "MP3Resume" }));
+          $("#btn-mp3stop").addEventListener("click", () => this.postForm("/cmd", { cmd: "MP3Stop" }));
+
+          this.shadowRoot.querySelectorAll('[data-cmd]').forEach(btn => {
+            btn.addEventListener("click", () => this.postForm("/cmd", { cmd: btn.getAttribute("data-cmd") }));
+          });
+
+          $("#lang").addEventListener("change", () => {
+            this.saveLocalSettings();
+          });
+          $("#gender").addEventListener("change", () => {
+            this.saveLocalSettings();
+          });
+
+
+          $("#rate").addEventListener("input", (e) => { $("#rateVal").textContent = Number(e.target.value) + "%"; });
+          $("#rate").addEventListener("change", (e) => this.postForm("/setrate", { rate: Number(e.target.value) + "%" }));
+
+          $("#autoUnmute").addEventListener("change", (e) => this.postForm("/autounmute", {
+            on: e.target.checked ? "1" : "0"
+          }));
+
+          $("#volume").addEventListener("input", (e) => $("#volVal").textContent = `${Number(e.target.value)}%`);
+          $("#volume").addEventListener("change", (e) => this.postForm("/setvol", { vol: String(Number(e.target.value)) }));
+          $("#btn-volup").addEventListener("click", () => this.postForm("/volup", {}));
+          $("#btn-voldown").addEventListener("click", () => this.postForm("/voldown", {}));
+          $("#btn-mute").addEventListener("click", () => this.postForm("/cmd", { cmd: "Mute" }));
+          $("#btn-unmute").addEventListener("click", () => this.postForm("/cmd", { cmd: "Unmute" }));
+
+          const copyBtn = $("#btnCopyYtDl");
+          if (copyBtn) {
+            copyBtn.addEventListener("click", async () => {
+              const a = $("#ytDlLink");
+              const url = a && a.href ? a.href : "";
+              if (!url) return;
+              try {
+                await navigator.clipboard.writeText(url);
+                alert("已複製連結：\n" + url);
+              } catch (e) {
+                prompt("複製失敗，請手動複製：", url);
+              }
+            });
+          }
+
+          this.refreshFiles();
+        }
+
+        // ===== Recording Logic =====
+        toggleRecording() {
+          if (this._isRecording) this.stopRecording();
+          else this.startRecording();
+        }
+
+        async startRecording() {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          if (this._isRecording) return;
+
+          // Reset mode if triggered by Toggle button
+          if (this._broadcastMode !== 'instant') this._broadcastMode = 'preview';
+
+          // 🛡️ 安全性檢查：瀏覽器限制 getUserMedia 只能在 HTTPS 或 localhost 運作
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            const $ = (s) => this.shadowRoot.querySelector(s);
+            const modal = $("#mic-help-modal");
+            const originInput = $("#origin-url-input");
+
+            if (modal && originInput) {
+              originInput.value = window.location.origin;
+              modal.style.display = "flex";
+            } else {
+              // Fail-safe if modal is missing for some reason
+              alert("無法啟動麥克風，請使用 HTTPS 或 localhost。");
+            }
+            return;
+          }
+
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this._mediaRecorder = new MediaRecorder(stream);
+            this._chunks = [];
+            this._mediaRecorder.ondataavailable = e => this._chunks.push(e.data);
+            this._mediaRecorder.onstop = () => this.uploadRecording();
+            this._mediaRecorder.start();
+            this._isRecording = true;
+
+            const btn = $("#btn-record-toggle");
+            const st = $("#recStatus");
+            if (btn) {
+              btn.style.background = "#e38b06";
+              btn.textContent = "⏹ 停止錄音";
+            }
+            if (st) st.style.display = "";
+          } catch (e) {
+            console.error(e);
+            alert("無法啟動麥克風：" + e.message);
+          }
+        }
+
+        stopRecording() {
+          if (!this._isRecording || !this._mediaRecorder) return;
+          this._mediaRecorder.stop();
+          this._isRecording = false;
+          this._mediaRecorder.stream.getTracks().forEach(t => t.stop());
+
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          const btn = $("#btn-record-toggle");
+          const st = $("#recStatus");
+          if (btn) {
+            btn.style.background = "";
+            btn.textContent = "🔴 開始錄音";
+          }
+          if (st) st.style.display = "none";
+        }
+
+        cancelRecording() {
+          if (this._isRecording && this._mediaRecorder) {
+            this._mediaRecorder.stop();
+            this._mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            this._isRecording = false;
+            this._chunks = []; // Clear chunks so uploadRecording does nothing (check below)
+
+            const $ = (s) => this.shadowRoot.querySelector(s);
+            const btn = $("#btn-record-toggle");
+            const st = $("#recStatus");
+            if (btn) {
+              btn.style.background = "";
+              btn.textContent = "🔴 開始錄音";
+            }
+            if (st) st.style.display = "none";
+          }
+        }
+
+        async uploadRecording() {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          if (!this._chunks || this._chunks.length === 0) return;
+
+          const blob = new Blob(this._chunks, { type: 'audio/webm' });
+          this._currentRecBlob = blob; // 暫存 blob
+
+          // Mode check: Instant (Hold-To-Talk) vs Preview
+          if (this._broadcastMode === 'instant') {
+            // 直接傳送，不顯示預覽
+            await this.sendCurrentRecording();
+            return;
+          }
+
+          const previewUrl = URL.createObjectURL(blob);
+          const audio = $("#recAudio");
+          audio.src = previewUrl;
+
+          // 顯示預覽 UI
+          $("#recPreviewBox").style.display = "flex";
+          $("#btn-record-toggle").style.display = "none"; // 暫時隱藏錄音鈕，避免重複錄音
+
+          // 自動播放試聽
+          try {
+            await audio.play();
+          } catch (e) {
+            console.error("預覽播放失敗", e);
+          }
+        }
+
+        async sendCurrentRecording() {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          if (!this._currentRecBlob) {
+            alert("錯誤：沒有錄音資料 (Blob is null)");
+            return;
+          }
+
+          const btn = $("#btn-rec-send");
+          const orgText = btn.textContent;
+          btn.textContent = "⏳ 傳送中...";
+          btn.disabled = true;
+
+          const fd = new FormData();
+          fd.append("file", this._currentRecBlob, "voice.webm");
+
+          try {
+            const r = await fetch("/api/speak_audio_blob", { method: "POST", body: fd });
+            if (!r.ok) {
+              const txt = await r.text();
+              throw new Error(`Server ${r.status} ${r.statusText}: ${txt}`);
+            }
+
+            // Success: Auto-play (server side) and refresh list
+            this.cancelCurrentRecording(); // Reset UI
+            this.refreshFiles(); // Refresh file list to show new recording
+
+            // Show status
+            const st = $("#recStatus");
+            if (st) {
+              st.textContent = "✅ 已送出並播放";
+              st.style.display = "";
+              setTimeout(() => { if (st.textContent.includes("已送出")) st.style.display = "none"; }, 3000);
+            }
+          } catch (e) {
+            console.error("Audio upload failed", e);
+            alert("廣播傳送失敗：\n" + e.message);
+            btn.textContent = orgText;
+            btn.disabled = false;
+          }
+        }
+
+        cancelCurrentRecording() {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          this._currentRecBlob = null;
+          $("#recAudio").pause();
+          $("#recAudio").src = "";
+          $("#recPreviewBox").style.display = "none";
+          $("#btn-record-toggle").style.display = ""; // 恢復錄音鈕
+
+          // Reset send button state in case it was stuck
+          const btn = $("#btn-rec-send");
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "📤 傳送";
+          }
+        }
+
+        filenameToTitle(name) {
+          const base = String(name || "").split("/").pop();
+          return decodeURIComponent(base).replace(/\.mp3$/i, "");
+        }
+
+        async playMP3OrYT() {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          const url = $("#mp3url").value.trim();
+          if (!url) return;
+
+          const isYT = this.isYouTubeUrl(url);
+          if (isYT) {
+            this._ytStartNames = await this.getFileNamesSafe();
+            this.toggleYtWait(true);
+            this.showYtLink("", "");
+          }
+
+          let hintedName = "";
+          try {
+            const body = new URLSearchParams();
+            body.append("mp3url", url);
+            const resp = await fetch("/sendmp3", {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body,
+              cache: "no-store"
+            });
+            try {
+              const j = await resp.clone().json();
+              hintedName = (j && (j.filename || j.saved_as || j.name || j.download)) ? String(j.filename || j.saved_as || j.name ||
+                j.download) : "";
+            } catch (_) { }
+          } catch (e) {
+            alert("請求失敗：" + e.message);
+            this.toggleYtWait(false);
+            return;
+          }
+
+          if (!isYT) return;
+
+          if (hintedName) {
+            const base = hintedName.split("/").pop();
+            const label = this.filenameToTitle(base);
+            this.showYtLink("/download/" + encodeURIComponent(base), label);
+            this.toggleYtWait(false);
+            this.refreshFiles();
+            return;
+          }
+
+          this.detectYtDownloaded()
+            .then(name => {
+              if (name) {
+                const base = name.split("/").pop();
+                const label = this.filenameToTitle(base);
+                this.showYtLink("/download/" + encodeURIComponent(base), label);
+              } else {
+                this.showYtLink("", "");
+                alert("未偵測到新下載的 MP3（可能檔名覆蓋或後端未寫入 /files）。");
+              }
+            })
+            .finally(() => {
+              this.toggleYtWait(false);
+              this.refreshFiles();
+            });
+        }
+
+        isYouTubeUrl(u) {
+          try { new URL(u); } catch { return false; }
+          return /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//i.test(u);
+        }
+
+        toggleYtWait(show) {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          const row = $("#ytDlWait");
+          const tick = $("#ytDlTick");
+          if (!row) return;
+
+          row.style.display = show ? "" : "none";
+          if (show) {
+            let sec = 0;
+            tick.textContent = "";
+            if (this._ytTick) clearInterval(this._ytTick);
+            this._ytTick = setInterval(() => {
+              sec++;
+              tick.textContent = `（${sec}s）`;
+            }, 1000);
+          } else {
+            if (this._ytTick) clearInterval(this._ytTick);
+            if (tick) tick.textContent = "";
+          }
+        }
+
+        showYtLink(href, label) {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          const box = $("#ytDlBox");
+          const a = $("#ytDlLink");
+          if (!box || !a) return;
+
+          if (href) {
+            a.href = href;
+            a.textContent = label || href;
+            a.title = label || href;
+            box.style.display = "";
+          } else {
+            a.removeAttribute("href");
+            a.textContent = "";
+            a.removeAttribute("title");
+            box.style.display = "none";
+          }
+        }
+
+        async getFileNamesSafe() {
+          try {
+            const r = await fetch("/files", { cache: "no-store" });
+            const j = await r.json();
+            if (!j || !j.ok || !Array.isArray(j.files)) return [];
+            return j.files.map(f => String(f.name || "")).filter(Boolean);
+          } catch { return []; }
+        }
+
+        async detectYtDownloaded(timeoutMs = 120000, intervalMs = 2000) {
+          const start = Date.now();
+          const baseline = new Set(this._ytStartNames || []);
+          return new Promise((resolve) => {
+            if (this._ytPoll) clearInterval(this._ytPoll);
+            this._ytPoll = setInterval(async () => {
+              if (Date.now() - start > timeoutMs) {
+                clearInterval(this._ytPoll);
+                resolve("");
+                return;
+              }
+              const names = await this.getFileNamesSafe();
+              const added = names.filter(n => !baseline.has(n) && /\.mp3$/i.test(n));
+              if (added.length > 0) {
+                clearInterval(this._ytPoll);
+                resolve(added[0]);
+              }
+            }, intervalMs);
+          });
+        }
+
+        // 🆕 Local Settings Helpers
+        loadLocalSettings() {
+          const lang = localStorage.getItem("relaybell_lang");
+          const gender = localStorage.getItem("relaybell_gender");
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          if (lang && $("#lang")) $("#lang").value = lang;
+          if (gender && $("#gender")) $("#gender").value = gender;
+        }
+
+        saveLocalSettings() {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          if ($("#lang")) localStorage.setItem("relaybell_lang", $("#lang").value);
+          if ($("#gender")) localStorage.setItem("relaybell_gender", $("#gender").value);
+        }
+
+        async sayText(text) {
+          if (!text) return;
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          const lang = $("#lang").value;
+          const gender = $("#gender").value;
+          try {
+            // 🆕 Use new metadata-aware endpoint
+            await this.postJSON("/api/speak_v2", { text, lang, gender });
+          } catch (e) {
+            alert("播放失敗：" + e.message);
+          }
+        }
+
+        async refreshState() {
+          try {
+            const r = await fetch("/state", { cache: "no-store" });
+            if (!r.ok) throw new Error("/state 失敗：" + r.status);
+            const s = await r.json();
+
+            this.state = Object.assign({}, this.state, s || {});
+
+            const $ = (sel) => this.shadowRoot.querySelector(sel);
+
+            if ($("#rateVal") && s.rate) $("#rateVal").textContent = s.rate;
+            if ($("#rate") && s.rate) $("#rate").value = parseInt(String(s.rate).replace("%", ""), 10);
+
+            // Only update from server if user hasn't touched it recently (3s)
+            // 🛑 Disabled server sync for Lang/Gender (Local Settings Mode)
+            /*
+            if ($("#lang") && s.lang && (Date.now() - (this._lastLangSet || 0) > 3000)) {
+              $("#lang").value = s.lang;
+            }
+            if ($("#gender") && s.gender && (Date.now() - (this._lastGenderSet || 0) > 3000)) {
+              $("#gender").value = s.gender === "male" ? "male" : "female";
+            }
+            */
+            if ($("#volume") && typeof s.volume === "number") {
+              $("#volume").value = s.volume;
+              $("#volVal").textContent = `${s.volume}%`;
+            }
+            if ($("#autoUnmute")) $("#autoUnmute").checked = !!s.auto_unmute_on_play;
+
+            // 🆕 Sync Local Language Settings from Server (only if we haven't touched it recently)
+            // But strict sync might be annoying. Let's just update if it's "Checking..." or on load.
+            // Actually, for this specific request, we want manual sync.
+
+
+            const header = this.shadowRoot.querySelector(".status");
+            if (header) {
+              const temp = document.createElement("div");
+              temp.innerHTML = this.html();
+              const statusNew = temp.querySelector(".status");
+              if (statusNew) header.replaceWith(statusNew);
+            }
+
+            if (s.timetable && this.shadowRoot.getElementById("ttInfo")) {
+              const inf = s.timetable;
+              this.shadowRoot.getElementById("ttInfo").textContent = `啟用=${inf.enabled ? "是" : "否"}，筆數=${inf.count}`;
+            }
+            if (s.relay && this.shadowRoot.getElementById("relayInfo")) {
+              const rly = s.relay;
+              this.shadowRoot.getElementById("relayInfo").textContent = `port=${rly.port || "-"}, last=${rly.last_cmd ||
+                "-"}:${rly.last_result || "-"}`;
+            }
+
+          } catch (e) {
+            console.error(e);
+          }
+        }
+
+        async refreshFiles() {
+          const sel = this.shadowRoot.querySelector("#fileList");
+          try {
+            const r = await fetch("/files", { cache: "no-store" });
+            const j = await r.json();
+            sel.innerHTML = "";
+            if (!j || !j.ok || !Array.isArray(j.files) || !j.files.length) {
+              const op = document.createElement("option");
+              op.textContent = "（無檔案）";
+              op.value = "";
+              sel.appendChild(op);
+              return;
+            }
+            j.files.forEach(f => {
+              const op = document.createElement("option");
+              op.value = f.name;
+              op.textContent = `${f.name} (${(f.size / 1024).toFixed(0)} KB)`;
+              sel.appendChild(op);
+            });
+            if (!sel.value && sel.options.length) sel.selectedIndex = 0;
+          } catch (e) {
+            const op = document.createElement("option");
+            op.textContent = "（清單失敗）";
+            op.value = "";
+            sel.appendChild(op);
+          }
+        }
+
+        async upload() {
+          const file = this.shadowRoot.querySelector("#file").files[0];
+          if (!file) return alert("請先選取 .mp3 檔案");
+          const fd = new FormData();
+          fd.append("file", file);
+          try {
+            const r = await fetch("/upload", { method: "POST", body: fd });
+            const j = await r.json();
+            if (!j.ok) throw new Error(j.error || "upload fail");
+            await this.refreshFiles();
+            alert("上傳完成：" + (j.filename || file.name));
+          } catch (e) {
+            alert("上傳失敗：" + e.message);
+          }
+        }
+
+        async fileAction() {
+          const name = this.shadowRoot.querySelector("#fileList").value;
+          const act = this.shadowRoot.querySelector("#fileAction").value;
+          if (!name) return;
+
+          if (act === "play") {
+            await this.postForm("/cmd", { cmd: "PlayMP3:" + name });
+          } else if (act === "download") {
+            const base = name.split("/").pop();
+            window.open("/download/" + encodeURIComponent(base), "_blank");
+          } else if (act === "delete") {
+            if (!confirm("確定要刪除？\n" + name)) return;
+            const fd = new URLSearchParams();
+            fd.append("name", name.split("/").pop());
+            await fetch("/delete", {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: fd
+            });
+            await this.refreshFiles();
+          }
+        }
+
+
+
+        async aiDirectGen() {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          const msgBox = $("#msg");
+          const word = msgBox.value.trim();
+          if (!word) return alert("請先在輸入框輸入「關鍵字」（例如：體育組 借用器材）");
+
+          const btn = $("#btn-ai-direct");
+          const orgText = btn.textContent;
+          btn.textContent = "✨ 思考中...";
+          btn.disabled = true;
+
+          try {
+            const r = await fetch('/api/ai_script', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keyword: word })
+            });
+            const j = await r.json();
+            if (j.ok) {
+              msgBox.value = j.script;
+            } else {
+              alert("AI 生成失敗: " + (j.error || "未知錯誤"));
+            }
+          } catch (e) {
+            alert("AI 連線失敗: " + e.message);
+          } finally {
+            btn.textContent = orgText;
+            btn.disabled = false;
+          }
+        }
+
+
+
+        /* ===== 翻譯 / 台語 ===== */
+        normalizeLang(code) {
+          if (!code) return "";
+          const c = String(code).toLowerCase();
+          if (c.startsWith("nan")) return "nan";
+          if (c.startsWith("zh")) return "zh";
+          if (c.startsWith("en")) return "en";
+          if (c.startsWith("ja")) return "ja";
+          if (c.startsWith("ko")) return "ko";
+          if (c.startsWith("vi")) return "vi";
+          if (c.startsWith("id")) return "id";
+          return c.slice(0, 2);
+        }
+
+        detectLang(text) {
+          const s = String(text || "");
+          if (/[\u3400-\u9FFF]/.test(s)) return "zh";
+          if (/[\u3040-\u30ff\u31f0-\u31ff]/.test(s)) return "ja";
+          if (/[\u1100-\u11FF\uAC00-\uD7AF]/.test(s)) return "ko";
+          if (/[ăâđêôơưĂÂĐÊÔƠƯ]/i.test(s)) return "vi";
+          if (/[áàâăāēíìîīóòôōúùûū][1-9]?|[ⁿ·]/i.test(s) && /[a-z]/i.test(s)) return "nan";
+          if (/^\s*[a-z0-9 ,.'-]+\s*$/i.test(s)) return "en";
+          return "zh";
+        }
+
+        async postJSON(url, body) {
+          const r = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body || {})
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok || j.ok === false) throw new Error(j.error || j.message || ("HTTP_" + r.status));
+          return j;
+        }
+
+        async auditionText(text, lang) {
+          if (!text) return;
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          console.log("Audition:", text, lang);
+
+          // Taigi Special Handling (Server-side generated audio)
+          if (lang === "nan" || lang === "nan-TW") {
+            try {
+              const g = ($("#gender")?.value === "male") ? "m" : "f";
+              const j = await this.postJSON("/taigi/say", { text: text, gender: g, direction: "raw", play: false, speed: 1.0 });
+              const url = j.url || (j.file ? ("/taigi/audio/" + encodeURIComponent(j.file)) : "");
+              if (url) {
+                const audio = $("#taigi-audio-player");
+                if (audio) {
+                  audio.src = url;
+                  $("#taigi-audio-preview").style.display = "flex";
+                  audio.play().catch(e => console.error("Audio play failed", e));
+                }
+              } else {
+                alert("無法取得台語試聽音檔");
+              }
+            } catch (e) {
+              alert("台語試聽失敗：" + e.message);
+            }
+            return;
+          }
+
+          // [NEW] Edge TTS Server-Side Preview
+          try {
+            // 1. Get parameters
+            const gVal = ($("#gender")?.value === "male") ? "male" : "female";
+            const rVal = $("#rate") ? parseInt($("#rate").value || "0") : 0;
+
+            const langMap = {
+              'zh': 'zh-TW', 'en': 'en-US', 'ja': 'ja-JP', 'ko': 'ko-KR',
+              'vi': 'vi-VN', 'id': 'id-ID', 'th': 'th-TH',
+              'km': 'km-KH', 'lo': 'lo-LA', 'my': 'my-MM', 'ms': 'ms-MY', 'tl': 'tl-PH'
+            };
+            const backendLang = langMap[lang] || lang;
+
+            // 2. Request audio blob
+            const res = await fetch("/api/tts_preview", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: text, lang: backendLang, gender: gVal, rate: rVal })
+            });
+
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              throw new Error(err.error || res.statusText);
+            }
+
+            // 3. Play blob
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const player = $("#taigi-audio-player"); // Reuse existing player
+            if (player) {
+              player.src = url;
+              // Cleanup on end
+              player.onended = () => URL.revokeObjectURL(url);
+              $("#taigi-audio-preview").style.display = "flex";
+              player.play().catch(e => console.error("Play error:", e));
+            }
+          } catch (e) {
+            console.warn("EdgeTTS Preview failed, fallback to native:", e);
+
+            // Fallback: Standard Web Speech API
+            const u = new SpeechSynthesisUtterance(text);
+            const langMap = {
+              'zh': 'zh-TW', 'en': 'en-US', 'ja': 'ja-JP', 'ko': 'ko-KR',
+              'vi': 'vi-VN', 'id': 'id-ID', 'th': 'th-TH'
+            };
+            u.lang = langMap[lang] || lang;
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(u);
+          }
+        }
+
+        stopAudition() {
+          window.speechSynthesis.cancel();
+          const audio = this.shadowRoot.querySelector("#taigi-audio-player");
+          if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+          }
+        }
+
+        async translateSimple() {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          const tgt = $("#tgtLangSimple").value;
+          const txt = ($("#msg").value || "").trim();
+          if (!txt) { alert("請先輸入文字"); return; }
+          const src = this.detectLang(txt);
+          if (this.normalizeLang(src) === this.normalizeLang(tgt)) {
+            alert("來源與目標語言相同，不需翻譯。");
+            return;
+          }
+          try {
+            const j = await this.postJSON("/translate", { text: txt, source: src, target: tgt });
+            if (j && j.translatedText) {
+              const previewBox = $("#transPreview");
+              const previewText = $("#transPreviewText");
+              previewText.textContent = j.translatedText;
+              previewBox.style.display = "block";
+              // Don't overwrite msg!
+              // $("#msg").value = j.translatedText;
+
+              // [NEW] Sync Web UI Language after translation
+              const langMap = {
+                "zh": "zh-TW",
+                "en": "en-US",
+                "ja": "ja-JP",
+                "ko": "ko-KR",
+                "vi": "vi-VN",
+                "nan": "nan-TW",
+                "id": "id-ID",
+                "km": "km-KH",
+                "lo": "lo-LA",
+                "th": "th-TH",
+                "my": "my-MM",
+                "ms": "ms-MY",
+                "tl": "tl-PH"
+              };
+
+              const newLang = langMap[tgt] || "zh-TW";
+              if ($("#lang")) {
+                $("#lang").value = newLang;
+                this.saveLocalSettings();
+                // Sync to Backend (for Desktop UI / Global State)
+                this.postForm("/cmd", { cmd: "SetLang:" + newLang });
+              }
+            }
+          } catch (e) {
+            alert("翻譯失敗：" + e.message);
+          }
+        }
+
+        async taigiTranslate() {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          const txt = ($("#msg").value || "").trim();
+          if (!txt) {
+            alert("請先輸入文字");
+            return;
+          }
+          const previewBox = $("#transPreview");
+          const previewText = $("#transPreviewText");
+          previewText.textContent = "⌛ 台語翻譯中...";
+          previewBox.style.display = "block";
+
+          try {
+            const src = this.detectLang(txt);
+
+            const direction = (src === "zh") ? "zh2nan" : "nan2zh";
+            const j = await this.postJSON("/taigi/translate", { text: txt, direction });
+            if (j && j.text) {
+              previewText.textContent = j.text;
+              // Sync language to Taigi if successful
+              const langSel = $("#lang");
+              if (langSel) {
+                langSel.value = "nan-TW";
+                langSel.dispatchEvent(new Event("change"));
+              }
+            } else {
+              previewBox.style.display = "none";
+              alert("台語翻譯無結果");
+            }
+          } catch (e) {
+            previewBox.style.display = "none";
+            alert("台語翻譯失敗：" + e.message);
+          }
+        }
+
+        async sayTaigi(playOnly) {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          // Try preview text first, then the main message box
+          const previewText = ($("#transPreviewText").textContent || "").trim();
+          let txt = (previewText && $("#transPreview").style.display !== "none") ? previewText : ($("#msg").value || "").trim();
+
+          if (!txt) return alert("請先輸入文字");
+          const gsel = $("#gender");
+          const g = (gsel && gsel.value === "male") ? "m" : "f";
+          try {
+            // 🆕 Speed control
+            const rateVal = $("#rate") ? parseInt($("#rate").value, 10) : 0;
+            const speed = 1.0 + (rateVal / 100.0);
+            await this.postJSON("/taigi/say", { text: txt, gender: g, direction: "raw", play: true, speed: speed });
+          } catch (e) {
+            alert("台語播放失敗：" + e.message);
+          }
+        }
+
+        async downloadTaigi() {
+          const $ = (s) => this.shadowRoot.querySelector(s);
+          let txt = ($("#msg").value || "").trim();
+          if (!txt) return alert("請先輸入文字");
+          const gsel = $("#gender");
+          const g = (gsel && gsel.value === "male") ? "m" : "f";
+          try {
+            // 🆕 Speed control
+            const rateVal = $("#rate") ? parseInt($("#rate").value, 10) : 0;
+            const speed = 1.0 + (rateVal / 100.0);
+            const j = await this.postJSON("/taigi/say", { text: txt, gender: g, direction: "raw", play: false, speed: speed });
+            const wrap = this.shadowRoot.querySelector("#taigi-audio-preview");
+            const link = $("#taigi-download-link");
+            const audio = $("#taigi-audio-player");
+            if (!wrap || !link || !audio) return;
+
+            const url = j.url || (j.file ? ("/taigi/audio/" + encodeURIComponent(j.file)) : "");
+            if (!url) {
+              alert("後端沒有提供語音網址");
+              return;
+            }
+
+            link.href = url;
+            link.textContent = j.file || "下載台語語音檔";
+            audio.src = url;
+            wrap.style.display = "flex";
+          } catch (e) {
+            alert("台語語音產生失敗：" + e.message);
+          }
+        }
+        /* ===== /翻譯 ===== */
+
+        async postForm(path, kv) {
+          const body = new URLSearchParams();
+          Object.entries(kv).forEach(([k, v]) => body.append(k, String(v)));
+          try {
+            await fetch(path, {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body,
+              cache: "no-store"
+            });
+            setTimeout(() => this.refreshState(), 400);
+          } catch (e) {
+            alert("請求失敗：" + e.message);
+          }
+        }
+
+        escape(s) {
+          return String(s).replace(/[&<>"']/g, m => ({
+            "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": " &quot;", "'"
+              : "&#039;"
+          }[m]));
+        }
+      } if (!customElements.get('udp-console')) {
+        customElements.define("udp-console", UDPConsole);
+      }
+    })();
+  </script>
+  <script>
+    (function () {
+      function pad2(n) { return String(n).padStart(2, '0'); }
+      function fmt(d) {
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' +
+          pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+      }
+      function startClock() {
+        function tick() {
+          var el = document.getElementById('nowText'); if (el) el.textContent =
+            fmt(new Date());
+        } tick(); setInterval(tick, 1000);
+      }
+      document.addEventListener('DOMContentLoaded', startClock);
+    })();
+  </script>
+
+  <script>
+    // === Bind "全螢幕（有聲/無聲）" 到 /announce（保留原有行為，再額外送一次 /announce） ===
+    (function () {
+      function pickMessage() {
+        const ids = ['msg', 'message', 'input-message', 'textarea-message'];
+        for (const id of ids) {
+          const el = document.getElementById(id);
+          if (el && el.value) return el.value.trim();
+        }
+        const ta = document.querySelector('textarea'); if (ta && ta.value) return ta.value.trim();
+        const ce = document.querySelector('[contenteditable="true"]'); if (ce && ce.innerText) return ce.innerText.trim();
+        return '';
+      }
+      async function pushAnnounce(sound) {
+        const message = pickMessage();
+        const image = (document.getElementById('annImgUrl')?.textContent || '').trim();
+        const media = (document.getElementById('annMediaUrl')?.textContent || '').trim();
+        try {
+          const r = await fetch('/announce', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, image, media, sound: sound ? 1 : 0 })
+          });
+          console.log('[announce] POST /announce →', r.status, r.statusText);
+        } catch (e) {
+          console.warn('[announce] fetch error:', e);
+        }
+      }
+      function bind(id, sound) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('click', () => pushAnnounce(sound), { capture: false });
+      }
+      bind('btn-show', true);
+
+    })();
+    // === end bind ===
+  </script>
+
+  <!-- Taigi integration: add 'tw' and reroute fetch for tw ＋ 防止 source/target 相同 -->
+  <script>
+    (function () {
+      const addTw = sel => {
+        sel.forEach(s => {
+          if (!s) return;
+          const exists = Array.from(s.options || []).some(o => (o.value || '').toLowerCase() === 'tw');
+          if (!exists) {
+            const opt = document.createElement('option');
+            opt.value = 'tw'; opt.textContent = '台語 (Taigi)';
+            s.appendChild(opt);
+          }
+        });
+      };
+      addTw([
+        document.querySelector('#toLang'),
+        document.querySelector('#targetLang'),
+        document.querySelector('#ttsLang'),
+        document.querySelector('#speakLang'),
+        document.querySelector('select[name=to]'),
+        document.querySelector('select[name=target]'),
+        document.querySelector('select[name=lang]')
+      ]);
+
+      const _fetch = window.fetch;
+      window.fetch = async function (input, init) {
+        try {
+          const url = (typeof input === 'string') ? input : (input && input.url) || '';
+          const isTranslate = /\/translate(\b|$)/.test(url);
+          const isTTS = /\/(tts|speak)(\b|$)/.test(url);
+
+          if ((isTranslate || isTTS) && init && init.method && init.method.toUpperCase() === 'POST') {
+            let targetLang = '';
+            let bodyObj = {};
+            let ct = '';
+
+            if (init.headers && (init.headers['Content-Type'] || (init.headers.get && init.headers.get('Content-Type')))) {
+              ct = (init.headers['Content-Type'] || init.headers.get('Content-Type')).toLowerCase();
+              if (ct.includes('application/json')) {
+                try { bodyObj = JSON.parse(init.body); } catch (_) { bodyObj = {}; }
+              } else if (ct.includes('application/x-www-form-urlencoded')) {
+                const params = new URLSearchParams(init.body);
+                params.forEach((v, k) => { bodyObj[k] = v; });
+              }
+            }
+
+            const low = v => String(v || '').toLowerCase();
+            const normCode = c => {
+              c = low(c);
+              if (!c) return '';
+              return c.split(/[-_]/)[0];
+            };
+
+            targetLang = low(bodyObj.target || bodyObj.to || bodyObj.lang || '');
+            let sourceLang = low(bodyObj.source || bodyObj.from || bodyObj.src || '');
+            const srcNorm = normCode(sourceLang);
+            const tgtNorm = normCode(targetLang);
+
+            // 🔒 防呆：來源與目標一樣時，自動把 source 改成 auto，避免 PLEASE SELECT TWO DISTINCT LANGUAGES
+            if (srcNorm && tgtNorm && srcNorm === tgtNorm) {
+              if ('source' in bodyObj) bodyObj.source = 'auto';
+              if ('from' in bodyObj) bodyObj.from = 'auto';
+              if (!('source' in bodyObj) && !('from' in bodyObj)) bodyObj.source = 'auto';
+            }
+
+            if (ct.includes('application/json')) {
+              init.body = JSON.stringify(bodyObj);
+            } else if (ct.includes('application/x-www-form-urlencoded')) {
+              const p2 = new URLSearchParams();
+              Object.entries(bodyObj).forEach(([k, v]) => p2.append(k, v));
+              init.body = p2.toString();
+            }
+
+            // Taigi 特例轉接：target = tw 時改走 /taigi API
+            if (targetLang === 'tw') {
+              if (isTranslate) {
+                return _fetch('/taigi/translate', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    text: bodyObj.text || bodyObj.q || '',
+                    source: bodyObj.source || bodyObj.from || 'zhtw',
+                    target: 'tw'
+                  })
+                });
+              }
+              if (isTTS) {
+                return _fetch('/taigi/tts', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    text: bodyObj.text || bodyObj.q || '',
+                    lang: 'tw',
+                    gender: (bodyObj.gender || 'f')
+                  })
+                });
+              }
+            }
+          }
+        } catch (e) { console.warn('[Taigi fetch-wrap warn]', e); }
+        return _fetch(input, init);
+      };
+    })();
+  </script>
+
+
+
+  <!-- Service Worker Registration for PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('SW registered:', reg.scope))
+          .catch(err => console.log('SW failed:', err));
+      });
+    }
+  </script>
+  <!-- ⛔ Force Cancel Floating Button -->
+  <div id="force-cancel-btn"
+    style="position:fixed;bottom:20px;right:20px;z-index:9999;cursor:pointer;background:#ef4444;color:white;padding:12px 24px;border-radius:50px;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-weight:bold;display:flex;align-items:center;gap:8px;transition:transform 0.1s;font-family:system-ui;">
+    <span style="font-size:18px">⛔</span>
+    <span>強制取消</span>
+  </div>
+  <script>
+    document.getElementById('force-cancel-btn').addEventListener('click', async () => {
+      // if (!confirm('確定要強制取消所有播放嗎？\n(將送出 CancelALL 指令)')) return;
+      try {
+        const btn = document.getElementById('force-cancel-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span>⏳ 處理中...</span>';
+        btn.style.opacity = '0.8';
+
+        // Use relative path by default, or API_BASE if defined globally
+        const apiBase = (typeof API_BASE !== 'undefined') ? API_BASE : '';
+        const r = await fetch(apiBase + '/cmd', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'cmd=CancelALL'
+        });
+
+        if (r.ok) {
+          btn.innerHTML = '<span>✅ 已取消</span>';
+          setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 1500);
+          return;
+        } else {
+          btn.innerHTML = '<span>❌ 失敗</span>';
+          setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 2000);
+          return;
+        }
+
+        btn.innerHTML = originalText;
+        btn.style.opacity = '1';
+      } catch (e) {
+        console.error(e);
+        const btn = document.getElementById('force-cancel-btn');
+        btn.innerHTML = '<span>❌ 錯誤</span>';
+        setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 2000);
+        return;
+        document.getElementById('force-cancel-btn').innerHTML = originalText;
+        document.getElementById('force-cancel-btn').style.opacity = '1';
+      }
+    });
+    // Add hover effect
+    const fcb = document.getElementById('force-cancel-btn');
+    fcb.addEventListener('mousedown', () => fcb.style.transform = 'scale(0.95)');
+    fcb.addEventListener('mouseup', () => fcb.style.transform = 'scale(1)');
+    fcb.addEventListener('mouseleave', () => fcb.style.transform = 'scale(1)');
+  </script>
+</body>
+
+</html>

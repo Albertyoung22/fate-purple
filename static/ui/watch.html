@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>校園直播 - 觀眾端 📺</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #fff;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        #video-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            max-width: 800px;
+            max-height: 600px;
+            object-fit: contain;
+            margin: auto;
+        }
+
+        #status-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .dot.live {
+            background: #f44336;
+            box-shadow: 0 0 8px #f44336;
+        }
+
+        #controls {
+            padding: 24px;
+            text-align: center;
+            background: rgba(20, 20, 20, 0.9);
+            flex: 0 0 auto;
+            border-top: 1px solid #333;
+        }
+
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #1976D2;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #msg {
+            margin-top: 12px;
+            color: #888;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="video-container">
+        <div id="status-overlay">
+            <div class="dot" id="status-dot"></div>
+            <span id="status-text">準備就緒</span>
+        </div>
+        <video id="remote-video" playsinline controls autoplay></video>
+    </div>
+
+    <div id="controls">
+        <button id="btn-play" onclick="startStream()">📺 開始觀看</button>
+        <div id="msg">請點擊按鈕連接直播訊號</div>
+    </div>
+
+    <script>
+        const vid = document.getElementById('remote-video');
+        const statusText = document.getElementById('status-text');
+        const statusDot = document.getElementById('status-dot');
+        const btn = document.getElementById('btn-play');
+        const msg = document.getElementById('msg');
+
+        let ws = null;
+        let mediaSource = null;
+        let sourceBuffer = null;
+        let queue = [];
+        let isConnected = false;
+
+        function updateStatus(text, live) {
+            statusText.textContent = text;
+            if (live) statusDot.classList.add('live');
+            else statusDot.classList.remove('live');
+        }
+
+        function startStream() {
+            if (isConnected) return;
+
+            // UI Update
+            btn.style.display = 'none';
+            msg.textContent = "正在連線伺服器...";
+            vid.muted = false;
+
+            // Low Latency Tweaks
+            vid.playbackRate = 1.0;
+
+            // Catch-up logic loop
+            setInterval(() => {
+                if (vid.buffered.length > 0) {
+                    const end = vid.buffered.end(vid.buffered.length - 1);
+                    const diff = end - vid.currentTime;
+
+                    // If latency > 3.5s, jump
+                    if (diff > 3.5) {
+                        console.log("Jumping to live, diff:", diff);
+                        vid.currentTime = end - 0.5;
+                    }
+                    // If latency > 1.5s, speed up slightly
+                    else if (diff > 1.5) {
+                        vid.playbackRate = 1.1;
+                    } else {
+                        vid.playbackRate = 1.0;
+                    }
+                }
+            }, 1000);
+
+            // Init MSE
+            if (!window.MediaSource) {
+                msg.textContent = "❌ 此瀏覽器不支援 MediaSource Extensions (MSE)";
+                return;
+            }
+
+            mediaSource = new MediaSource();
+            vid.src = URL.createObjectURL(mediaSource);
+
+            mediaSource.addEventListener('sourceopen', () => {
+                // Codec probing logic
+                const codecs = [
+                    'video/webm; codecs="vp8,opus"',
+                    'video/webm; codecs="vp9,opus"',
+                    'video/webm'
+                ];
+
+                let supportedMime = "";
+                for (let c of codecs) {
+                    if (MediaSource.isTypeSupported(c)) {
+                        supportedMime = c;
+                        break;
+                    }
+                }
+
+                console.log("Selected MIME:", supportedMime);
+
+                if (!supportedMime) {
+                    msg.textContent = "❌ 瀏覽器不支援 WebM (VP8/VP9) 格式";
+                    return;
+                }
+
+                try {
+                    sourceBuffer = mediaSource.addSourceBuffer(supportedMime);
+                    sourceBuffer.mode = 'sequence';
+
+                    sourceBuffer.addEventListener('updateend', () => {
+                        if (queue.length > 0 && !sourceBuffer.updating) {
+                            try { sourceBuffer.appendBuffer(queue.shift()); } catch (e) { }
+                        }
+                    });
+
+                    connectWS();
+                } catch (e) {
+                    console.error(e);
+                    msg.textContent = "❌ MSE 初始化錯誤: " + e.message;
+                }
+            });
+        }
+
+        function connectWS() {
+            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            // Explicitly set role=subscriber
+            ws = new WebSocket(`${proto}//${location.host}/ws/live?role=subscriber`);
+            ws.binaryType = 'arraybuffer';
+
+            ws.onopen = () => {
+                isConnected = true;
+                updateStatus("已連線，等待訊號...", true);
+                msg.textContent = "連線成功，等待接收影像...";
+            };
+
+            ws.onmessage = (e) => {
+                const data = e.data;
+                updateStatus("🔴 直播中", true);
+                msg.style.display = 'none';
+
+                if (sourceBuffer && !sourceBuffer.updating && queue.length === 0) {
+                    try {
+                        sourceBuffer.appendBuffer(data);
+                    } catch (e) { console.error(e); }
+                } else {
+                    queue.push(data);
+                }
+            };
+
+            ws.onclose = () => {
+                isConnected = false;
+                updateStatus("連線中斷", false);
+                msg.style.display = 'block';
+                msg.textContent = "連線已斷開，5秒後自動重試...";
+
+                // Cleanup Video
+                vid.pause();
+                vid.removeAttribute('src');
+                if (mediaSource && mediaSource.readyState === 'open') {
+                    try { mediaSource.endOfStream(); } catch (e) { }
+                }
+                mediaSource = null;
+                sourceBuffer = null;
+                queue = [];
+
+                btn.style.display = 'inline-block';
+                btn.textContent = "🔄 立即重新連線";
+                btn.onclick = () => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("autoplay", "1");
+                    window.location.href = url.toString();
+                };
+
+                // Auto Retry
+                setTimeout(() => {
+                    if (!isConnected) {
+                        console.log("Auto reconnecting...");
+                        console.log("Auto reconnecting...");
+                        // Reload with autoplay param to skip button click
+                        const url = new URL(window.location.href);
+                        url.searchParams.set("autoplay", "1");
+                        window.location.href = url.toString();
+                    }
+                }, 5000);
+            };
+
+            ws.onerror = (e) => {
+                console.error(e);
+                updateStatus("連線錯誤", false);
+            };
+        }
+
+        // Auto-play checks
+        window.addEventListener('load', () => {
+            console.log("Auto-starting stream...");
+            setTimeout(() => {
+                startStream();
+            }, 500); // Small delay to ensure page is ready
+        });
+
+    </script>
+</body>
+
+</html>

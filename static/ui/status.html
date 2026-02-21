@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>/schedules status</title>
+<script defer src="auth.js"></script>
+<style>
+  :root{--bg:#f6fbff;--card:#fff;--muted:#6b7280;--ok:#16a34a;--warn:#b45309;--err:#b91c1c;--line:#e5e7eb;}
+  body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);margin:24px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.04);padding:18px;max-width:860px}
+  h1{margin:.2rem 0 1rem 0;font-size:1.25rem}
+  .kv{display:grid;grid-template-columns:180px 1fr;row-gap:8px;column-gap:12px;margin:10px 0}
+  .muted{color:var(--muted)}
+  .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+  .next{border-top:1px dashed var(--line);margin-top:12px;padding-top:12px}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:.85rem}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+  button{padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#eef6ff;cursor:pointer}
+  button:active{transform:translateY(1px)}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>/schedules → status</h1>
+  <div class="kv">
+    <div class="muted">Server time</div><div id="now" class="mono">—</div>
+    <div class="muted">Has next</div><div id="has">—</div>
+    <div class="muted">Total items</div><div id="count">—</div>
+  </div>
+  <div class="next" id="nextwrap" hidden>
+    <div class="muted">Next trigger</div>
+    <div style="margin:6px 0 4px 0">
+      <span id="at" class="pill mono">—</span>
+      <span id="title" class="pill">—</span>
+      <span id="type" class="pill">—</span>
+    </div>
+    <div class="kv">
+      <div class="muted">In</div><div id="in" class="mono">—</div>
+      <div class="muted">Payload</div><div id="payload" class="mono" style="word-break:break-all">—</div>
+      <div class="muted">Jitter</div><div id="jitter" class="mono">—</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button onclick="refresh()">Refresh</button>
+    <button onclick="toggleLoop()" id="loopbtn">Start auto-refresh</button>
+  </div>
+  <div style="margin-top:8px" class="muted mono">GET /schedules/status</div>
+</div>
+<script>
+let timer = null;
+async function load(){
+  try{
+    const r = await fetch('/schedules/status', {cache:'no-store'});
+    const j = await r.json();
+    document.getElementById('now').textContent = j.now || '—';
+    document.getElementById('count').textContent = j.count &#128229; '—';
+    document.getElementById('has').innerHTML = (j.has_next ? '<span class="ok">Yes</span>' : '<span class="warn">No</span>');
+    const wrap = document.getElementById('nextwrap');
+    if(j.has_next && j.next){
+      wrap.hidden = false;
+      document.getElementById('at').textContent = j.next.at || '—';
+      document.getElementById('title').textContent = j.next.title || '(untitled)';
+      document.getElementById('type').textContent = j.next.type || 'cmd';
+      document.getElementById('payload').textContent = j.next.payload || '—';
+      const secs = Number(j.next.in_seconds||0);
+      document.getElementById('in').textContent = secs + 's';
+      document.getElementById('jitter').textContent = (j.next.jitter&#128229;0) + 's';
+    }else{
+      wrap.hidden = true;
+    }
+  }catch(e){
+    document.getElementById('has').innerHTML = '<span class="err">Fetch error</span>';
+  }
+}
+function refresh(){ load(); }
+function toggleLoop(){
+  if(timer){ clearInterval(timer); timer=null; document.getElementById('loopbtn').textContent='Start auto-refresh'; }
+  else{ timer = setInterval(load, 1000); document.getElementById('loopbtn').textContent='Stop auto-refresh'; load(); }
+}
+load();
+</script>

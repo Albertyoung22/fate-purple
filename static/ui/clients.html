@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客戶端管理 | Client Manager</title>
+    <link href="app.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --surface: #1e293b;
+            --primary: #3b82f6;
+            --success: #22c55e;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .client-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .client-card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .client-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .client-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .client-id {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .client-details {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status-badge.online {
+            color: var(--success);
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--text-muted);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            margin: 1rem 0;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>
+            👥 客戶端管理
+            <button onclick="loadClients()" class="btn" style="padding:0.5rem 1rem; font-size:0.9rem;">重新整理</button>
+            <a href="taigi_edu.html"
+                style="margin-left:auto; font-size:1rem; color:var(--primary); text-decoration:none; margin-right:1rem;">🇹🇼
+                本土語</a>
+            <a href="index.html" style="font-size:1rem; color:var(--primary); text-decoration:none;">回首頁</a>
+        </h1>
+
+        <div id="clientList" class="client-list">
+            <div style="text-align:center; color:gray;">載入中...</div>
+        </div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div id="renameModal" class="modal">
+        <div class="modal-content">
+            <h2>修改 ID</h2>
+            <p>請輸入新的客戶端 ID：</p>
+            <p style="font-size:0.8rem; color:orange;">注意：修改後客戶端將自動建立新設定檔並重新連線。</p>
+            <input type="text" id="newIdInput" placeholder="例如: Class-101">
+            <div class="modal-actions">
+                <button onclick="closeModal()" class="btn btn-outline" style="color:white">取消</button>
+                <button onclick="confirmRename()" class="btn">確認修改</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentClients = {};
+        let targetClientId = null;
+
+        async function loadClients() {
+            const listEl = document.getElementById('clientList');
+            try {
+                const res = await fetch('/controller/api/clients');
+                const data = await res.json();
+
+                if (data.ok) {
+                    currentClients = data.clients;
+                    renderClients(data.clients);
+                }
+            } catch (e) {
+                listEl.innerHTML = `<div style="color:red">無法載入列表: ${e}</div>`;
+            }
+        }
+
+        function renderClients(clients) {
+            const listEl = document.getElementById('clientList');
+            listEl.innerHTML = '';
+
+            const sorted = Object.entries(clients).sort();
+
+            if (sorted.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; color:gray;">目前無連線裝置</div>';
+                return;
+            }
+
+            sorted.forEach(([id, info]) => {
+                const card = document.createElement('div');
+                card.className = 'client-card';
+
+                const isOnline = info.online; // Based on last_seen
+
+                card.innerHTML = `
+                <div class="client-info">
+                    <div class="client-id">
+                        ${id}
+                        <span class="status-badge ${isOnline ? 'online' : ''}">
+                            ${isOnline ? '● Online' : '○ Offline'}
+                        </span>
+                    </div>
+                    <div class="client-details">
+                        <span>IP: ${info.ip}</span>
+                        <span>MAC: ${info.mac}</span>
+                        <span>Group: ${info.group}</span>
+                    </div>
+                </div>
+                <div>
+                     <button class="btn" onclick="openRenameModal('${id}')">修改 ID</button>
+                </div>
+            `;
+                listEl.appendChild(card);
+            });
+        }
+
+        function openRenameModal(id) {
+            targetClientId = id;
+            document.getElementById('newIdInput').value = id;
+            document.getElementById('renameModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('renameModal').classList.remove('active');
+            targetClientId = null;
+        }
+
+        async function confirmRename() {
+            const newId = document.getElementById('newIdInput').value.trim();
+            if (!newId || !targetClientId) return;
+
+            if (!confirm(`確定要將 ${targetClientId} 改名為 ${newId} 嗎？`)) return;
+
+            try {
+                const res = await fetch('/controller/api/send', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        targets: [targetClientId],
+                        cmd: 'set_id',
+                        args: newId // student_agent logic: cmd="set_id", args="new_id"
+                    })
+                });
+
+                const result = await res.json();
+                if (result.ok) {
+                    alert('指令已發送！客戶端將更新設定並重新連線。');
+                    closeModal();
+                    // Refresh list after few seconds
+                    setTimeout(loadClients, 2000);
+                } else {
+                    alert('發送失敗: ' + result.error);
+                }
+            } catch (e) {
+                alert('請求錯誤: ' + e);
+            }
+        }
+
+        // Auto load
+        loadClients();
+        setInterval(loadClients, 5000);
+
+    </script>
+</body>
+
+</html>

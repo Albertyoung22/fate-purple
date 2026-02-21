@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>4-Relay 控制台</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, "Microsoft JhengHei", Segoe UI, Roboto, Arial;
+      background: #f5f8fb;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #1e7bd8;
+      color: #fff;
+    }
+
+    header .title {
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    header .links a {
+      color: #dff1ff;
+      text-decoration: none;
+      margin-left: 12px;
+      font-size: 13px;
+    }
+
+    header .links .sep {
+      color: rgba(255, 255, 255, 0.4);
+      margin: 0 2px 0 10px;
+      font-size: 11px;
+    }
+
+    header .right {
+      font-size: 11px;
+      opacity: .85;
+      text-align: right;
+    }
+
+    main {
+      padding: 12px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .info-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: #e5f2ff;
+      border-radius: 8px;
+      border: 1px solid #bfdbfe;
+      font-size: 13px;
+      color: #1f2933;
+    }
+
+    .info-left,
+    .info-right {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .label {
+      font-weight: 600;
+      margin-right: 2px;
+    }
+
+    .value {
+      font-family: "Consolas", "SF Mono", Menlo, monospace;
+      padding: 2px 6px;
+      background: #fff;
+      border-radius: 4px;
+      border: 1px solid #d1e3ff;
+    }
+
+    .select-port {
+      padding: 4px 8px;
+      font-size: 13px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      min-width: 140px;
+    }
+
+    .btn-port {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 999px;
+      border: none;
+      background: #2563eb;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .btn-port.secondary {
+      background: #6b7280;
+    }
+
+    .btn-port.ghost {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .btn-port+.btn-port {
+      margin-left: 4px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px 10px;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, .12);
+      border: 1px solid #e5e7eb;
+    }
+
+    .card h2 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+    }
+
+    .status-pill {
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .status-on {
+      background: #e5f8eb;
+      color: #188a3a;
+      border: 1px solid #8fd1a3;
+    }
+
+    .status-off {
+      background: #f3f4f6;
+      color: #555;
+      border: 1px solid #d1d5db;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .btn-on {
+      background: #22c55e;
+      color: #0b3b19;
+    }
+
+    .btn-off {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .log {
+      margin-top: 16px;
+      padding: 10px 12px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+      font-size: 12px;
+      color: #555;
+      max-height: 150px;
+      overflow-y: auto;
+      border: 1px solid #e5e7eb;
+    }
+
+    .log-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #111827;
+    }
+
+    .log-lines {
+      font-family: "Consolas", "SF Mono", Menlo, monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .log-lines .error {
+      color: #b91c1c;
+    }
+
+    @media (max-width:600px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .info-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+  <script defer src="auth.js"></script>
+</head>
+
+<body>
+  <header>
+
+    <div class="title">🔌 4-Relay 控制台 </div>
+    <div class="links">
+      <span id="nowText"
+        style="margin-right:12px;opacity:.9;display:inline-block;min-width:140px;text-align:right">--:--:--</span>
+      <a href="index.html">🎛 主控台</a>
+      <a href="sched.html">🕐 排程</a>
+      <a href="single_reservation.html">📅 預約</a>
+      <a href="tt.html">📚 課表</a>
+      <span class="sep">|</span>
+      <a href="taigi_edu.html">🇹🇼 本土語</a>
+      <a href="eew.html">🌋 地震</a>
+      <a href="relay4.html">📣 分區</a>
+      <a href="silent-dashboard.html">🔇 無聲</a>
+      <span class="sep">|</span>
+      <a href="live.html">🔴 直播</a>
+      <a href="/devices">💻 設備</a>
+      <a href="logs.html">🗒 紀錄</a>
+    </div>
+  </header>
+  <main>
+    <div class="info-bar">
+      <div class="info-left">
+        <span class="label">4-Relay COM：</span>
+        <span class="value" id="portLabel">掃描中…</span>
+        <span class="label">指定 COM（僅顯示偵測到的 USB Relay）：</span>
+        <select id="portSelect" class="select-port">
+          <option value="">自動偵測</option>
+        </select>
+        <button class="btn-port" onclick="applyPortSelection()">套用</button>
+        <button class="btn-port secondary" onclick="clearPort()">清除指定</button>
+        <button class="btn-port ghost" onclick="rescanPorts()">重新掃描 COM</button>
+      </div>
+      <div class="info-right">
+        <span class="label">單 Relay 目前 COM：</span>
+        <span class="value" id="backendPortLabel">未知</span>
+        <span style="font-size:11px;color:#6b7280;">（請避免選到同一顆 COM）</span>
+      </div>
+      <div id="lastStatus" style="font-size:12px;color:#555;flex-basis:100%;margin-top:4px;">&nbsp;</div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <h2>CH1</h2>
+        <div class="status-pill status-off" id="ch1Status">OFF</div>
+        <div class="btn-row">
+          <button class="btn-on" onclick="setRelay(1,true)">ON</button>
+          <button class="btn-off" onclick="setRelay(1,false)">OFF</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>CH2</h2>
+        <div class="status-pill status-off" id="ch2Status">OFF</div>
+        <div class="btn-row">
+          <button class="btn-on" onclick="setRelay(2,true)">ON</button>
+          <button class="btn-off" onclick="setRelay(2,false)">OFF</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>CH3</h2>
+        <div class="status-pill status-off" id="ch3Status">OFF</div>
+        <div class="btn-row">
+          <button class="btn-on" onclick="setRelay(3,true)">ON</button>
+          <button class="btn-off" onclick="setRelay(3,false)">OFF</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>CH4</h2>
+        <div class="status-pill status-off" id="ch4Status">OFF</div>
+        <div class="btn-row">
+          <button class="btn-on" onclick="setRelay(4,true)">ON</button>
+          <button class="btn-off" onclick="setRelay(4,false)">OFF</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="log">
+      <div class="log-title">事件紀錄</div>
+      <div id="logLines" class="log-lines">初始化中…</div>
+    </div>
+  </main>
+
+  <script>
+    let currentPort = '';
+
+    function log(msg, isError) {
+      const box = document.getElementById('logLines');
+      const t = new Date().toLocaleTimeString();
+      const line = `[${t}] ${msg}`;
+      const div = document.createElement('div');
+      if (isError) div.classList.add('error');
+      div.textContent = line;
+      if (box.textContent === '初始化中…') box.textContent = '';
+      box.prepend(div);
+    }
+
+    function rebuildPortOptions(ports, mainPort) {
+      const sel = document.getElementById('portSelect');
+      const previous = currentPort;
+      sel.innerHTML = '';
+      const optAuto = document.createElement('option');
+      optAuto.value = '';
+      optAuto.textContent = '自動偵測';
+      sel.appendChild(optAuto);
+
+      if (!Array.isArray(ports) || ports.length === 0) {
+        const optNo = document.createElement('option');
+        optNo.value = '';
+        optNo.textContent = '（目前無偵測到 USB Relay）';
+        optNo.disabled = true;
+        sel.appendChild(optNo);
+        return;
+      }
+
+      ports.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p;
+        sel.appendChild(opt);
+      });
+
+      if (mainPort) {
+        for (let i = 0; i < sel.options.length; i++) {
+          const opt = sel.options[i];
+          if (opt.value === mainPort) {
+            opt.textContent = mainPort + '（單 Relay 已用）';
+            opt.disabled = true;
+            if (currentPort === mainPort) {
+              currentPort = '';
+              sel.value = '';
+              log('注意：' + mainPort + ' 已由單 Relay 使用，4-Relay COM 已清除', true);
+            }
+          }
+        }
+      }
+
+      // 如果之前選的 COM 仍在列表裡，維持選取
+      if (previous && previous !== mainPort) {
+        for (let i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value === previous && !sel.options[i].disabled) {
+            sel.value = previous;
+            currentPort = previous;
+            break;
+          }
+        }
+      }
+    }
+
+    function applyPortSelection() {
+      const sel = document.getElementById('portSelect');
+      const v = sel.value;
+      if (!v) {
+        currentPort = '';
+        log('4-Relay COM 改為「自動偵測」模式', false);
+      } else {
+        currentPort = v;
+        log('已指定 4-Relay COM：' + v, false);
+      }
+      fetchStatus();
+    }
+
+    function clearPort() {
+      currentPort = '';
+      const sel = document.getElementById('portSelect');
+      sel.value = '';
+      log('已清除 4-Relay 手動 COM，回到自動偵測', false);
+      fetchStatus();
+    }
+
+    function rescanPorts() {
+      log('重新掃描 USB Relay COM 中…', false);
+      // 不改變 currentPort，只是重抓狀態與可用 COM 列表
+      fetchStatus();
+    }
+
+    async function fetchStatus() {
+      try {
+        let url = '/relay4/status';
+        if (currentPort) url += '?port=' + encodeURIComponent(currentPort);
+        const res = await fetch(url);
+        const j = await res.json();
+        if (!j.ok) {
+          log('狀態取得失敗：' + (j.error || 'unknown'), true);
+          return;
+        }
+        const mainPort = j.main_port || j.single_port || j.relay_port || j.mainRelayPort || '';
+        document.getElementById('backendPortLabel').textContent = mainPort || '未知';
+
+        const ports = j.usb_relay_ports || j.available_ports || j.relay4_ports || j.ports || [];
+        rebuildPortOptions(ports, mainPort);
+
+        const usedPort = j.port || '';
+        if (currentPort)
+          document.getElementById('portLabel').textContent = '手動指定：' + currentPort + '（實際：' + (usedPort || '未知') + '）';
+        else
+          document.getElementById('portLabel').textContent = usedPort || '(未連線)';
+
+        const sel = document.getElementById('portSelect');
+        if (currentPort && sel.value !== currentPort) {
+          sel.value = currentPort;
+        }
+
+        updateChStatus(j.ch_state || {});
+        const status = '最後指令：' + (j.last_cmd || '-') + ' · 結果：' + (j.last_result || '-') + (j.last_error ? (' · 錯誤：' + j.last_error) : '');
+        document.getElementById('lastStatus').textContent = status;
+      } catch (e) {
+        log('無法取得狀態：' + e, true);
+      }
+    }
+
+    function updateChStatus(chState) {
+      for (let ch = 1; ch <= 4; ch++) {
+        const el = document.getElementById('ch' + ch + 'Status');
+        const isOn = !!chState[ch];
+        el.textContent = isOn ? 'ON' : 'OFF';
+        el.classList.toggle('status-on', isOn);
+        el.classList.toggle('status-off', !isOn);
+      }
+    }
+
+    async function setRelay(ch, on) {
+      try {
+        const payload = { ch, on };
+        if (currentPort) payload.port = currentPort;
+        const res = await fetch('/relay4/set', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const j = await res.json();
+        if (!j.ok) {
+          log('CH' + ch + ' 設定失敗：' + (j.error || 'unknown'), true);
+          return;
+        }
+        updateChStatus(j.ch_state || {});
+        const usedPort = j.port || '';
+        if (currentPort)
+          document.getElementById('portLabel').textContent = '手動指定：' + currentPort + '（實際：' + (usedPort || '未知') + '）';
+        else
+          document.getElementById('portLabel').textContent = usedPort || '(未連線)';
+
+        log('CH' + ch + ' → ' + (on ? 'ON' : 'OFF') + ' 成功', false);
+        const status = '最後指令：' + (j.last_cmd || '-') + ' · 結果：' + (j.last_result || '-') + (j.last_error ? (' · 錯誤：' + j.last_error) : '');
+        document.getElementById('lastStatus').textContent = status;
+      } catch (e) {
+        log('CH' + ch + ' 設定例外：' + e, true);
+      }
+    }
+
+    fetchStatus();
+    setInterval(fetchStatus, 5000);
+  </script>
+  <script>
+    (function () {
+      function pad2(n) { return String(n).padStart(2, '0'); }
+      function fmt(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); }
+      function startClock() { function tick() { var el = document.getElementById('nowText'); if (el) el.textContent = fmt(new Date()); } tick(); setInterval(tick, 1000); }
+      document.addEventListener('DOMContentLoaded', startClock);
+    })();
+  </script>
+</body>
+
+</html>

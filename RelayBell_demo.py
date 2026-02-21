@@ -383,11 +383,11 @@ def _save_chime_config():
 
 
 
-# ==== [schedules ?脣? JSON 閫??撌亙�] ====
+# ==== [schedules ?脣? JSON 閫??撌亙] ====
 
 def _ensure_obj(value):
 
-    """?𠰴虾?賣糓 str ??JSON ?�???dict/list嚗𥕦捆敹滩◤摮𦯀葡?硋�甈～�?""
+    """Ensure the value is a dictionary or list, even if it is a JSON string."""
 
     if not isinstance(value, str):
 
@@ -419,7 +419,7 @@ def _ensure_obj(value):
 
 def _get_json_tolerant():
 
-    """?�憭批捆敹滚漲??request 頧㗇? Python ?拐辣??""
+    """Tolerantly get JSON from the request."""
 
     data = request.get_json(silent=True)
 
@@ -474,7 +474,7 @@ try:
     HAS_DEEPTRANS = True
 except ImportError:
     HAS_DEEPTRANS = False
-    print("[translate] deep_translator ?芸?鋆?)
+    print("[translate] deep_translator not installed.")
 
 
 
@@ -492,7 +492,7 @@ def _get_server_location():
 
     # Default: Taipei 101
 
-    res = {"lat": 25.0330, "lon": 121.5654, "city": "?啣?撣?, "region": "Taipei City"}
+    res = {"lat": 25.0330, "lon": 121.5654, "city": "Taipei", "region": "Taipei City"}
 
     
 
@@ -561,116 +561,29 @@ def _get_server_location():
 
 
 def _get_weather_report():
-
     loc = _get_server_location()
-
     lat = loc["lat"]
-
     lon = loc["lon"]
-
-    # Prefer City, then Region
-
-    loc_name = loc["city"] or loc["region"] or "?啣?撣?
-
-
+    loc_name = loc["city"] or loc["region"] or "Taipei"
 
     try:
-
-        # Open-Meteo API
-
         url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,weather_code&timezone=auto"
-
         r = requests.get(url, timeout=5)
-
-        if r.status_code != 200: return "?⊥??硋?瘞?情鞈�?"
-
+        if r.status_code != 200: return "Weather data currently unavailable."
+        
         data = r.json().get("current", {})
-
-        temp = data.get("temperature_2m", "?")
-
-        humid = data.get("relative_humidity_2m", "?")
-
-        code = data.get("weather_code", 0)
-
+        temp = data.get("temperature_2m", "N/A")
+        humid = data.get("relative_humidity_2m", "N/A")
         
-
-        # WMO Weather interpretation
-
-        status = "?湔?"
-
-        if code in (1, 2, 3): status = "憭𡁻𤩅"
-
-        elif code in (45, 48): status = "?厰𧊅"
-
-        elif 51 <= code <= 55: status = "瘥𥟇???
-
-        elif 56 <= code <= 57: status = "?漤𢂚"
-
-        elif 61 <= code <= 65: status = "銝钅𢂚"
-
-        elif 66 <= code <= 67: status = "?圈𢂚"
-
-        elif 71 <= code <= 77: status = "銝钅䪸"
-
-        elif 80 <= code <= 82: status = "??𢂚"
-
-        elif 85 <= code <= 86: status = "??䪸"
-
-        elif code >= 95: status = "?琿𢂚"
-
-
-
-        # Air Quality Check
-
-        aqi_str = ""
-
-        try:
-
-            aq_url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=us_aqi"
-
-            aq_r = requests.get(aq_url, timeout=3)
-
-            if aq_r.status_code == 200:
-
-                aq_data = aq_r.json().get("current", {})
-
-                aqi = aq_data.get("us_aqi")
-
-                if aqi is not None:
-
-                    if aqi <= 50: q_status = "?臬末"
-
-                    elif aqi <= 100: q_status = "?桅�?
-
-                    elif aqi <= 150: q_status = "撠齿??�?蝢支??亙熒"
-
-                    elif aqi <= 200: q_status = "銝滚�摨?
-
-                    elif aqi <= 300: q_status = "?𧼮虜銝滚�摨?
-
-                    else: q_status = "?勗拿"
-
-                    aqi_str = f"嚗𣬚征瘞??鞈泯q_status}嚗淾QI?�彍{aqi}"
-
-        except Exception as e:
-
-            print(f"[Weather] AQI fetch failed: {e}")
-
-        
-
-        now_str = datetime.now().strftime("%H暺?M??)
-
-        return f"?曉銁?�? {now_str}嚗峕??其?蝵?{loc_name}嚗𣬚𤌍?齿除皞?{temp} 摨佗??詨?瞈訫漲 {humid}%嚗�予瘞??瘜�?{status}{aqi_str}??
-
+        now_str = datetime.now().strftime("%H:%M")
+        return f"Current weather in {loc_name} at {now_str}: Temperature {temp}°C, Humidity {humid}%."
     except Exception as e:
-
         print("Weather error:", e)
-
-        return "瘞?情鞈�?霈�?硋仃??
-
+        return "Failed to fetch weather data."
 
 
-# ---- qrcode嚗�𥅾?∪?隞交?蝷箔誨?選?----
+
+# ---- qrcode嚗𥅾?∪?隞交?蝷箔誨?選?----
 
 try:
 
@@ -805,7 +718,7 @@ try:
              melo_model = TTS(language='ZH', device=device)
              
              HAS_MELO = True
-             _log_boot("??MeloTTS 頛匧�摰峕?嚗?)
+             _log_boot("[SETUP] MeloTTS Loaded Successfully.")
              
              try:
                  spks = melo_model.hps.data.spk2id
@@ -1103,6 +1016,34 @@ def api_set_chime_config():
     except Exception as e:
         return jsonify(ok=False, error=str(e)), 500
 
+@app.route('/api/translate', methods=['POST'])
+def api_translate():
+    if not HAS_DEEPTRANS:
+        return jsonify(ok=False, error="Translation module not available"), 501
+    try:
+        data = request.json or request.form
+        if not data:
+            data = request.get_json(silent=True) or {}
+        
+        text = data.get('text')
+        target = data.get('target', 'zh-TW')
+        source = data.get('source', 'auto')
+        
+        if not text:
+            return jsonify(ok=False, error="Missing text"), 400
+            
+        from deep_translator import GoogleTranslator
+        translated = GoogleTranslator(source=source, target=target).translate(text)
+        return jsonify(ok=True, translated=translated)
+    except Exception as e:
+        print(f"[TRANSLATE] Error: {e}")
+        return jsonify(ok=False, error=str(e)), 500
+
+@app.route('/demo')
+def demo_page():
+    return render_template('demo.html')
+
+
 @app.route('/api/melo_voices')
 def api_melo_voices():
     if not HAS_MELO or not melo_model:
@@ -1182,7 +1123,7 @@ def api_ai_script():
         except ollama.ResponseError as e:
             if e.status_code == 404:
                 print(f"[AI] Model not found: {e}")
-                return jsonify(ok=False, error="?航炊嚗𡁏𪄳銝滚� AI 璅∪?嚗諹??券𤓖?虫??瑁? `ollama pull gemma2:2b` 銝贝?璅∪???), 404
+                return jsonify(ok=False, error="AI Model not found. Please run 'ollama pull gemma2:2b' first."), 404
             raise e
         
         result_text = response['message']['content'].strip()
@@ -1486,7 +1427,7 @@ def live_stream(ws):
 
              except Exception as e:
 
-                 msg = f"?剜𦆮?典??訫仃?? {e}"
+                 msg = f"Player startup failed: {e}"
 
                  print(msg)
 
@@ -1494,7 +1435,7 @@ def live_stream(ws):
 
         else:
 
-             msg = "?芣炎皜砍� mpv/ffmpeg/ffplay嚗𣬚�瘜閙偘?曄凒?剝𨺗閮?
+             msg = "Missing player: mpv/ffmpeg/ffplay not found."
 
              print(f"[WS] {msg}")
 
@@ -1854,7 +1795,7 @@ def api_speak_audio_blob():
 
             if not _FFMPEG:
 
-                err = "隡箸??函� ffmpeg嚗𣬚�瘜閗?瑼𢛵��?摰㕑? ffmpeg.exe??
+                err = "ffmpeg not found. Please install ffmpeg.exe."
 
                 text_area_insert(f"??{err}", "Rec")
 
@@ -4094,10 +4035,12 @@ gender_code2label={code:lab for lab,code in GENDER_LABELS}
 
 
 def get_voice_id_auto(text, lang_code=None, gender_code=None):
+    if lang_code and ("-Neural" in lang_code or "-" in lang_code and len(lang_code) > 10): 
+        return lang_code # Direct voice ID
     if not lang_code: lang_code = detect_language(text)
     if not gender_code: gender_code = gender_label2code.get(gender_label_var.get(), "female")
     # Make sure gender_code is lowercase "female" or "male"
-    gender_code = gender_code.lower()
+    gender_code = (gender_code or "female").lower()
     return VOICE_ID_TABLE.get(lang_code, VOICE_ID_TABLE["zh-TW"]).get(gender_code, "zh-TW-HsiaoChenNeural")
 
 
@@ -9014,14 +8957,9 @@ def _client_ip_from_request():
 
 
 @app.get("/")
-
 def home():
-
-    ui_index = os.path.join(UI_TEMPLATE_DIR, "index.html")
-
-    if os.path.exists(ui_index): return redirect("/static/ui/index.html", code=302)
-
-    return jsonify(ok=False, error="?芣𪄳??./static/ui/index.html"), 404
+    # Redirect to demo showcase as requested
+    return redirect("/demo")
 
 
 

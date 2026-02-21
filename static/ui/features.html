@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>📖 功能介紹 - 校園廣播系統</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e7bd8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            font-family: system-ui, -apple-system, "Microsoft JhengHei", Segoe UI, Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: #1e7bd8;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        header .title {
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 0.3px;
+        }
+
+        header .links a {
+            color: #dff1ff;
+            text-decoration: none;
+            margin-left: 12px;
+            font-size: 13px;
+            transition: color 0.2s;
+        }
+
+        header .links a:hover {
+            color: #ffffff;
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .hero {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: #64748b;
+            line-height: 1.6;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            border-color: #667eea;
+        }
+
+        .feature-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .feature-card h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #1e293b;
+        }
+
+        .feature-card p {
+            color: #64748b;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .cta-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 50px 40px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .cta-section h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
+        .cta-section p {
+            font-size: 18px;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-primary:hover {
+            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border-color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero p {
+                font-size: 16px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-section h2 {
+                font-size: 28px;
+            }
+        }
+    </style>
+    <script defer src="auth.js"></script>
+</head>
+
+<body>
+    <div id="auth-toolbar" style="position:fixed; top:72px; right:16px; z-index:9999;">
+        <button id="logoutBtn"
+            style="background:#f87171;border:none;border-radius:999px;color:white;padding:10px 14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);">登出</button>
+    </div>
+
+    <header>
+        <div class="title">📖 功能介紹</div>
+        <div class="links">
+            <a href="index.html">🎛 主控台</a>
+            <a href="sched.html">🕐 排程</a>
+            <a href="tt.html">📚 課表</a>
+            <a href="features.html">📖 功能</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero">
+            <span class="version-badge">Version 0.1.10</span>
+            <h1>🎙️ 校園廣播系統</h1>
+            <p>
+                整合 UDP 語音接收、多媒體播放、智能排程、地震預警的全方位校園廣播解決方案。
+                支援桌面 UI 與 Web 介面雙重控制，讓校園廣播更智能、更便捷。
+            </p>
+            <div style="margin-top: 25px;">
+                <a href="guide.html" class="button-demo" style="font-size: 16px; padding: 12px 30px;">📚 查看使用說明</a>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="features-grid">
+            <!-- Feature 1 -->
+            <div class="feature-card">
+                <span class="feature-icon">🔊</span>
+                <h3>多層 TTS 語音引擎</h3>
+                <p>智能備援機制，確保語音播報永不中斷：</p>
+                <ul class="feature-list">
+                    <li>Edge TTS - 高品質雲端語音（優先）</li>
+                    <li>Piper TTS - 離線本地語音引擎</li>
+                    <li>gTTS - Google 文字轉語音</li>
+                    <li>SAPI5 - Windows 內建語音（備援）</li>
+                    <li>支援中文、英文、日文、韓文、越南語、印尼語、台語</li>
+                </ul>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="feature-card">
+                <span class="feature-icon">🎵</span>
+                <h3>多媒體播放系統</h3>
+                <p>支援多種音訊格式與來源：</p>
+                <ul class="feature-list">
+                    <li>MP3 檔案上傳與管理</li>
+                    <li>YouTube 影片下載轉 MP3</li>
+                    <li>全螢幕影片播放（mpv）</li>
+                    <li>播放控制（暫停/繼續/停止）</li>
+                    <li>音量調整與靜音功能</li>
+                </ul>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="feature-card">
+                <span class="feature-icon">📅</span>
+                <h3>智能排程系統</h3>
+                <p>自動化排程，解放人力：</p>
+                <ul class="feature-list">
+                    <li>課表自動播放（上課鈴、下課鈴）</li>
+                    <li>自訂排程（一次性/重複性）</li>
+                    <li>支援多種動作（TTS、MP3、YouTube）</li>
+                    <li>視覺化排程管理介面</li>
+                    <li>即時預覽下一次觸發時間</li>
+                </ul>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="feature-card">
+                <span class="feature-icon">🌋</span>
+                <h3>地震預警整合</h3>
+                <p>即時接收中央氣象署地震資訊：</p>
+                <ul class="feature-list">
+                    <li>自動偵測伺服器位置</li>
+                    <li>強度門檻過濾</li>
+                    <li>自動播放警報音效</li>
+                    <li>TTS 廣播地震詳情</li>
+                    <li>WebSocket 即時推送</li>
+                </ul>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="feature-card">
+                <span class="feature-icon">🎤</span>
+                <h3>即時錄音廣播</h3>
+                <p>遠端麥克風功能，隨時隨地廣播：</p>
+                <ul class="feature-list">
+                    <li>按住說話（Hold to Talk）</li>
+                    <li>錄音後預覽再傳送</li>
+                    <li>支援桌面與行動裝置</li>
+                    <li>自動音訊壓縮</li>
+                    <li>即時播放無延遲</li>
+                </ul>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="feature-card">
+                <span class="feature-icon">🌐</span>
+                <h3>多語言翻譯</h3>
+                <p>內建翻譯引擎，打破語言障礙：</p>
+                <ul class="feature-list">
+                    <li>支援 Google 翻譯 API</li>
+                    <li>台語 ↔ 中文 雙向翻譯</li>
+                    <li>自動偵測來源語言</li>
+                    <li>一鍵翻譯並播報</li>
+                    <li>支援 7+ 種語言</li>
+                </ul>
+            </div>
+
+            <!-- Feature 7 -->
+            <div class="feature-card">
+                <span class="feature-icon">🤖</span>
+                <h3>AI 廣播稿生成</h3>
+                <p>整合 Ollama 本地 LLM：</p>
+                <ul class="feature-list">
+                    <li>輸入關鍵字自動生成廣播稿</li>
+                    <li>語氣親切友善</li>
+                    <li>適合校園環境</li>
+                    <li>支援繁體中文</li>
+                    <li>離線運作保護隱私</li>
+                </ul>
+            </div>
+
+            <!-- Feature 8 -->
+            <div class="feature-card">
+                <span class="feature-icon">📱</span>
+                <h3>多平台支援</h3>
+                <p>隨時隨地控制廣播系統：</p>
+                <ul class="feature-list">
+                    <li>桌面 UI（Tkinter）</li>
+                    <li>Web 介面（響應式設計）</li>
+                    <li>行動裝置優化</li>
+                    <li>PWA 支援（可安裝）</li>
+                    <li>ngrok 公網穿透（可選）</li>
+                </ul>
+            </div>
+
+            <!-- Feature 9 -->
+            <div class="feature-card">
+                <span class="feature-icon">👥</span>
+                <h3>學生端管理</h3>
+                <p>完整的設備控制系統：</p>
+                <ul class="feature-list">
+                    <li>自動發現學生端設備</li>
+                    <li>遠端開關機（WOL）</li>
+                    <li>分組管理</li>
+                    <li>即時狀態監控</li>
+                    <li>WebRTC 視訊通話</li>
+                </ul>
+            </div>
+
+            <!-- Feature 10 -->
+            <div class="feature-card">
+                <span class="feature-icon">🔐</span>
+                <h3>安全認證系統</h3>
+                <p>保護系統安全：</p>
+                <ul class="feature-list">
+                    <li>bcrypt 密碼雜湊</li>
+                    <li>角色權限管理（管理員/教師）</li>
+                    <li>Session 會話管理</li>
+                    <li>登入/登出功能</li>
+                    <li>API 端點保護</li>
+                </ul>
+            </div>
+
+            <!-- Feature 11 -->
+            <div class="feature-card">
+                <span class="feature-icon">📣</span>
+                <h3>分區廣播控制</h3>
+                <p>4 路繼電器分區控制：</p>
+                <ul class="feature-list">
+                    <li>獨立控制 4 個區域</li>
+                    <li>串列埠（COM Port）通訊</li>
+                    <li>即時狀態顯示</li>
+                    <li>Web 介面控制</li>
+                    <li>支援自動化排程</li>
+                </ul>
+            </div>
+
+            <!-- Feature 12 -->
+            <div class="feature-card">
+                <span class="feature-icon">🌤️</span>
+                <h3>天氣播報整合</h3>
+                <p>自動獲取即時天氣資訊：</p>
+                <ul class="feature-list">
+                    <li>IP 位置自動偵測</li>
+                    <li>Open-Meteo API 整合</li>
+                    <li>溫度、濕度、天氣狀況</li>
+                    <li>空氣品質 AQI 指數</li>
+                    <li>一鍵插入氣象文字</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="cta-section">
+            <h2>🚀 立即開始使用</h2>
+            <p>體驗智能化校園廣播系統，讓廣播工作更輕鬆、更高效！</p>
+            <div class="cta-buttons">
+                <a href="index.html" class="btn btn-primary">🎛️ 進入主控台</a>
+                <a href="sched.html" class="btn btn-secondary">📅 設定排程</a>
+                <a href="eew.html" class="btn btn-secondary">🌋 地震預警</a>
+                <a href="broadcast.html" class="btn btn-secondary">🎙️ 行動廣播</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 時鐘顯示
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-TW', { hour12: false });
+            const clockEl = document.getElementById('nowText');
+            if (clockEl) clockEl.textContent = timeStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // 平滑滾動
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

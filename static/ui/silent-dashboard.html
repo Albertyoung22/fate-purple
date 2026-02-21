@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>靜音廣播控制台</title>
+    <script defer src="auth.js"></script>
+    <style>
+        :root {
+            --bg: #f5f8fb;
+            --card: #ffffff;
+            --border: #d9e8fb;
+            --text: #0f172a;
+            --muted: #5a6b80;
+            --primary: #1e7bd8;
+            --primary-dark: #165ea3;
+            --success: #0a8754;
+            --warn: #e38b06;
+            --danger: #d62839;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, "Microsoft JhengHei", Segoe UI, Roboto, Arial;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--primary);
+            color: #fff;
+        }
+
+        header .links {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        header .links a {
+            color: #dff1ff;
+            text-decoration: none;
+        }
+
+        header .links a:hover {
+            text-decoration: underline;
+        }
+
+        header .links .sep {
+            color: rgba(255, 255, 255, 0.4);
+            margin: 0 2px 0 10px;
+            font-size: 11px;
+        }
+
+        .wrap {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 18px;
+        }
+
+        @media (max-width: 960px) {
+            .wrap {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 6px 24px rgba(15, 23, 42, .08);
+        }
+
+        .card h2 {
+            margin: 0 0 12px 0;
+            font-size: 18px;
+        }
+
+        textarea,
+        input,
+        select {
+            width: 100%;
+            background: #fff;
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #fff;
+            background: var(--primary);
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            transition: transform .1s ease, filter .1s ease;
+        }
+
+        .btn:hover {
+            filter: brightness(1.05);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn.secondary {
+            background: #eef4ff;
+            color: var(--primary-dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn.warn {
+            background: var(--warn);
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 6px;
+        }
+
+        .row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .btn.danger {
+            background: var(--danger);
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f1f5ff;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .client-table th,
+        .client-table td {
+            font-size: 12px;
+        }
+
+        tr:hover td {
+            background: #f8fbff;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .2);
+            border: 1px solid rgba(255, 255, 255, .4);
+            color: #fff;
+            font-size: 13px;
+        }
+
+        .status {
+            min-height: 18px;
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .ann-panel {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            margin: 14px 0;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, .06);
+        }
+
+        .ann-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .ann-text {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 16px;
+            background: #fff;
+            color: var(--text);
+        }
+
+        .ann-btn {
+            appearance: none;
+            border: 0;
+            background: var(--primary);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .08s ease, filter .08s ease;
+        }
+
+        .ann-btn:hover {
+            filter: brightness(1.08);
+        }
+
+        .ann-btn:active {
+            transform: translateY(1px);
+        }
+
+        .ann-btn.warn {
+            background: var(--warn);
+        }
+
+        .ann-btn.secondary {
+            background: var(--success);
+        }
+
+        .ann-muted {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .ann-preview {
+            max-width: 320px;
+            max-height: 180px;
+            border-radius: 10px;
+            display: block;
+            margin-top: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .ann-toggle {
+            margin: 12px 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: background .12s ease;
+        }
+
+        .ann-toggle:hover {
+            background: rgba(30, 123, 216, .12);
+        }
+
+        .ann-hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div>
+            <div class="pill">無聲看板 · Silent Cast</div>
+            <div class="muted" id="summary">正在載入...</div>
+        </div>
+        <div class="links">
+            <span id="nowText"
+                style="margin-right:12px;opacity:.85;display:inline-block;min-width:110px;text-align:right">--:--:--</span>
+            <a href="index.html">🎛 主控台</a>
+            <a href="sched.html">🕐 排程</a>
+            <a href="single_reservation.html">📅 預約</a>
+            <a href="tt.html">📚 課表</a>
+            <span class="sep">|</span>
+            <a href="taigi_edu.html">🇹🇼 本土語</a>
+            <a href="eew.html">🌋 地震</a>
+            <a href="relay4.html">📣 分區</a>
+            <a href="silent-dashboard.html">🔇 無聲</a>
+            <span class="sep">|</span>
+            <a href="broadcast.html" target="_blank">🎙️ 行動</a>
+            <a href="live.html">🔴 直播</a>
+            <a href="teacher_call.html" target="_blank">📹 通話</a>
+            <span class="sep">|</span>
+            <a href="/teacher?key=teacher" target="_blank">🎵 媒體</a>
+            <a href="logs.html">🗒 紀錄</a>
+        </div>
+        <div class="row">
+            <button class="btn secondary btn-sm" onclick="refreshClients()">刷新</button>
+            <button class="btn secondary btn-sm" onclick="autoRefreshToggle()" id="autoBtn">自動:開</button>
+        </div>
+    </header>
+
+    <div class="wrap">
+        <section class="card">
+            <div class="ann-panel">
+                <div class="ann-toggle" id="annToggle">
+                    <span style="font-weight:700">靜音廣播</span>
+                    <a href="/static/ui/announce.html" target="_blank" onclick="event.stopPropagation()"
+                        style="text-decoration:none;margin:0 4px;" title="開啟公告看板">🔗</a>
+                    <span class="ann-muted">填入文字、上傳圖片/影音後送出至 announce.html</span>
+                </div>
+                <div id="annBody">
+                    <label class="ann-muted">廣播文字</label>
+                    <textarea id="annMsg" class="ann-text" placeholder="例如：302 班到大禮堂集合"></textarea>
+                    <div class="ann-row">
+                        <input id="annFile" type="file" accept="image/*" />
+                        <button id="annUpload" class="ann-btn secondary">上傳圖片</button>
+                        <span id="annImgUrl" class="ann-muted"></span>
+                    </div>
+                    <div class="ann-row">
+                        <input id="annMediaFile" type="file" accept="audio/*,video/*" />
+                        <button id="annMediaUpload" class="ann-btn secondary">上傳音訊/影片</button>
+                        <span id="annMediaUrl" class="ann-muted"></span>
+                    </div>
+                    <img id="annPreview" class="ann-preview" style="display:none" />
+                    <div class="ann-row">
+                        <button id="annSendSound" class="ann-btn">送出（朗讀）</button>
+                        <button id="annSendSilent" class="ann-btn warn">送出（無聲）</button>
+                        <span id="annStatus" class="ann-muted">準備</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>學生端設備狀況與控制</h2>
+            <div class="row" style="justify-content:space-between; align-items:center;">
+                <div class="muted">已知 <strong id="count">0</strong> 台 · 上次更新 <span id="lastUpdated">--</span></div>
+            </div>
+            <table class="client-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="chkAll" onchange="toggleAll(this)"></th>
+                        <th>Client ID</th>
+                        <th>主機名稱</th>
+                        <th>IP</th>
+                        <th>群組</th>
+                        <th>MAC</th>
+                        <th>狀態</th>
+                        <th>最後上線</th>
+                    </tr>
+                </thead>
+                <tbody id="clientBody">
+                    <tr>
+                        <td colspan="8" class="muted">載入中...</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 最終版快速指令區：自動偵測後端 IP -->
+            <div
+                style="margin-top:16px; padding:16px; background:#ffffff; border:1px solid var(--border); border-radius:14px; box-shadow:0 8px 24px rgba(15,23,42,.08);">
+                <div style="margin-bottom:12px;">
+                    <strong>快速一鍵指令（直接對勾選的電腦執行）</strong>
+                </div>
+
+                <div class="actions" style="gap:12px; flex-wrap:wrap;">
+                    <div
+                        style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; width:100%; margin-bottom:8px;">
+                        <input type="text" id="quickUrl" placeholder="留空 = 自動開啟目前後端的靜音廣播頁（announce.html）"
+                            style="flex:1; min-width:280px;" value="">
+                        <button class="btn" onclick="quickOpenUrl()">開啟網址</button>
+                        <button class="btn secondary" onclick="quickOpenUrl(true)">一鍵靜音廣播</button>
+                        <button class="btn secondary" onclick="quickOpenWatch()"
+                            style="background:#e83e8c;color:#fff;border-color:#e83e8c;">一鍵開啟直播</button>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; width:100%; margin-bottom:8px;">
+                        <button class="btn secondary" onclick="quickOpenGroup(1)">群組 1</button>
+                        <button class="btn secondary" onclick="quickOpenGroup(2)">群組 2</button>
+                        <button class="btn secondary" onclick="quickOpenGroup(3)">群組 3</button>
+                        <button class="btn secondary" onclick="quickOpenGroup(4)">群組 4</button>
+                        <button class="btn secondary" onclick="quickOpenGroup(5)">群組 5</button>
+                        <button class="btn secondary" onclick="quickOpenGroup(6)">群組 6</button>
+                    </div>
+
+                    <button class="btn secondary" onclick="quickCmd('lock')">鎖定螢幕</button>
+                    <button class="btn warn" onclick="quickCmd('shutdown')">立即關機</button>
+                    <button class="btn warn" onclick="quickCmd('reboot')">重新開機</button>
+                    <button class="btn secondary" onclick="quickCmd('ring')"
+                        style="background:#fde68a;color:#92400e;border-color:#f59e0b;">響鈴</button>
+                    <button class="btn secondary" onclick="quickCmd('wol')">網路喚醒（WOL）</button>
+
+                    <div style="margin-top:12px; width:100%; display:flex; gap:8px;">
+                        <button class="btn secondary" onclick="selectAll()">全選</button>
+                        <button class="btn secondary" onclick="clearAll()">全部取消</button>
+                        <button class="btn secondary" onclick="refreshClients()">刷新名單</button>
+                    </div>
+                </div>
+
+                <div class="status" id="quickStatus" style="margin-top:12px;"></div>
+            </div>
+
+            <div class="status" id="clientStatus"></div>
+        </section>
+    </div>
+
+    <script>
+        const el = (id) => document.getElementById(id);
+
+        let state = {
+            clients: {},
+            selectedIds: new Set(),
+            auto: true,
+        };
+
+        function startClock() {
+            function pad(n) { return n.toString().padStart(2, "0"); }
+            function fmt(date) { return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`; }
+            function tick() { el("nowText").textContent = fmt(new Date()); }
+            tick();
+            setInterval(tick, 1000);
+        }
+
+        function toggleAll(checkbox) {
+            const checked = checkbox.checked;
+            document.querySelectorAll('input[name="targets"]').forEach(cb => {
+                cb.checked = checked;
+                checked ? state.selectedIds.add(cb.value) : state.selectedIds.delete(cb.value);
+            });
+        }
+
+        function renderClients() {
+            const body = el("clientBody");
+            const entries = Object.entries(state.clients || {});
+
+            if (entries.length === 0) {
+                body.innerHTML = '<tr><td colspan="8" class="muted">暫無學生端連線</td></tr>';
+                el("chkAll").checked = false;
+                return;
+            }
+
+            let html = '';
+            for (const [cid, c] of entries) {
+                const statusText = c.online ? '線上' : '<span class="muted">離線</span>';
+                const isChecked = state.selectedIds.has(cid) ? 'checked' : '';
+                html += `<tr>
+                <td><input type="checkbox" name="targets" value="${cid}" ${isChecked} onchange="handleCheckbox(this)"></td>
+                <td>${cid}</td>
+                <td>${c.hostname || '--'}</td>
+                <td>${c.ip || '--'}</td>
+                <td>${c.group || 'default'}</td>
+                <td>${c.mac || '--'}</td>
+                <td>${statusText}</td>
+                <td>${c.last_seen_str || '--'}</td>
+            </tr>`;
+            }
+            body.innerHTML = html;
+
+            const total = entries.length;
+            const selected = state.selectedIds.size;
+            const chkAll = el("chkAll");
+            chkAll.checked = selected > 0 && selected === total;
+            chkAll.indeterminate = selected > 0 && selected < total;
+        }
+
+        function handleCheckbox(cb) {
+            cb.checked ? state.selectedIds.add(cb.value) : state.selectedIds.delete(cb.value);
+            renderClients();
+        }
+
+        async function refreshClients() {
+            try {
+                const resp = await fetch('/controller/api/clients_v2');
+                const data = await resp.json();
+                if (!data.ok) { el("clientStatus").textContent = "錯誤：" + (data.error || "無法獲取列表"); return; }
+
+                state.clients = data.clients || {};
+                const onlineCount = data.online_count || 0;
+                el("count").textContent = Object.keys(state.clients).length;
+                el("lastUpdated").textContent = new Date().toLocaleTimeString();
+                el("summary").textContent = `在線：${onlineCount} / ${Object.keys(state.clients).length}`;
+                renderClients();
+                el("clientStatus").textContent = "";
+            } catch (e) {
+                el("clientStatus").textContent = "刷新失敗：" + e.message;
+            }
+        }
+
+        function selectAll() { el("chkAll").checked = true; toggleAll(el("chkAll")); }
+        function clearAll() { state.selectedIds.clear(); renderClients(); }
+
+        function autoRefreshToggle() {
+            state.auto = !state.auto;
+            el("autoBtn").textContent = `自動:${state.auto ? "開" : "關"}`;
+        }
+
+        function startAuto() { setInterval(() => { if (state.auto) refreshClients(); }, 7000); }
+
+        // ==================== 快速一鍵指令 ====================
+        async function quickCmd(cmd) {
+            const targets = Array.from(state.selectedIds);
+            if (targets.length === 0) {
+                el("quickStatus").textContent = "請先勾選至少一台學生端電腦";
+                return;
+            }
+
+            el("quickStatus").textContent = "發送中...";
+            try {
+                const resp = await fetch('/controller/api/send_v2', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ targets, cmd, url: "" })
+                });
+                const r = await resp.json();
+                if (r.ok) {
+                    el("quickStatus").textContent = `已對 ${r.count || targets.length} 台發送「${getCmdName(cmd)}」`;
+                } else {
+                    el("quickStatus").textContent = "失敗：" + (r.error || "");
+                }
+            } catch (e) {
+                el("quickStatus").textContent = "發送失敗：" + e.message;
+            }
+        }
+
+        // 關鍵！自動組成目前後端的 announce.html 路徑
+        async function quickOpenUrl(useDefault = false) {
+            const targets = Array.from(state.selectedIds);
+            if (targets.length === 0) {
+                el("quickStatus").textContent = "請先勾選至少一台學生端電腦";
+                return;
+            }
+
+            const baseUrl = window.location.origin;  // 自動取得目前控制台的 http://IP:Port
+            let url = el("quickUrl").value.trim();
+
+            if (!url || useDefault) {
+                url = `${baseUrl}/static/ui/announce.html`;  // 自動補完整路徑
+            }
+
+            el("quickStatus").textContent = "發送中...";
+            try {
+                const resp = await fetch('/controller/api/send_v2', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ targets, cmd: "open_url", url })
+                });
+                const r = await resp.json();
+                if (r.ok) {
+                    el("quickStatus").textContent = `已對 ${r.count || targets.length} 台開啟靜音廣播頁`;
+                } else {
+                    el("quickStatus").textContent = "失敗：" + (r.error || "");
+                }
+            } catch (e) {
+                el("quickStatus").textContent = "發送失敗：" + e.message;
+            }
+        }
+
+        async function quickOpenWatch() {
+            const targets = Array.from(state.selectedIds);
+            if (targets.length === 0) {
+                el("quickStatus").textContent = "請先勾選至少一台學生端電腦";
+                return;
+            }
+
+            const baseUrl = window.location.origin;
+            const url = `${baseUrl}/static/ui/watch.html`;
+
+            el("quickStatus").textContent = "發送中 (開啟直播頁)...";
+            try {
+                const resp = await fetch('/controller/api/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ targets, cmd: "open_url", url })
+                });
+                const r = await resp.json();
+                if (r.ok) {
+                    el("quickStatus").textContent = `已對 ${r.count || targets.length} 台開啟直播頁`;
+                } else {
+                    el("quickStatus").textContent = "失敗：" + (r.error || "");
+                }
+            } catch (e) {
+                el("quickStatus").textContent = "發送失敗：" + e.message;
+            }
+        }
+
+        async function quickOpenGroup(groupId) {
+            const targets = Array.from(state.selectedIds);
+            if (targets.length === 0) {
+                el("quickStatus").textContent = "請先勾選至少一台學生端電腦";
+                return;
+            }
+
+            const url = `${window.location.origin}/g/${groupId}`;
+
+            el("quickStatus").textContent = `發送中（群組 ${groupId}）...`;
+            try {
+                const resp = await fetch('/controller/api/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ targets, cmd: "open_url", url })
+                });
+                const r = await resp.json();
+                if (r.ok) {
+                    el("quickStatus").textContent = `已對 ${r.count || targets.length} 台開啟 /g/${groupId}`;
+                } else {
+                    el("quickStatus").textContent = "失敗：" + (r.error || "");
+                }
+            } catch (e) {
+                el("quickStatus").textContent = "發送失敗：" + e.message;
+            }
+        }
+
+        function getCmdName(cmd) {
+            const map = { lock: "鎖定螢幕", shutdown: "關機", reboot: "重新開機", wol: "網路喚醒", ring: "響鈴" };
+            return map[cmd] || cmd;
+        }
+        // ==================== 快速指令結束 ====================
+
+        // ==================== 靜音廣播面板 ====================
+        (function () {
+            const $ = id => document.getElementById(id);
+            const body = $('annBody');
+            const toggle = $('annToggle');
+            toggle?.addEventListener('click', () => body.classList.toggle('ann-hidden'));
+
+            let currentImageUrl = "";
+            let currentMediaUrl = "";
+
+            $('annFile')?.addEventListener('change', ev => {
+                const f = ev.target.files[0];
+                const p = $('annPreview');
+                if (!f) { p.style.display = "none"; return; }
+                p.src = URL.createObjectURL(f);
+                p.style.display = 'block';
+            });
+
+            $('annUpload')?.addEventListener('click', async () => {
+                const f = $('annFile').files[0];
+                if (!f) { $('annStatus').textContent = '請先選擇圖片'; return; }
+                const fd = new FormData(); fd.append('file', f);
+                $('annStatus').textContent = '上傳中...';
+                try {
+                    const r = await fetch('/announce_upload', { method: 'POST', body: fd });
+                    const j = await r.json();
+                    if (j.ok) {
+                        currentImageUrl = j.url;
+                        $('annImgUrl').textContent = j.url;
+                        $('annStatus').textContent = '圖片已上傳';
+                        const p = $('annPreview');
+                        if (p) { p.src = j.url; p.style.display = 'block'; }
+                    } else {
+                        $('annStatus').textContent = '上傳失敗: ' + (j.error || '');
+                    }
+                } catch (e) {
+                    $('annStatus').textContent = '上傳錯誤';
+                }
+            });
+
+            $('annMediaUpload')?.addEventListener('click', async () => {
+                const f = $('annMediaFile').files[0];
+                if (!f) { $('annStatus').textContent = '請先選擇音訊/影片'; return; }
+                const fd = new FormData(); fd.append('file', f);
+                $('annStatus').textContent = '上傳中...';
+                try {
+                    const r = await fetch('/announce_upload', { method: 'POST', body: fd });
+                    const j = await r.json();
+                    if (j.ok) {
+                        currentMediaUrl = j.url;
+                        $('annMediaUrl').textContent = j.url;
+                        $('annStatus').textContent = '媒體已上傳';
+                    } else {
+                        $('annStatus').textContent = '上傳失敗: ' + (j.error || '');
+                    }
+                } catch (e) {
+                    $('annStatus').textContent = '上傳錯誤';
+                }
+            });
+
+            async function send(sound) {
+                const message = ($('annMsg').value || '').trim();
+                const body = { message, image: currentImageUrl, media: currentMediaUrl, sound: sound ? 1 : 0 };
+                $('annStatus').textContent = '送出中...';
+                try {
+                    const r = await fetch('/announce', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    const j = await r.json();
+
+                    if (j.ok) {
+                        try {
+                            $('annStatus').textContent = '更新成功，正在推送...';
+
+                            // Get all connected clients
+                            const clResp = await fetch('/controller/api/clients_v2');
+                            const clData = await clResp.json();
+
+                            if (clData.ok && clData.clients) {
+                                const allTargets = Object.keys(clData.clients);
+                                if (allTargets.length > 0) {
+                                    const siteUrl = window.location.origin + "/static/ui/announce.html";
+
+                                    await fetch('/controller/api/send_v2', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            targets: allTargets,
+                                            cmd: "open_url",
+                                            url: siteUrl
+                                        })
+                                    });
+                                    $('annStatus').textContent = `已更新並推送至 ${allTargets.length} 台`;
+                                } else {
+                                    $('annStatus').textContent = '已更新 (無連線電腦)';
+                                }
+                            } else {
+                                $('annStatus').textContent = '已更新 (無法取得名單)';
+                            }
+                        } catch (pushErr) {
+                            console.error("推送失敗:", pushErr);
+                            $('annStatus').textContent = '已更新但推送失敗';
+                        }
+                    } else {
+                        $('annStatus').textContent = '失敗: ' + (j.error || '');
+                    }
+                } catch (e) {
+                    $('annStatus').textContent = '錯誤';
+                    console.error(e);
+                }
+            }
+            $('annSendSound')?.addEventListener('click', () => send(true));
+            $('annSendSilent')?.addEventListener('click', () => send(false));
+        })();
+        // ==================== 靜音廣播結束 ====================
+
+        window.addEventListener("load", () => {
+            startClock();
+            refreshClients();
+            startAuto();
+        });
+    </script>
+
+
+</body>
+
+</html>

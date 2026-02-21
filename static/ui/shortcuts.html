@@ -1,0 +1,988 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>⚡ 自訂快速鍵設定</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, "Microsoft JhengHei", Segoe UI, Roboto, Arial;
+            background: #f5f8fb;
+            color: #0b2239;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: #1e7bd8;
+            color: #fff;
+        }
+
+        header .title {
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        header .links a {
+            color: #dff1ff;
+            text-decoration: none;
+            margin-left: 12px;
+            font-size: 13px;
+        }
+
+        header .links .sep {
+            color: rgba(255, 255, 255, 0.4);
+            margin: 0 2px 0 10px;
+            font-size: 11px;
+        }
+
+        main {
+            padding: 12px;
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 讓檔案管理區塊橫跨兩欄 */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        h2 {
+            font-size: 20px;
+            color: #0b2239;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        h3 {
+            font-size: 16px;
+            color: #0b2239;
+            margin: 0 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #eef4ff;
+            padding-bottom: 8px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e7f0fb;
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 4px 14px rgba(30, 123, 216, .06);
+            /* 讓卡片內容撐開高度 */
+            height: fit-content;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-size: 14px;
+            color: #445b78;
+            min-width: 60px;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        select,
+        textarea {
+            flex: 1;
+            width: 100%;
+            font-size: 14px;
+            padding: 8px 10px;
+            border: 1px solid #d6e3f7;
+            border-radius: 10px;
+            background: #fff;
+            outline: none;
+            color: #0b2239;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        button,
+        .btn {
+            appearance: none;
+            border: 1px solid #cfe1fb;
+            background: #f6faff;
+            color: #0a2b5a;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .16);
+            transition: all .1s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        button:hover,
+        .btn:hover {
+            filter: brightness(1.03);
+            box-shadow: 0 3px 6px rgba(15, 23, 42, .22);
+        }
+
+        button:active,
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn.primary {
+            background: #1e7bd8;
+            border-color: #1e7bd8;
+            color: #fff;
+        }
+
+        .btn.danger {
+            background: #ffe9e9;
+            border-color: #ffd0d0;
+            color: #8b1a1a;
+        }
+
+        .btn.play {
+            background: #0a8754;
+            border-color: #0a8754;
+            color: #fff;
+        }
+
+        .btn.ghost {
+            background: #fff;
+        }
+
+        .btn.small {
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        /* Specific styles for shortcut list */
+        .shortcut-item {
+            background: #fdfdfd;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid #eff4fa;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .shortcut-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .shortcut-name {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 4px;
+            color: #0b2239;
+        }
+
+        .shortcut-detail {
+            font-size: 12px;
+            color: #5c738f;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .tag {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #eef4ff;
+            color: #1e7bd8;
+            border: 1px solid #dae7f9;
+        }
+
+        .tag.accent {
+            background: #e0f2fe;
+            color: #0284c7;
+            border-color: #bae6fd;
+        }
+
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        .file-table th,
+        .file-table td {
+            padding: 8px;
+            border-bottom: 1px solid #ececec;
+            text-align: left;
+            color: #0b2239;
+        }
+
+        .file-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .mode-switch label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .home-link-btn {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 6px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .home-link-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .quick-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .quick-actions-content {
+            flex: 1;
+        }
+
+        .quick-actions p {
+            margin: 0;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        .quick-action-buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .volume-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .volume-controls label {
+            font-size: 13px;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .volume-controls input[type="range"] {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .volume-value {
+            font-size: 13px;
+            color: #0f172a;
+            font-weight: 600;
+        }
+    </style>
+    <script defer src="auth.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="title">⚡ 自訂快速鍵</div>
+        <div class="links">
+            <span id="nowText"
+                style="margin-right:12px;opacity:.9;display:inline-block;min-width:140px;text-align:right">--:--:--</span>
+            <a href="index.html">🎛 主控台</a>
+            <a href="sched.html">🕐 排程</a>
+            <a href="single_reservation.html">📅 預約</a>
+            <a href="tt.html">📚 課表</a>
+            <span class="sep">|</span>
+            <a href="taigi_edu.html">🇹🇼 本土語</a>
+            <a href="eew.html">🌋 地震</a>
+            <a href="relay4.html">📣 分區</a>
+            <a href="silent-dashboard.html">🔇 無聲</a>
+            <span class="sep">|</span>
+            <a href="broadcast.html" target="_blank">🎙️ 行動</a>
+            <a href="live.html">🔴 直播</a>
+            <a href="teacher_call.html" target="_blank">📹 通話</a>
+            <a href="shortcuts.html">⚡ 快捷</a>
+      <a href="buddha.html">🕌 佛教</a>
+            <span class="sep">|</span>
+            <a href="clients.html" target="_blank">👥 設備</a>
+            <a href="/teacher?key=teacher" target="_blank">🎵 媒體</a>
+            <a href="logs.html">🗒 紀錄</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="card full-width">
+            <div class="quick-actions">
+                <div class="quick-actions-content">
+                    <h3 style="margin:0;border:none;">即時控制</h3>
+                    <p>播放途中若需立即停止，可點擊「強制取消」送出 CancelALL 命令，或使用音量拉桿調整音量。</p>
+                </div>
+                <div class="quick-action-buttons">
+                    <button class="btn danger" id="btnForceCancel" onclick="forceCancelAll(this)">⏹ 強制取消</button>
+                    <div class="volume-controls">
+                        <label for="volumeSlider">音量</label>
+                        <input type="range" id="volumeSlider" min="0" max="100" value="80" tabindex="-1" />
+                        <span class="volume-value" id="volumeValue">80%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Left Column: Add New -->
+        <div class="card">
+            <h3>⚡ 新增快速鍵</h3>
+            <div class="row">
+                <label>名稱</label>
+                <input type="text" id="newName" placeholder="例如：升旗典禮音樂">
+            </div>
+            <div class="row">
+                <label>類型</label>
+                <div class="mode-switch" style="display:flex;gap:16px;">
+                    <label>
+                        <input type="radio" name="shortcutMode" value="mp3" checked>
+                        播放 MP3
+                    </label>
+                    <label>
+                        <input type="radio" name="shortcutMode" value="tts">
+                        播報文字
+                    </label>
+                </div>
+            </div>
+            <div class="row" id="fileRow">
+                <label>檔案</label>
+                <div style="flex:1; display:flex; gap:8px;">
+                    <select id="newFile" style="flex:1">
+                        <option value="">載入中...</option>
+                    </select>
+                    <button class="btn play" onclick="document.getElementById('uploadInput').click()">⬆ 上傳 MP3</button>
+                    <input type="file" id="uploadInput" accept=".mp3" style="display:none" onchange="uploadFile(this)">
+                </div>
+            </div>
+            <div class="row" id="textRow" style="display:none;">
+                <label>內容</label>
+                <textarea id="newText" placeholder="輸入要播報的文字..."></textarea>
+            </div>
+            <div class="row">
+                <label>選項</label>
+                <div style="flex:1; display:flex; gap:16px;">
+                    <label style="font-weight:400; display:flex; align-items:center; gap:6px; cursor:pointer">
+                        <input type="checkbox" id="chkStart"> 播放前提示音
+                    </label>
+                    <label style="font-weight:400; display:flex; align-items:center; gap:6px; cursor:pointer">
+                        <input type="checkbox" id="chkEnd"> 播放後結束音
+                    </label>
+                </div>
+            </div>
+            <div style="text-align:right; margin-top:12px;">
+                <button class="btn primary" onclick="addShortcut()">＋ 新增快速鍵</button>
+            </div>
+        </div>
+
+        <!-- Right Column: List -->
+        <div class="card">
+            <h3>📂 現有快速鍵</h3>
+            <div id="listContainer">
+                <div style="text-align:center; color:#999; padding:20px;">載入中...</div>
+            </div>
+        </div>
+
+        <!-- Full Width: File Manager -->
+        <div class="card full-width">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin:0; border:none;">💾 檔案管理</h3>
+                <button class="btn ghost small" onclick="loadFiles()">🔄 重新整理</button>
+            </div>
+            <div id="fileManager" class="file-empty" style="color:#94a3b8; text-align:center; padding:20px;">載入中...
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Clock script for header
+        (function () {
+            function pad2(n) { return String(n).padStart(2, '0'); }
+            function fmt(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); }
+            function startClock() { function tick() { var el = document.getElementById('nowText'); if (el) el.textContent = fmt(new Date()); } tick(); setInterval(tick, 1000); }
+            document.addEventListener('DOMContentLoaded', startClock);
+        })();
+    </script>
+
+    <script>
+        let shortcuts = [];
+        let files = [];
+        let volumeSliderEl = null;
+        let volumeValueEl = null;
+        let lastVolumeScrollY = 0;
+        let volumeScrollLockId = null;
+        const MODE_MP3 = 'mp3';
+        const MODE_TTS = 'tts';
+
+        function normalizeShortcut(item) {
+            const rawMode = (item && item.mode) ? String(item.mode).toLowerCase() : MODE_MP3;
+            const mode = (rawMode === MODE_TTS || rawMode === 'text') ? MODE_TTS : MODE_MP3;
+            return {
+                name: (item && item.name) || '',
+                mode,
+                filename: (item && item.filename) || '',
+                text: (item && item.text) || '',
+                options: {
+                    start: !!(item && item.options && item.options.start),
+                    end: !!(item && item.options && item.options.end)
+                }
+            };
+        }
+
+        function getSelectedMode() {
+            const radios = document.querySelectorAll('input[name="shortcutMode"]');
+            for (const r of radios) {
+                if (r.checked) return r.value === MODE_TTS ? MODE_TTS : MODE_MP3;
+            }
+            return MODE_MP3;
+        }
+
+        function updateModeUI() {
+            const mode = getSelectedMode();
+            const fileRow = document.getElementById('fileRow');
+            const textRow = document.getElementById('textRow');
+            if (fileRow) fileRow.style.display = mode === MODE_MP3 ? 'flex' : 'none';
+            if (textRow) textRow.style.display = mode === MODE_TTS ? 'flex' : 'none';
+        }
+
+        function bindModeSwitch() {
+            document.querySelectorAll('input[name="shortcutMode"]').forEach(r => {
+                r.addEventListener('change', updateModeUI);
+            });
+            updateModeUI();
+        }
+
+        function snippetText(text, maxLen = 60) {
+            const content = (text || '').trim();
+            if (!content) return '（無文字內容）';
+            return content.length > maxLen ? content.slice(0, maxLen) + '…' : content;
+        }
+
+        // Auth check
+        async function checkAuth() {
+            try {
+                const r = await fetch('/auth/status');
+                const d = await r.json();
+                if (!d.logged_in) location.href = '/login?next=' + encodeURIComponent(location.pathname);
+            } catch (e) { console.error(e); }
+        }
+        checkAuth();
+
+        // Load Files
+        async function loadFiles() {
+            try {
+                const r = await fetch('/api/uploads?only=av&t=' + Date.now());
+                const j = await r.json();
+                if (j.ok) {
+                    files = j.items || [];
+                    const sel = document.getElementById('newFile');
+
+                    // Deduplicate logic
+                    const seenUrls = new Set();
+                    const options = [];
+                    options.push('<option value="">請選擇 MP3 檔案...</option>');
+
+                    for (const f of files) {
+                        const url = (f.url || "").trim();
+                        if (!url) continue;
+                        if (seenUrls.has(url)) continue;
+
+                        // Strict extension check for MP3/WAV only to avoid "unable to play"
+                        if (!/\.(mp3|wav|ogg|m4a)$/i.test(url)) continue;
+
+                        seenUrls.add(url);
+                        const label = f.orig || f.saved || '(未命名檔案)';
+                        options.push(`<option value="${url}">${label}</option>`);
+                    }
+
+                    sel.innerHTML = options.join('');
+                    renderFileManager();
+                    render();
+                }
+            } catch (e) { console.error('Load files failed', e); }
+        }
+
+        // Load Shortcuts
+        async function loadShortcuts() {
+            try {
+                const r = await fetch('/api/shortcuts');
+                let data = await r.json();
+                if (!Array.isArray(data)) data = [];
+                shortcuts = data.map(normalizeShortcut);
+                render();
+            } catch (e) { console.error('Load shortcuts failed', e); }
+        }
+
+        async function saveShortcuts() {
+            try {
+                await fetch('/api/shortcuts', {
+                    method: 'POST',
+                    body: JSON.stringify(shortcuts)
+                });
+                // loadShortcuts(); // Refresh ensuring sync
+            } catch (e) { alert('儲存失敗'); }
+        }
+
+        async function playShortcut(idx) {
+            const item = shortcuts[idx];
+            if (!item) return;
+            const mode = item.mode === MODE_TTS ? MODE_TTS : MODE_MP3;
+            const payload = {
+                mode: mode,
+                start_chime: item.options.start,
+                end_chime: item.options.end
+            };
+            if (mode === MODE_TTS) {
+                payload.text = item.text || '';
+                if (!payload.text) {
+                    alert('此快速鍵沒有文字內容，請重新設定。');
+                    return;
+                }
+            } else {
+                payload.filename = item.filename || '';
+                if (!payload.filename) {
+                    alert('此快速鍵尚未選擇檔案，請重新設定。');
+                    return;
+                }
+            }
+            // Call API
+            fetch('/api/play_shortcut', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            }).then(r => r.json()).then(j => {
+                if (!j.ok) alert('播放失敗: ' + (j.error || '未知錯誤'));
+            });
+        }
+
+        function render() {
+            const c = document.getElementById('listContainer');
+            if (shortcuts.length === 0) {
+                c.innerHTML = '<div style="text-align:center; color:#5c738f; padding:20px;">尚未設定任何快速鍵</div>';
+                return;
+            }
+            // Display newest first (reverse order) but keep original index
+            const list = shortcuts.map((s, i) => ({ s, i })).reverse();
+
+            c.innerHTML = list.map(({ s, i }) => `
+        <div class="shortcut-item">
+            <div class="shortcut-info">
+                <div class="shortcut-name">${esc(s.name)}</div>
+                <div class="shortcut-detail">${renderShortcutDetail(s)}</div>
+            </div>
+            <div class="shortcut-actions" style="display:flex;gap:8px;">
+                <button class="btn play small" onclick="playShortcut(${i})">▶ 播放</button>
+                <button class="btn danger small" onclick="delShortcut(${i})">刪除</button>
+            </div>
+        </div>
+    `).join('');
+        }
+
+        function addShortcut() {
+            const name = document.getElementById('newName').value.trim();
+            const file = document.getElementById('newFile').value;
+            const text = document.getElementById('newText').value.trim();
+            const start = document.getElementById('chkStart').checked;
+            const end = document.getElementById('chkEnd').checked;
+            const mode = getSelectedMode();
+
+            if (!name) return alert('請輸入名稱');
+            const shortcut = {
+                name: name,
+                mode: mode,
+                filename: '',
+                text: '',
+                options: { start: start, end: end }
+            };
+
+            if (mode === MODE_MP3) {
+                if (!file) return alert('請選擇檔案');
+                const storedFilename = toStoredFilename(file);
+                shortcut.filename = storedFilename;
+            } else {
+                if (!text) return alert('請輸入要播報的文字');
+                shortcut.text = text;
+            }
+
+            shortcuts.push(shortcut);
+            saveShortcuts();
+            render();
+
+            // Reset form
+            document.getElementById('newName').value = '';
+            document.getElementById('newText').value = '';
+            const sel = document.getElementById('newFile');
+            if (sel) sel.selectedIndex = 0;
+        }
+
+        function delShortcut(i) {
+            if (!confirm('確定要刪除？')) return;
+            shortcuts.splice(i, 1);
+            saveShortcuts();
+            render();
+        }
+
+        function esc(s) {
+            return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function escAttr(s) {
+            return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        }
+
+        function toStoredFilename(path) {
+            if (!path) return '';
+            let stored = path;
+            if (stored.startsWith('/uploads/')) {
+                stored = stored.replace('/uploads/', '');
+            }
+            if (stored.startsWith('/static/uploads/')) {
+                stored = stored.replace('/static/uploads/', '');
+            }
+            return stored;
+        }
+
+        function getFileName(path) {
+            if (!path) return '';
+            return path.split('/').pop().split('\\').pop();
+        }
+
+        function getDisplayFileName(path) {
+            if (!path) return '';
+            const base = getFileName(path);
+            if (!files || !files.length) return base;
+            for (const file of files) {
+                if (!file) continue;
+                if (file.saved && file.saved === base) {
+                    return file.orig || file.saved || base;
+                }
+                if (file.url && typeof file.url === 'string' && file.url.endsWith(base)) {
+                    return file.orig || file.saved || base;
+                }
+            }
+            return base;
+        }
+
+        function renderShortcutDetail(s) {
+            if (!s) return '';
+            const tags = [];
+            tags.push(`<span class="tag accent">${s.mode === MODE_TTS ? '語音' : 'MP3'}</span>`);
+            if (s.options && s.options.start) tags.push('<span class="tag">前導音</span>');
+            if (s.options && s.options.end) tags.push('<span class="tag">結束音</span>');
+            if (s.mode === MODE_TTS) {
+                tags.push(`<span class="text-preview" style="color:#475569;margin-left:8px;font-style:italic;">${esc(snippetText(s.text))}</span>`);
+            } else {
+                const label = s.filename ? getDisplayFileName(s.filename) : '（尚未選擇檔案）';
+                tags.push(`<span class="file-name" style="color:#0b2239;margin-left:8px;">${esc(label)}</span>`);
+            }
+            return tags.join('');
+        }
+
+        async function uploadFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const btn = document.querySelector('button[onclick*="uploadInput"]');
+            const oldText = btn.textContent;
+            btn.textContent = '上傳中...';
+            btn.disabled = true;
+
+            try {
+                const r = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const j = await r.json();
+                if (j.ok) {
+                    await loadFiles();
+                    // Auto select the new file
+                    const sel = document.getElementById('newFile');
+                    // Try to match by filename
+                    const target = j.filename || j.saved_as || j.orig || file.name;
+                    let found = false;
+
+                    // First pass: exact match on value (url) suffix
+                    if (target) {
+                        for (let i = 0; i < sel.options.length; i++) {
+                            // Check if option value ends with target filename
+                            if (sel.options[i].value.endsWith(target) || sel.options[i].text.includes(target)) {
+                                sel.selectedIndex = i;
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!found && sel.options.length > 1) {
+                        // Fallback: select last one if reasonable attempt failed, assuming it's the new one
+                        sel.selectedIndex = sel.options.length - 1;
+                    }
+                    alert('上傳成功！');
+                } else {
+                    alert('上傳失敗: ' + (j.error || '未知錯誤'));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('上傳發生錯誤');
+            } finally {
+                btn.textContent = oldText;
+                btn.disabled = false;
+                input.value = ''; // clear for re-selection
+            }
+        }
+
+        async function renderFileManager() {
+            const wrap = document.getElementById('fileManager');
+            if (!wrap) return;
+
+            // Fetch upload dir
+            let uploadDir = '';
+            try {
+                const r = await fetch('/whoami');
+                const j = await r.json();
+                if (j.upload_dir) uploadDir = j.upload_dir;
+            } catch (e) { console.warn(e); }
+
+            const dirInfo = uploadDir ? `<div style="margin-bottom:10px; padding:8px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; color:#0369a1; font-size:13px; word-break:break-all;">
+                <strong>📂 檔案儲存位置：</strong> ${esc(uploadDir)}
+            </div>` : '';
+
+            if (!files.length) {
+                wrap.className = 'file-empty';
+                wrap.innerHTML = dirInfo + '<div style="padding:20px; text-align:center;">暫無上傳檔案，請先透過上方按鈕上傳 MP3，或直接將檔案放入上述資料夾。</div>';
+                return;
+            }
+            wrap.className = '';
+            const rows = files.map(f => `
+                <tr>
+                    <td>${esc(f.orig || f.saved)}</td>
+                    <td>${esc(getFileName(f.url))}</td>
+                    <td>${f.mtype || '-'}</td>
+                    <td>${formatSize(f.size || 0)}</td>
+                    <td>${formatTime(f.mtime)}</td>
+                    <td class="actions">
+                        <button class="btn small primary" onclick="useFile('${encodeURIComponent(f.url)}')">套用</button>
+                        <button class="btn small danger" onclick="deleteUpload('${encodeURIComponent(f.saved)}')">刪除</button>
+                    </td>
+                </tr>
+            `).join('');
+            wrap.innerHTML = dirInfo + `
+                <div class="file-table-wrap" style="overflow-x:auto;">
+                    <table class="file-table">
+                        <thead>
+                            <tr>
+                                <th>原始名稱</th>
+                                <th>儲存檔名</th>
+                                <th>類型</th>
+                                <th>大小</th>
+                                <th>更新時間</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function useFile(url) {
+            try {
+                const sel = document.getElementById('newFile');
+                const decoded = decodeURIComponent(url);
+                let found = false;
+                for (let i = 0; i < sel.options.length; i++) {
+                    if (sel.options[i].value === decoded) {
+                        sel.selectedIndex = i;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) {
+                    // Scroll to view
+                    sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    // Visual feedback
+                    const originalTransition = sel.style.transition;
+                    const originalBg = sel.style.backgroundColor;
+
+                    sel.style.transition = 'background-color 0.3s';
+                    sel.style.backgroundColor = '#fff3cd'; // Yellow highlight
+
+                    setTimeout(() => {
+                        sel.style.backgroundColor = originalBg;
+                        setTimeout(() => {
+                            sel.style.transition = originalTransition;
+                        }, 300);
+                    }, 1000);
+                } else {
+                    alert('無法在選單中找到此檔案，可能已被移除或過濾。');
+                }
+            } catch (e) {
+                console.warn(e);
+            }
+        }
+
+        async function deleteUpload(saved) {
+            const real = decodeURIComponent(saved);
+            if (!confirm(`確定要刪除「${real}」？`)) return;
+            const body = new URLSearchParams();
+            body.append('name', real);
+            try {
+                const r = await fetch('/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString()
+                });
+                const j = await r.json().catch(() => ({}));
+                if (j.ok) {
+                    await loadFiles();
+                } else {
+                    alert('刪除失敗：' + (j.error || '未知錯誤'));
+                }
+            } catch (e) {
+                alert('刪除失敗：' + e.message);
+            }
+        }
+
+        function formatSize(size) {
+            if (!size || size <= 0) return '-';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let idx = 0;
+            let val = size;
+            while (val >= 1024 && idx < units.length - 1) {
+                val /= 1024;
+                idx++;
+            }
+            return val.toFixed(idx === 0 ? 0 : 1) + ' ' + units[idx];
+        }
+
+        function formatTime(ts) {
+            if (!ts) return '-';
+            try {
+                const d = new Date(ts * 1000);
+                return d.toLocaleString();
+            } catch (e) {
+                return '-';
+            }
+        }
+
+        async function forceCancelAll(btn) {
+            const target = btn || document.getElementById('btnForceCancel');
+            if (target) {
+                target.disabled = true;
+                target.textContent = '送出中...';
+            }
+            try {
+                // Use simple form-data POST to /cmd, same as index.html
+                const body = new URLSearchParams();
+                body.append('cmd', 'CancelALL');
+                const resp = await fetch('/cmd', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString()
+                });
+                if (!resp.ok && resp.status !== 204) throw new Error('HTTP ' + resp.status);
+                // alert('已送出強制取消指令。'); // index.html doesn't alert usually, but we can keep or remove. 
+                // Let's settle for a console log or non-blocking
+                console.log('Force Cancel sent');
+            } catch (e) {
+                alert('送出失敗：' + e.message);
+            } finally {
+                if (target) {
+                    target.disabled = false;
+                    target.textContent = '⏹ 強制取消';
+                }
+            }
+        }
+
+        function initVolumeSlider() {
+            volumeSliderEl = document.getElementById('volumeSlider');
+            volumeValueEl = document.getElementById('volumeValue');
+            if (!volumeSliderEl) return;
+
+            volumeSliderEl.addEventListener('input', (e) => {
+                if (volumeValueEl) volumeValueEl.textContent = e.target.value + '%';
+            });
+            volumeSliderEl.addEventListener('change', async (e) => {
+                try {
+                    await fetch('/api/cmd', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'set_volume',
+                            groups: [0],
+                            payload: { volume: parseInt(e.target.value) }
+                        })
+                    });
+                } catch (err) {
+                    console.error(err);
+                }
+            });
+        }
+
+        window.onload = function () {
+            bindModeSwitch();
+            loadFiles();
+            loadShortcuts();
+            initVolumeSlider();
+        };
+    </script>
+</body>
+
+</html>

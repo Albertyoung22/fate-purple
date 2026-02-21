@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="utf-8">
+    <title>學生端控制主控台</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, "Microsoft JhengHei", Arial;
+            margin: 0;
+            background: #f5f8fb;
+        }
+
+        header {
+            background: #1e7bd8;
+            color: #fff;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        main {
+            padding: 16px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: #fff;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f0f5ff;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .controls {
+            margin-top: 16px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            margin-right: 6px;
+        }
+
+        .btn-primary {
+            background: #1e7bd8;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: #e55353;
+            color: #fff;
+        }
+
+        .btn-warn {
+            background: #ff9f1c;
+            color: #fff;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            background: #e5f2ff;
+            color: #1e7bd8;
+        }
+
+        .offline {
+            color: #999;
+            font-style: italic;
+        }
+
+        .flash {
+            margin-bottom: 8px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            background: #fffbe6;
+            border: 1px solid #ffe58f;
+            font-size: 13px;
+        }
+
+        .logout-btn {
+            background: #f87171;
+            border: none;
+            border-radius: 999px;
+            color: #ffffff;
+            padding: 8px 16px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .logout-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+  <script defer src="auth.js"></script>
+</head>
+
+<body>
+    <header>
+        <h1>學生端控制主控台</h1>
+                <div style="display:flex; align-items:center; gap:12px; font-size:12px;">
+            <div>????<span id="onlineCount">0</span> ?????</div>
+            <button class="logout-btn" onclick="logoutUser()" id="logoutBtnController">??</button>
+        </div>
+    </header>
+    <main>
+        <div id="flashMsg" class="flash" style="display:none;"></div>
+
+        <form id="controlForm">
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="chkAll" onclick="toggleAll(this)"></th>
+                        <th>Client ID</th>
+                        <th>主機名稱</th>
+                        <th>IP</th>
+                        <th>群組</th>
+                        <th>MAC</th>
+                        <th>狀態</th>
+                        <th>最近上線時間</th>
+                    </tr>
+                </thead>
+                <tbody id="clientsTable">
+                    <tr>
+                        <td colspan="8" style="text-align:center; color:#999;">載入中...</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="controls">
+                <div style="margin-bottom:6px;">
+                    指令：
+                    <label><input type="radio" name="cmd" value="open_url" checked> 開啟網址</label>
+                    <label><input type="radio" name="cmd" value="shutdown"> 關機</label>
+                    <label><input type="radio" name="cmd" value="reboot"> 重新開機</label>
+                    <label><input type="radio" name="cmd" value="wol"> 喚醒（WOL）</label>
+                </div>
+                <div style="margin-bottom:6px;">
+                    網址（僅當「開啟網址」時需填）：<input type="text" id="urlInput" style="width:60%;"
+                        placeholder="例如：https://announce.yourschool.edu">
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary">發出指令給勾選的學生端</button>
+                    <button type="button" class="btn btn-warn" onclick="selectGroup('all')">全選</button>
+                    <button type="button" class="btn" onclick="clearAll()">全部取消</button>
+                </div>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        function redirectToLogin() {
+            const next = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = '/login?next=' + next;
+        }
+
+        async function ensureLoggedIn() {
+            const resp = await fetch('/auth/status', { credentials: 'same-origin', cache: 'no-store' });
+            if (!resp.ok) {
+                redirectToLogin();
+                throw new Error('AUTH_CHECK_FAILED');
+            }
+            const data = await resp.json();
+            if (!data.logged_in) {
+                redirectToLogin();
+                throw new Error('NOT_LOGGED_IN');
+            }
+            return data.user || null;
+        }
+
+        async function authFetch(url, options) {
+            const opts = Object.assign({ credentials: 'same-origin' }, options || {});
+            const resp = await fetch(url, opts);
+            if (resp.status === 401 || resp.status === 403) {
+                redirectToLogin();
+                throw new Error('UNAUTHORIZED');
+            }
+            return resp;
+        }
+
+        async function logoutUser() {
+            try {
+                const btn = document.getElementById('logoutBtnController');
+                if (btn) {
+                    btn.disabled = true;
+                }
+                await authFetch('/auth/logout', { method: 'POST' });
+            } catch (err) {
+                console.warn('logout failed', err);
+            } finally {
+                window.location.href = '/login';
+            }
+        }
+
+        let clientsData = {};
+
+        function toggleAll(src) {
+            const checked = src.checked;
+            document.querySelectorAll("input[name='targets']").forEach(cb => cb.checked = checked);
+        }
+
+        function clearAll() {
+            document.getElementById("chkAll").checked = false;
+            document.querySelectorAll("input[name='targets']").forEach(cb => cb.checked = false);
+        }
+
+        function selectGroup(group) {
+            if (group === 'all') {
+                document.querySelectorAll("input[name='targets']").forEach(cb => cb.checked = true);
+                document.getElementById("chkAll").checked = true;
+            }
+        }
+
+        function showFlash(msg) {
+            const flash = document.getElementById('flashMsg');
+            flash.textContent = msg;
+            flash.style.display = 'block';
+            setTimeout(() => flash.style.display = 'none', 5000);
+        }
+
+        async function loadClients() {
+            try {
+                // 保存當前已勾選的客戶端 ID
+                const checkedIds = Array.from(document.querySelectorAll('input[name="targets"]:checked'))
+                    .map(cb => cb.value);
+
+                const resp = await authFetch('/controller/api/clients');
+                const data = await resp.json();
+                if (!data.ok) {
+                    console.error('Failed to load clients:', data.error);
+                    return;
+                }
+
+                clientsData = data.clients || {};
+                const onlineCount = data.online_count || 0;
+                document.getElementById('onlineCount').textContent = onlineCount;
+
+                const tbody = document.getElementById('clientsTable');
+                if (Object.keys(clientsData).length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#999;">暫無學生端連線</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                for (const [cid, c] of Object.entries(clientsData)) {
+                    const statusText = c.online ? '線上' : '<span class="offline">離線</span>';
+                    // 檢查此客戶端之前是否被勾選
+                    const isChecked = checkedIds.includes(cid) ? 'checked' : '';
+                    html += `
+        <tr>
+          <td><input type="checkbox" name="targets" value="${cid}" ${isChecked}></td>
+          <td>${cid}</td>
+          <td>${c.hostname || ''}</td>
+          <td>${c.ip || ''}</td>
+          <td><span class="tag">${c.group || 'default'}</span></td>
+          <td>${c.mac || ''}</td>
+          <td>${statusText}</td>
+          <td>${c.last_seen_str || ''}</td>
+        </tr>
+      `;
+                }
+                tbody.innerHTML = html;
+
+                // 更新「全選」核取方塊的狀態
+                const allCheckboxes = document.querySelectorAll('input[name="targets"]');
+                const checkedCheckboxes = document.querySelectorAll('input[name="targets"]:checked');
+                const chkAll = document.getElementById('chkAll');
+                if (allCheckboxes.length > 0) {
+                    chkAll.checked = allCheckboxes.length === checkedCheckboxes.length;
+                    chkAll.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < allCheckboxes.length;
+                }
+            } catch (err) {
+                console.error('Error loading clients:', err);
+            }
+        }
+
+        document.getElementById('controlForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const targets = Array.from(document.querySelectorAll('input[name="targets"]:checked')).map(cb => cb.value);
+            const cmd = document.querySelector('input[name="cmd"]:checked').value;
+            const url = document.getElementById('urlInput').value.trim();
+
+            if (targets.length === 0) {
+                showFlash('請至少勾選一台學生電腦');
+                return;
+            }
+
+            if (cmd === 'open_url' && !url) {
+                showFlash('請輸入要開啟的網址');
+                return;
+            }
+
+            try {
+                const resp = await authFetch('/controller/api/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ targets, cmd, url })
+                });
+
+                const result = await resp.json();
+                if (result.ok) {
+                    showFlash(`指令已送出給 ${result.count} 台學生端`);
+                    clearAll();
+                } else {
+                    showFlash(`錯誤：${result.error}`);
+                }
+            } catch (err) {
+                showFlash(`發送失敗：${err.message}`);
+            }
+        });
+
+        async function init() {
+            await ensureLoggedIn();
+            loadClients();
+            setInterval(loadClients, 3000);
+        }
+
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', () => init().catch(err => console.error(err)));
+        } else {
+            init().catch(err => console.error(err));
+        }
+    </script>
+</body>
+
+</html>

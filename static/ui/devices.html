@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>設備控制中心</title>
+    <style>
+        :root {
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-main: #111827;
+            --text-sub: #6b7280;
+            --border: #e5e7eb;
+            --primary: #3b82f6;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warn: #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-warn {
+            background: var(--warn);
+        }
+
+        .logout-btn {
+            background: #f87171;
+            border: none;
+            border-radius: 999px;
+            color: #ffffff;
+            padding: 10px 18px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .logout-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            flex: 1;
+        }
+    </style>
+  <script defer src="auth.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💻 設備控制中心</h1>
+            <div>
+                <a href="/" class="btn btn-primary" style="text-decoration:none;">回首頁</a>
+                <a href="/teacher" class="btn btn-primary" style="text-decoration:none;">教師廣播</a>
+                <button class="logout-btn" onclick="logoutUser()" id="logoutBtnDevices">??</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>全域控制</h3>
+            <div class="controls">
+                <button class="btn btn-success" onclick="wakeAll()">⚡ 全部喚醒 (WOL)</button>
+                <button class="btn btn-danger" onclick="confirmAction('shutdown', '全部關機')">🛑 全部關機</button>
+                <button class="btn btn-warn" onclick="confirmAction('reboot', '全部重啟')">🔄 全部重啟</button>
+                <button class="btn btn-primary" onclick="loadClients()">🔄 重新整理列表</button>
+            </div>
+            <div class="input-group">
+                <label>開啟網頁：</label>
+                <input type="text" id="urlInput" placeholder="https://example.com">
+                <button class="btn btn-primary" onclick="openUrlAll()">🌐 全體開啟</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>設備列表</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th width="50"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
+                        <th>組別</th>
+                        <th>IP 位址</th>
+                        <th>MAC 位址</th>
+                        <th>主機名稱</th>
+                        <th>平台</th>
+                        <th>最後連線</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="clientList">
+                    <tr>
+                        <td colspan="8" style="text-align:center; color:#999;">載入中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let clients = [];
+
+        function redirectToLogin() {
+            const next = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = '/login?next=' + next;
+        }
+
+        async function ensureLoggedIn() {
+            const resp = await fetch('/auth/status', { credentials: 'same-origin', cache: 'no-store' });
+            if (!resp.ok) {
+                redirectToLogin();
+                throw new Error('AUTH_CHECK_FAILED');
+            }
+            const data = await resp.json();
+            if (!data.logged_in) {
+                redirectToLogin();
+                throw new Error('NOT_LOGGED_IN');
+            }
+            return data.user || null;
+        }
+
+        async function authFetch(url, options) {
+            const opts = Object.assign({ credentials: 'same-origin' }, options || {});
+            const resp = await fetch(url, opts);
+            if (resp.status === 401 || resp.status === 403) {
+                redirectToLogin();
+                throw new Error('UNAUTHORIZED');
+            }
+            return resp;
+        }
+
+
+        async function logoutUser() {
+            try {
+                const btn = document.getElementById('logoutBtnDevices');
+                if (btn) {
+                    btn.disabled = true;
+                }
+                await authFetch('/auth/logout', { method: 'POST' });
+            } catch (err) {
+                console.warn('logout failed', err);
+            } finally {
+                window.location.href = '/login';
+            }
+        }
+        function loadClients() {
+            authFetch('/api/clients')
+                .then(r => r.json())
+                .then(data => {
+                    clients = data.clients || [];
+                    renderTable();
+                })
+                .catch(e => console.error(e));
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('clientList');
+            if (clients.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#999;">目前無連線設備</td></tr>';
+                return;
+            }
+
+            // Sort by group then IP
+            clients.sort((a, b) => (a.group || 0) - (b.group || 0) || a.ip.localeCompare(b.ip));
+
+            tbody.innerHTML = clients.map(c => {
+                const lastSeen = Math.floor(Date.now() / 1000) - c.last_seen;
+                const statusClass = lastSeen < 60 ? 'status-online' : 'status-offline';
+                const statusText = lastSeen < 60 ? '在線' : '離線';
+
+                return `
+                    <tr>
+                        <td><input type="checkbox" class="client-cb" value="${c.mac}"></td>
+                        <td><span class="status-badge" style="background:#e0f2fe;color:#0369a1">Group ${c.group || '-'}</span></td>
+                        <td style="font-family:monospace">${c.ip}</td>
+                        <td style="font-family:monospace">${c.mac}</td>
+                        <td>${c.hostname || '-'}</td>
+                        <td>${c.platform || '-'}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText} (${lastSeen}s ago)</span></td>
+                        <td>
+                            <button class="btn btn-success" style="padding:4px 8px;font-size:12px" onclick="wakeOne('${c.mac}')">Wake</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function toggleSelectAll() {
+            const checked = document.getElementById('selectAll').checked;
+            document.querySelectorAll('.client-cb').forEach(cb => cb.checked = checked);
+        }
+
+        function getSelectedGroups() {
+            // Logic to get groups present in list, or just return all 1-6 for broadcast
+            return [1, 2, 3, 4, 5, 6];
+        }
+
+        function sendCmd(action, payload) {
+            // For now, broadcast to all groups 1-6. 
+            // Ideally we could filter by selected clients, but the backend api_cmd targets groups.
+            // If we want to target specific IPs, we need to update backend or just rely on group broadcast.
+            // Since student_client filters by its own group config, broadcasting to all groups is safe 
+            // as long as we want "All" or "All in Group X".
+
+            // For "Selected Only", we might need a new API or just iterate.
+            // But let's stick to the existing /api/cmd which takes "groups".
+
+            const groups = [1, 2, 3, 4, 5, 6]; // Target all groups
+
+            authFetch('/api/cmd', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    groups: groups,
+                    action: action,
+                    payload: payload || {}
+                })
+            }).then(r => r.json()).then(j => {
+                if (j.ok) alert('指令已發送');
+                else alert('發送失敗: ' + j.error);
+            });
+        }
+
+        function confirmAction(action, name) {
+            if (confirm(`確定要對所有設備執行「${name}」嗎？`)) {
+                sendCmd(action);
+            }
+        }
+
+        function wakeAll() {
+            // Iterate all known clients and send WOL
+            if (!confirm('確定要喚醒列表中的所有設備嗎？')) return;
+            let p = [];
+            clients.forEach(c => {
+                p.push(authFetch('/api/wol', {
+                    method: 'POST', body: JSON.stringify({ mac: c.mac })
+                }));
+            });
+            Promise.all(p).then(() => alert('喚醒封包已發送'));
+        }
+
+        function wakeOne(mac) {
+            authFetch('/api/wol', {
+                method: 'POST', body: JSON.stringify({ mac: mac })
+            }).then(r => r.json()).then(j => {
+                if (j.ok) alert('喚醒封包已發送');
+                else alert('失敗');
+            });
+        }
+
+        function openUrlAll() {
+            const url = document.getElementById('urlInput').value;
+            if (!url) return alert('請輸入網址');
+            sendCmd('open_url', { url: url });
+        }
+
+        async function init() {
+            await ensureLoggedIn();
+            loadClients();
+            setInterval(loadClients, 5000);
+        }
+
+        init().catch(err => console.error(err));
+    </script>
+</body>
+
+</html>

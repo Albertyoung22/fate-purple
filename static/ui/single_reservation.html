@@ -1,0 +1,638 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>📅 單次預約 · 接收端</title>
+    <style>
+        :root {
+            --brand: #1e7bd8;
+            --panel: #f3f9ff;
+            --card: #ffffff;
+            --br: #d9e8fb;
+            --text: #0b2239;
+            --muted: #5a6b80;
+        }
+
+        html,
+        body {
+            margin: 0;
+            background: #f5f8fb;
+            font-family: system-ui, -apple-system, "Microsoft JhengHei", Segoe UI, Roboto, Arial;
+            color: var(--text);
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--brand);
+            color: #fff;
+        }
+
+        header .links a {
+            color: #dff1ff;
+            text-decoration: none;
+            margin-left: 12px;
+            font-size: 13px;
+        }
+
+        header .links .sep {
+            color: rgba(255, 255, 255, 0.4);
+            margin: 0 2px 0 10px;
+            font-size: 11px;
+        }
+
+        main {
+            padding: 12px;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: minmax(0, clamp(400px, 30vw, 500px)) minmax(0, 1fr);
+        }
+
+        @media (max-width: 800px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--br);
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: 0 1px 0 rgba(16, 24, 40, .03);
+        }
+
+        .card h3 {
+            margin: 0 0 10px;
+            font-size: 16px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 8px 0;
+        }
+
+        .row.stretch>* {
+            flex: 1 1 140px;
+        }
+
+        label.small {
+            font-size: 12px;
+            color: #45607d;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        input[type="text"],
+        input[type="time"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            font-size: 14px;
+            padding: 7px 9px;
+            border: 1px solid #d6e3f7;
+            border-radius: 10px;
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        button {
+            appearance: none;
+            border: 1px solid #cfe1fb;
+            background: #f6faff;
+            color: #0a2b5a;
+            padding: 7px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        button:hover {
+            background: #eef6ff;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button.primary {
+            background: #1e7bd8;
+            border-color: #1e7bd8;
+            color: #fff;
+        }
+
+        button.primary:hover {
+            background: #1967b8;
+        }
+
+        button.warn {
+            background: #ffe9e9;
+            border-color: #ffd0d0;
+            color: #8b1a1a;
+        }
+
+        button.warn:hover {
+            background: #ffdcdc;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: 1px solid var(--br);
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #edf3fb;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        th {
+            background: #f8fbff;
+            color: #45607d;
+            font-weight: 600;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #fbfdff;
+        }
+
+        .pill {
+            display: inline-block;
+            border: 1px solid #cfe1fb;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 12px;
+            background: #fff;
+        }
+
+        .hint {
+            color: #5c738f;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+    </style>
+    <script defer src="auth.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="title">📅 單次預約 · 接收端</div>
+        <div class="links">
+            <span id="nowText"
+                style="margin-right:12px;opacity:.9;display:inline-block;min-width:140px;text-align:right">--:--:--</span>
+            <a href="index.html">🎛 主控台</a>
+            <a href="sched.html">🕐 排程</a>
+            <a href="single_reservation.html">📅 預約</a>
+            <a href="tt.html">📚 課表</a>
+            <span class="sep">|</span>
+            <a href="taigi_edu.html">🇹🇼 本土語</a>
+            <a href="eew.html">🌋 地震</a>
+            <a href="relay4.html">📣 分區</a>
+            <a href="silent-dashboard.html">🔇 無聲</a>
+            <span class="sep">|</span>
+            <a href="broadcast.html" target="_blank">🎙️ 行動</a>
+            <a href="live.html">🔴 直播</a>
+            <a href="teacher_call.html" target="_blank">📹 通話</a>
+            <a href="shortcuts.html">⚡ 快捷</a>
+      <a href="buddha.html">🕌 佛教</a>
+            <span class="sep">|</span>
+            <a href="clients.html" target="_blank">👥 設備</a>
+            <a href="/teacher?key=teacher" target="_blank">🎵 媒體</a>
+            <a href="logs.html">🗒 紀錄</a>
+        </div>
+    </header>
+    <main>
+        <div class="grid">
+            <!-- 左側：新增表單 -->
+            <div class="card">
+                <h3>➕ 新增單次預約</h3>
+
+                <div class="row">
+                    <div style="flex:1">
+                        <label class="small">日期</label>
+                        <input id="in-date" type="date" />
+                    </div>
+                    <div style="flex:1">
+                        <label class="small">時間</label>
+                        <input id="in-time" type="time" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div style="flex:1">
+                        <label class="small">標題 (備註)</label>
+                        <input id="in-title" type="text" placeholder="例如：臨時廣播" />
+                    </div>
+                </div>
+
+                <div class="row stretch">
+                    <div>
+                        <label class="small">動作類型</label>
+                        <select id="in-type" style="width:65%">
+                            <option value="cmd">/cmd 指令</option>
+                            <option value="send">/send 文字播報</option>
+                            <option value="special">/special (ShowMsg)</option>
+                            <option value="sendmp3">/sendmp3 (PlayMP3)</option>
+                        </select>
+                        <select id="in-lang" style="width:30%">
+                            <option value="zh">國語</option>
+                            <option value="tw">台語</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div style="flex:1">
+                        <label class="small">內容 / 指令 / 檔名</label>
+                        <textarea id="in-payload" placeholder="輸入要播報的文字，或 PlayMP3:xxx.mp3"></textarea>
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top:-4px; margin-bottom:12px">
+                    <span class="hint" style="margin-right:4px">台語工具：</span>
+                    <button id="btn-taigi-trans" class="secondary" style="font-size:12px;padding:4px 8px"
+                        title="將輸入內容翻譯成台語">📝 先翻成台文</button>
+                    <button id="btn-taigi-say" class="secondary" style="font-size:12px;padding:4px 8px"
+                        title="試聽目前內容 (TTS)">🗣️ 講台語</button>
+                    <button id="btn-taigi-dl" class="secondary" style="font-size:12px;padding:4px 8px"
+                        title="產生並下載語音檔">💾 下載語音檔</button>
+                    <div id="taigi-dl-area" style="display:none; margin-left:8px; align-items:center; gap:4px">
+                        <a id="taigi-dl-link" href="#" download style="font-size:12px">下載</a>
+                        <audio id="taigi-preview-audio" controls style="height:24px"></audio>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div style="flex:1">
+                        <label class="small">快速插入 MP3</label>
+                        <select id="mp3-list"></select>
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top:16px">
+                    <button id="btn-add" class="primary" style="flex:1">💾 加入排程</button>
+                    <button id="btn-clear" style="width:auto">🧹</button>
+                </div>
+                <div class="hint">單次預約執行後不會自動刪除，請手動清理過期項目。</div>
+            </div>
+
+            <!-- 右側：清單 -->
+            <div class="card">
+                <h3>📋 預約清單 <span id="count" class="pill">0</span></h3>
+                <div style="margin-bottom:8px;display:flex;gap:8px">
+                    <button id="btn-refresh" class="small">🔄 重新整理</button>
+                    <button id="btn-clean-expired" class="warn small">🗑 清理過期項目</button>
+                </div>
+                <div style="overflow-x:auto">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:90px">日期</th>
+                                <th style="width:60px">時間</th>
+                                <th>標題 / 內容</th>
+                                <th style="width:60px">動作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-body">
+                            <!-- items -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        (() => {
+            const $ = (sel) => document.querySelector(sel);
+            const API_BASE = (location.protocol === 'file:' || location.port !== '5050') ? 'http://localhost:5050' : '';
+            const apiFetch = (path, opts) => fetch(API_BASE + path, opts);
+
+            // 初始化日期為今天
+            $('#in-date').valueAsDate = new Date();
+
+            // 時間顯示
+            setInterval(() => {
+                const d = new Date();
+                $('#nowText').textContent = d.toLocaleString('zh-TW', { hour12: false });
+            }, 1000);
+
+            // 載入 MP3 清單
+            async function loadFiles() {
+                try {
+                    const r = await apiFetch('/files');
+                    const j = await r.json();
+                    const sel = $('#mp3-list');
+                    sel.innerHTML = '<option value="">(選擇 MP3 插入)</option>';
+                    (j.files || []).forEach(f => {
+                        if (f.name.toLowerCase().endsWith('.mp3')) {
+                            const opt = document.createElement('option');
+                            opt.value = f.saved; // filename
+                            opt.textContent = f.orig || f.saved;
+                            sel.appendChild(opt);
+                        }
+                    });
+                    sel.onchange = () => {
+                        if (sel.value) {
+                            const type = $('#in-type').value;
+                            if (type === 'sendmp3') {
+                                $('#in-payload').value = sel.value;
+                            } else {
+                                $('#in-payload').value = `PlayMP3:${sel.value}`;
+                            }
+                        }
+                    };
+                } catch (e) { console.error(e); }
+            }
+            loadFiles();
+
+            // 載入排程
+            let allSchedules = [];
+            async function loadSchedules() {
+                try {
+                    const r = await apiFetch('/schedules');
+                    const j = await r.json();
+                    // 過濾出有 date 屬性的項目 (單次預約)
+                    allSchedules = Array.isArray(j) ? j : [];
+                    renderList();
+                } catch (e) {
+                    alert('讀取排程失敗: ' + e);
+                }
+            }
+
+            function renderList() {
+                const tbody = $('#list-body');
+                tbody.innerHTML = '';
+
+                // 只顯示單次預約 (有 date 欄位)
+                const singles = allSchedules.filter(it => it.date).sort((a, b) => {
+                    return (a.date + a.time).localeCompare(b.date + b.time);
+                });
+
+                $('#count').textContent = singles.length;
+
+                singles.forEach(it => {
+                    const tr = document.createElement('tr');
+                    const isExpired = new Date(it.date + 'T' + it.time) < new Date();
+                    if (isExpired) tr.style.opacity = '0.6';
+
+                    let displayPayload = (it.payload || '').replace(/</g, '&lt;');
+                    if (it.payload && it.payload.startsWith('lang:tw|')) {
+                        displayPayload = `<span class="pill" style="background:#fff3e0;border-color:#ffb74d;color:#e65100;margin-right:6px">台語</span>` +
+                            displayPayload.replace(/^lang:tw\|/, '');
+                    }
+
+                    tr.innerHTML = `
+            <td>${it.date}</td>
+            <td>${it.time}</td>
+            <td>
+              <div style="font-weight:bold">${it.title || '(無標題)'}</div>
+              <div style="font-size:12px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px">
+                [${it.type}] ${displayPayload}
+              </div>
+            </td>
+            <td>
+              <button class="warn" style="padding:4px 8px;font-size:12px" onclick="deleteItem('${it.id}')">刪除</button>
+            </td>
+          `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            window.deleteItem = async (id) => {
+                if (!confirm('確定要刪除此預約嗎？')) return;
+                // 移除該 ID
+                const newScheds = allSchedules.filter(it => it.id !== id);
+                await saveSchedules(newScheds);
+            };
+
+            async function saveSchedules(newData) {
+                try {
+                    const r = await apiFetch('/schedules', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newData)
+                    });
+                    const res = await r.json();
+                    if (res.ok) {
+                        loadSchedules();
+                    } else {
+                        alert('儲存失敗: ' + res.error);
+                    }
+                } catch (e) {
+                    alert('儲存錯誤: ' + e);
+                }
+            }
+
+            $('#btn-add').onclick = async () => {
+                const date = $('#in-date').value;
+                const time = $('#in-time').value;
+                const title = $('#in-title').value.trim();
+                const type = $('#in-type').value;
+                let payload = $('#in-payload').value.trim();
+                const lang = $('#in-lang').value;
+
+                if (!date || !time) return alert('請選擇日期與時間');
+                if (!payload) return alert('請輸入內容或指令');
+
+                // Handle Taigi prefix
+                if (lang === 'tw' && !payload.startsWith('lang:tw|')) {
+                    payload = 'lang:tw|' + payload;
+                } else if (lang === 'zh' && payload.startsWith('lang:tw|')) {
+                    payload = payload.replace(/^lang:tw\|/, '');
+                }
+
+                const newItem = {
+                    id: 'sched_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                    date: date,
+                    time: time,
+                    title: title,
+                    type: type,
+                    payload: payload,
+                    enabled: true,
+                    created_at: new Date().toISOString()
+                };
+
+                allSchedules.push(newItem);
+                await saveSchedules(allSchedules);
+
+                // 清空輸入
+                $('#in-title').value = '';
+                $('#in-payload').value = '';
+            };
+
+            $('#btn-clear').onclick = () => {
+                $('#in-title').value = '';
+                $('#in-payload').value = '';
+            };
+
+            $('#btn-refresh').onclick = loadSchedules;
+
+            $('#btn-clean-expired').onclick = async () => {
+                if (!confirm('確定要清除所有「已過期」的單次預約嗎？')) return;
+                const now = new Date();
+                const valid = allSchedules.filter(it => {
+                    // 保留無 date (週期性) 或 date 未過期
+                    if (!it.date) return true;
+                    const d = new Date(it.date + 'T' + it.time);
+                    return d >= now;
+                });
+                await saveSchedules(valid);
+                alert('已清理過期項目');
+            };
+
+            // 初始載入
+            loadSchedules();
+
+            // Taigi Helpers
+            function getPayloadText() {
+                let raw = $('#in-payload').value || '';
+                if (raw.startsWith('lang:tw|')) raw = raw.replace(/^lang:tw\|/, '');
+                return raw.trim();
+            }
+            function detectLang(s) {
+                if (/[\u3400-\u9FFF]/.test(s)) return 'zh';
+                return 'zh'; // simplify
+            }
+
+            $('#btn-taigi-trans').onclick = async () => {
+                const txt = getPayloadText();
+                if (!txt) return alert('請先輸入文字');
+                try {
+                    const r = await apiFetch('/taigi/translate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: txt, direction: 'zh2nan', source: 'zhtw', target: 'tw' })
+                    });
+                    const j = await r.json();
+                    if (j.ok && j.text) {
+                        $('#in-payload').value = j.text;
+                        $('#in-lang').value = 'tw';
+                    } else alert('翻譯失敗: ' + (j.error || 'unknown'));
+                } catch (e) { alert('Err: ' + e); }
+            };
+
+            $('#btn-taigi-say').onclick = async () => {
+                const txt = getPayloadText();
+                if (!txt) return alert('請先輸入文字');
+                try {
+                    await apiFetch('/taigi/say', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: txt, gender: 'f', direction: 'raw', play: true })
+                    });
+                } catch (e) { alert('Err: ' + e); }
+            };
+
+            $('#btn-taigi-dl').onclick = async () => {
+                const txt = getPayloadText();
+                if (!txt) return alert('請先輸入文字');
+                const dlArea = $('#taigi-dl-area');
+                const dlLink = $('#taigi-dl-link');
+                const audio = $('#taigi-preview-audio');
+                try {
+                    const r = await apiFetch('/taigi/say', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: txt, gender: 'f', direction: 'raw', play: false })
+                    });
+                    const j = await r.json();
+                    if (j.url) {
+                        dlLink.href = j.url;
+                        dlLink.textContent = j.file || '下載';
+                        audio.src = j.url;
+                        dlArea.style.display = 'flex';
+                    } else { alert('無法取得連結'); }
+                } catch (e) { alert('Err: ' + e); }
+            };
+
+        })();
+    </script>
+    <!-- ⛔ Force Cancel Floating Button -->
+    <div id="force-cancel-btn"
+        style="position:fixed;bottom:20px;right:20px;z-index:9999;cursor:pointer;background:#ef4444;color:white;padding:12px 24px;border-radius:50px;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-weight:bold;display:flex;align-items:center;gap:8px;transition:transform 0.1s;font-family:system-ui;">
+        <span style="font-size:18px">⛔</span>
+        <span>強制取消</span>
+    </div>
+    <script>
+        document.getElementById('force-cancel-btn').addEventListener('click', async () => {
+            // if (!confirm('確定要強制取消所有播放嗎？\n(將送出 CancelALL 指令)')) return;
+            try {
+                const btn = document.getElementById('force-cancel-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<span>⏳ 處理中...</span>';
+                btn.style.opacity = '0.8';
+
+                // Use relative path by default, or API_BASE if defined globally
+                const apiBase = (typeof API_BASE !== 'undefined') ? API_BASE : '';
+                const r = await fetch(apiBase + '/cmd', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'cmd=CancelALL'
+                });
+
+                if (r.ok) {
+                    btn.innerHTML = '<span>✅ 已取消</span>';
+                    setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 1500);
+                    return;
+                } else {
+                    btn.innerHTML = '<span>❌ 失敗</span>';
+                    setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 2000);
+                    return;
+                }
+
+                btn.innerHTML = originalText;
+                btn.style.opacity = '1';
+            } catch (e) {
+                console.error(e);
+                const btn = document.getElementById('force-cancel-btn');
+                btn.innerHTML = '<span>❌ 錯誤</span>';
+                setTimeout(() => { btn.innerHTML = originalText; btn.style.opacity = '1'; }, 2000);
+                return;
+                document.getElementById('force-cancel-btn').innerHTML = originalText;
+                document.getElementById('force-cancel-btn').style.opacity = '1';
+            }
+        });
+        // Add hover effect
+        const fcb = document.getElementById('force-cancel-btn');
+        fcb.addEventListener('mousedown', () => fcb.style.transform = 'scale(0.95)');
+        fcb.addEventListener('mouseup', () => fcb.style.transform = 'scale(1)');
+        fcb.addEventListener('mouseleave', () => fcb.style.transform = 'scale(1)');
+    </script>
+</body>
+
+</html>

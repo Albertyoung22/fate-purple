@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🇹🇼 本土語教學政策相容性系統 (MOE Compliance)</title>
+    <style>
+        :root {
+            --brand: #059669;
+            /* Emerald Green for Education */
+            --brand-light: #ecfdf5;
+            --text-dark: #064e3b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --accent: #10b981;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, "Microsoft JhengHei", sans-serif;
+            background: var(--bg);
+            color: #1e293b;
+            line-height: 1.6;
+        }
+
+        header {
+            background: var(--brand);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-links a {
+            color: #d1fae5;
+            text-decoration: none;
+            margin-left: 1.5rem;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: white;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .hero {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .policy-badge {
+            display: inline-block;
+            background: var(--brand-light);
+            color: var(--brand);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            border: 1px solid var(--brand);
+        }
+
+        h1 {
+            color: var(--text-dark);
+            margin: 0.5rem 0;
+            font-size: 1.75rem;
+        }
+
+        .description {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .tool-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        textarea {
+            width: 100%;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            background: var(--brand);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: filter 0.2s;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: var(--text-dark);
+        }
+
+        .result-area {
+            margin-top: 1.5rem;
+            background: #f1f5f9;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            display: none;
+        }
+
+        .audio-player {
+            width: 100%;
+            margin: 1rem 0;
+        }
+
+        .download-links {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .download-link {
+            flex: 1;
+            text-align: center;
+            background: white;
+            border: 1px solid var(--border);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            color: var(--brand);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div style="font-weight: 800; font-size: 1.25rem;">RelayBell Education</div>
+        <div class="nav-links">
+            <a href="index.html">🎛 主控台</a>
+            <a href="sched.html">🕐 排程</a>
+            <a href="tt.html">📚 課表</a>
+            <a href="logs.html">🗒 紀錄</a>
+            <a href="taigi_edu.html" style="font-weight:700; color:white;">🇹🇼 本土語</a>
+        </div>
+    </header>
+
+    <main>
+        <div class="hero">
+            <div class="policy-badge">教育部：國家語言發展法相容</div>
+            <h1>本土語教學教材自動化生成系統</h1>
+            <p class="description">
+                配合教育部本土語政策，本系統協助老師快速將國語教材轉化為台語文與高品質 AI 語音。
+                不僅可用於每日廣播，更可產出高品質練習素材供學生課後複習。
+            </p>
+        </div>
+
+        <div class="tool-grid">
+            <!-- Left: Translation -->
+            <div class="card">
+                <label>1. 輸入國語句子 (或欲翻譯文字)</label>
+                <textarea id="srcText" placeholder="請輸入欲翻譯的中文...&#10;例：各位同學，大家早安，現在是朝會時間。"></textarea>
+                <button class="btn" id="btnTranslate">
+                    <span>📝 轉化為本土台文</span>
+                </button>
+            </div>
+
+            <!-- Right: Results & Audio -->
+            <div class="card">
+                <label>2. 台文結果與語音生成</label>
+                <textarea id="tgtText" placeholder="轉換後的台文將顯示於此..."></textarea>
+                <div style="margin-bottom: 1rem;">
+                    <label for="speedRange" style="font-size: 0.9rem; margin-bottom: 0.25rem;">語速調整：<span
+                            id="speedVal">1.0x</span></label>
+                    <input type="range" id="speedRange" min="0.5" max="1.5" step="0.1" value="1.0" style="width: 100%;">
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn" id="btnGenFemale">🗣️ 生成女聲 (雅婷)</button>
+                    <button class="btn btn-secondary" id="btnGenMale">🗣️ 生成男聲 (阿明)</button>
+                </div>
+
+                <div class="result-area" id="resultArea">
+                    <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.5rem;">
+                        🔉 語音素材預覽：</div>
+                    <audio id="audioPlayer" class="audio-player" controls></audio>
+                    <div class="download-links">
+                        <a id="linkDownload" href="#" download class="download-link">💾 下載 MP3 素材</a>
+                    </div>
+                    <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.8rem; text-align: center;">*
+                        下載後可直接存入廣播列表，用於定時排程或課表自動化播報</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 2rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">
+            RelayBell 智慧校園平台 - 助力本土語言文化傳承
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = (location.port !== '5050' && location.port !== "") ? 'http://localhost:5050' : '';
+
+        const $ = (id) => document.getElementById(id);
+
+        async function postJSON(url, data) {
+            const r = await fetch(API_BASE + url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            return r.json();
+        }
+
+        $('btnTranslate').onclick = async () => {
+            const text = $('srcText').value.trim();
+            if (!text) return alert('請先輸入文字');
+
+            $('btnTranslate').disabled = true;
+            $('btnTranslate').innerText = '⏳ 正在轉化中...';
+
+            try {
+                const res = await postJSON('/taigi/translate', { text, direction: 'zh2nan' });
+                if (res.ok) {
+                    $('tgtText').value = res.text;
+                } else {
+                    alert('轉化失敗：' + (res.error || '未知錯誤'));
+                }
+            } catch (e) {
+                alert('系統連線失敗');
+            } finally {
+                $('btnTranslate').disabled = false;
+                $('btnTranslate').innerText = '📝 轉化為本土台文';
+            }
+        };
+
+        const generateAudio = async (voice) => {
+            const text = $('tgtText').value.trim();
+            if (!text) return alert('請先生成或輸入台文內容');
+
+            const btn = voice === 'f' ? $('btnGenFemale') : $('btnGenMale');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = '⚡ 合成中...';
+
+            try {
+                const speed = parseFloat($('speedRange').value);
+                const res = await postJSON('/taigi/tts', { text, voice, speed });
+                if (res.ok) {
+                    $('resultArea').style.display = 'block';
+                    $('audioPlayer').src = API_BASE + res.url;
+                    $('linkDownload').href = API_BASE + res.url;
+                    $('linkDownload').download = `taigi_material_${Date.now()}.wav`;
+                    $('audioPlayer').play();
+                } else {
+                    alert('語音合成失敗：' + (res.error || '請檢查 API 金鑰或網路'));
+                }
+            } catch (e) {
+                alert('系統連線失敗');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        };
+
+        $('btnGenFemale').onclick = () => generateAudio('f');
+        $('btnGenMale').onclick = () => generateAudio('m');
+
+        $('speedRange').oninput = (e) => {
+            $('speedVal').innerText = e.target.value + 'x';
+        };
+
+    </script>
+</body>
+
+</html>

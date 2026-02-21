@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>校園直播主控台 🎥</title>
+    <style>
+        :root {
+            --primary: #f44336;
+            --bg: #1a1a1a;
+            --text: #eee;
+        }
+
+        body {
+            margin: 0;
+            padding: 16px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0 0 16px 0;
+            font-size: 1.5rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: #444;
+            color: #aaa;
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: normal;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Sidebar for Student List */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
+            background: #222;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        /* Desktop: always open if screen ample, or interactive? 
+           Let's keep it collapsible for cleaner Live UI, but default open on desktop if space allows?
+           Actually, live UI is centered. Let's make it an overlay drawer for mobile, 
+           and maybe fixed left for desktop if wide enough. for now, collapsible drawer is safest.
+        */
+
+        .sidebar-header {
+            padding: 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .student-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .student-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-bottom: 4px;
+            background: #333;
+        }
+
+        .student-item:hover {
+            background: #444;
+        }
+
+        .student-item.selected {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .student-item input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+            pointer-events: none;
+            /* controlled by row click */
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+            margin-left: auto;
+        }
+
+        .status-dot.online {
+            background: #22c55e;
+            box-shadow: 0 0 5px #22c55e;
+        }
+
+        /* Toggle Button */
+        #btn-toggle-sidebar {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 110;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Preview Area */
+        #preview-container {
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 20px;
+            border: 2px solid #333;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            /* Mirror effect for selfie cam */
+        }
+
+        #overlay-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rec-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .rec-dot.active {
+            background: #f44336;
+            animation: pulse 1s infinite;
+        }
+
+        /* Options */
+        .options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .opt-btn {
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            flex: 1;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+
+        .opt-btn.active {
+            background: #2196F3;
+            border-color: #2196F3;
+        }
+
+        /* Main Action Button */
+        #btn-action {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            background: var(--primary);
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #btn-action.stop {
+            background: #333;
+            border: 2px solid #555;
+            box-shadow: none;
+        }
+
+        /* Chime Controls */
+        #chime-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #444;
+        }
+
+        .chime-btn {
+            flex: 1;
+            background: #444;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .chime-btn:active {
+            transform: scale(0.96);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+            }
+        }
+
+        .back-link {
+            margin-top: 20px;
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        /* Modal for Permissions */
+        #mic-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            text-align: left;
+            color: #333;
+        }
+
+        .url-box {
+            background: #eee;
+            padding: 8px;
+            border-radius: 6px;
+            word-break: break-all;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 13px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar Toggle -->
+    <button id="btn-toggle-sidebar" onclick="toggleSidebar()">👥 選擇觀眾</button>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span>選擇班級 (多選)</span>
+            <button onclick="toggleSidebar()"
+                style="background:none;border:none;color:#aaa;font-size:1.2rem;cursor:pointer">✕</button>
+        </div>
+        <div style="padding: 8px 12px; border-bottom:1px solid #333; display:flex; gap:8px;">
+            <button onclick="selectAll()"
+                style="flex:1;padding:6px;background:#444;color:white;border:none;border-radius:4px;cursor:pointer">全選</button>
+            <button onclick="deselectAll()"
+                style="flex:1;padding:6px;background:#444;color:white;border:none;border-radius:4px;cursor:pointer">重置</button>
+        </div>
+        <div id="studentList" class="student-list">
+            <div style="text-align:center;padding:12px;color:#666">載入中...</div>
+        </div>
+        <div style="padding:12px;border-top:1px solid #333">
+            <button onclick="openWatchOnSelected()"
+                style="width:100%;padding:10px;background:#3b82f6;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer">
+                📺 讓所選學生收看
+            </button>
+        </div>
+    </div>
+
+    <h1>直播主控台 <span class="badge">Live</span></h1>
+
+    <div class="container">
+        <!-- Preview -->
+        <div id="preview-container">
+            <video id="preview" autoplay playsinline muted></video>
+            <div id="overlay-status">
+                <div class="rec-dot" id="dot"></div>
+                <span id="status-txt">等待開始</span>
+            </div>
+        </div>
+
+        <!-- Options -->
+        <div class="options">
+            <button class="opt-btn active" id="btn-cam" onclick="toggleCam()">
+                📷 視訊鏡頭
+            </button>
+            <button class="opt-btn active" id="btn-mic" onclick="toggleMic()">
+                🎤 麥克風 (降噪)
+            </button>
+        </div>
+
+        <!-- Action -->
+        <button id="btn-action" onclick="toggleLive()">
+            🔴 開始直播
+        </button>
+
+        <!-- Chimes -->
+        <div id="chime-controls">
+            <button class="chime-btn" onclick="playChime('start')">🔔 播放片頭</button>
+            <button class="chime-btn" onclick="playChime('end')">🔕 播放片尾</button>
+        </div>
+    </div>
+
+    <a href="index.html" class="back-link">← 返回廣播首頁</a>
+    <a href="taigi_edu.html" class="back-link">🇹🇼 本土語</a>
+    <a href="watch.html" target="_blank" class="back-link" style="margin-left: 16px;">📺 預覽觀眾畫面</a>
+
+    <!-- Permission Modal -->
+    <div id="mic-modal">
+        <div class="modal-content" style="color:#333;">
+            <h3 style="color:#d32f2f;margin-top:0">⚠️ 無法使用麥克風或鏡頭</h3>
+            <p>因瀏覽器安全限制，非 HTTPS 環境需手動開啟權限。</p>
+            <ol style="padding-left:20px; font-size:14px; line-height:1.5;">
+                <li>複製下方網址：<br>
+                    <div class="url-box" id="flag-url">chrome://flags/#unsafely-treat-insecure-origin-as-secure</div>
+                </li>
+                <li>開新分頁貼上並前往。</li>
+                <li>填入本站網址：<br>
+                    <div class="url-box" id="site-url" style="color:#2196F3;font-weight:bold;"></div>
+                </li>
+                <li>設為 <b>Enabled</b> 並 Relaunch。</li>
+            </ol>
+            <div style="text-align:right">
+                <button onclick="copyUrl()"
+                    style="padding:8px 16px;background:#2196F3;color:white;border:none;border-radius:4px;cursor:pointer;">複製
+                    Flag 網址</button>
+                <button onclick="copySiteUrl()"
+                    style="padding:8px 16px;background:#4CAF50;color:white;border:none;border-radius:4px;margin-left:8px;cursor:pointer;">複製本站網址</button>
+                <button onclick="document.getElementById('mic-modal').style.display='none'"
+                    style="padding:8px 16px;background:#ddd;border:none;border-radius:4px;margin-left:8px;color:#333;cursor:pointer;">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sidebar & Student List Logic
+        const sidebar = document.getElementById('sidebar');
+        const studentListEl = document.getElementById('studentList');
+        let studentsData = {}; // Store client data: {id: {ip, hostname...}}
+        let selectedIds = new Set();
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+        }
+
+        async function loadStudents() {
+            try {
+                const res = await fetch('/controller/api/clients');
+                const data = await res.json();
+                if (data.ok) {
+                    studentsData = data.clients || {};
+                    renderStudents();
+                    // Clean up selectedIds for gone clients? Maybe not needed for simple UI
+                }
+            } catch (e) {
+                console.error("Load students error", e);
+            }
+        }
+
+        function renderStudents() {
+            studentListEl.innerHTML = '';
+            const list = Object.entries(studentsData).map(([id, info]) => ({ id, ...info }));
+
+            // Sort by group then hostname
+            list.sort((a, b) => (a.group || "").localeCompare(b.group || "") || (a.hostname || "").localeCompare(b.hostname || ""));
+
+            if (list.length === 0) {
+                studentListEl.innerHTML = '<div style="padding:1rem; text-align:center; color:gray;">無連線班級</div>';
+                return;
+            }
+
+            list.forEach(stu => {
+                const div = document.createElement('div');
+                div.className = 'student-item';
+                if (selectedIds.has(stu.id)) div.classList.add('selected');
+
+                div.onclick = (e) => toggleSelection(stu.id, div);
+
+                div.innerHTML = `
+                    <input type="checkbox" ${selectedIds.has(stu.id) ? 'checked' : ''}>
+                    <div style="overflow:hidden;">
+                        <div style="font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${stu.hostname || stu.id}</div>
+                        <div style="font-size:0.8rem;color:#aaa">${stu.group || '未分組'} ${stu.ip ? '(' + stu.ip + ')' : ''}</div>
+                    </div>
+                    <span class="status-dot ${stu.online ? 'online' : ''}"></span>
+                `;
+                studentListEl.appendChild(div);
+            });
+        }
+
+        function toggleSelection(id, el) {
+            if (selectedIds.has(id)) {
+                selectedIds.delete(id);
+                el.classList.remove('selected');
+                el.querySelector('input').checked = false;
+            } else {
+                selectedIds.add(id);
+                el.classList.add('selected');
+                el.querySelector('input').checked = true;
+            }
+        }
+
+        function selectAll() {
+            if (!studentsData) return;
+            Object.keys(studentsData).forEach(id => selectedIds.add(id));
+            renderStudents();
+        }
+
+        function deselectAll() {
+            selectedIds.clear();
+            renderStudents();
+        }
+
+        async function openWatchOnSelected() {
+            const targets = Array.from(selectedIds);
+            if (targets.length === 0) {
+                alert("請先選擇要播放的學生電腦！");
+                return;
+            }
+
+
+            const watchUrl = `${location.protocol}//${location.host}/static/ui/watch.html`;
+            try {
+                const r = await fetch('/controller/api/send', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        targets: targets,
+                        cmd: 'open_url',
+                        url: watchUrl
+                    })
+                });
+                const j = await r.json();
+                if (j.ok) {
+                    alert(`指令已發送成功 (對象：${j.count} 台)`);
+                    toggleSidebar(); // Close sidebar on success
+                } else {
+                    alert("發送失敗：" + (j.error || "未知錯誤"));
+                }
+            } catch (e) {
+                alert("發送失敗：" + e.message);
+            }
+        }
+
+        // Auto load loop
+        setInterval(loadStudents, 5000);
+        loadStudents();
+
+        let isBroadcasting = false;
+        let mediaStream = null;
+        let mediaRecorder = null;
+        let ws = null;
+
+        const preview = document.getElementById('preview');
+        const btnAction = document.getElementById('btn-action');
+        const dot = document.getElementById('dot');
+        const statusTxt = document.getElementById('status-txt');
+
+        // Options State
+        let useCam = true;
+        let useMic = true;
+
+        // Init: Request permissions immediately to warm up
+        initMedia();
+
+        function toggleCam() {
+            useCam = !useCam;
+            document.getElementById('btn-cam').classList.toggle('active', useCam);
+            initMedia();
+        }
+
+        function toggleMic() {
+            useMic = !useMic;
+            document.getElementById('btn-mic').classList.toggle('active', useMic);
+            initMedia(); // Need to re-get stream if track added/removed often simpler to just get user media again
+        }
+
+        async function initMedia() {
+            // Check Permissions first
+            const hasPerm = await checkMediaPermission();
+            if (!hasPerm) return;
+
+            // Stop old tracks
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(t => t.stop());
+            }
+
+            if (!useCam && !useMic) {
+                preview.srcObject = null;
+                return;
+            }
+
+            try {
+                // Lower quality settings for stability
+                const constraints = {
+                    audio: useMic ? {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } : false,
+                    video: useCam ? {
+                        width: 480, height: 360, frameRate: 15,
+                        facingMode: "user"
+                    } : false
+                };
+
+                mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+                preview.srcObject = mediaStream;
+            } catch (e) {
+                console.error(e);
+                showPermissionModal();
+            }
+        }
+
+        async function checkMediaPermission() {
+            // 1. Check for Secure Context (HTTPS or localhost)
+            if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                if (!navigator.mediaDevices) {
+                    showPermissionModal();
+                    return false;
+                }
+            }
+            // 2. Check Device Support
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showPermissionModal();
+                return false;
+            }
+            return true;
+        }
+
+        function showPermissionModal() {
+            const currentUrl = window.location.href;
+            document.getElementById('site-url').textContent = currentUrl;
+            document.getElementById('mic-modal').style.display = 'flex';
+        }
+
+        window.copyUrl = () => {
+            const txt = document.getElementById('flag-url').textContent;
+            const ta = document.createElement("textarea");
+            ta.value = txt;
+            ta.style.position = "fixed"; ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.focus(); ta.select();
+            try {
+                document.execCommand('copy');
+                alert("已複製！");
+            } catch (e) {
+                prompt("請手動複製:", txt);
+            }
+            document.body.removeChild(ta);
+        };
+
+        window.copySiteUrl = () => {
+            const txt = document.getElementById('site-url').textContent;
+            const ta = document.createElement("textarea");
+            ta.value = txt;
+            ta.style.position = "fixed"; ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.focus(); ta.select();
+            try {
+                document.execCommand('copy');
+                alert("已複製本站網址！");
+            } catch (e) {
+                prompt("請手動複製:", txt);
+            }
+            document.body.removeChild(ta);
+        };
+
+        function toggleLive() {
+            if (isBroadcasting) stopLive();
+            else startLive();
+        }
+
+        function startLive() {
+            if (!mediaStream) {
+                alert("請先啟用麥克風或鏡頭！");
+                return;
+            }
+
+            // Connect WS
+            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${proto}//${location.host}/ws/live?role=broadcaster`);
+
+            ws.onopen = () => {
+                // Determine Codec & Bitrate based on available tracks
+                const hasVideo = mediaStream.getVideoTracks().length > 0;
+                const hasAudio = mediaStream.getAudioTracks().length > 0;
+
+                let mime = 'video/webm; codecs="vp8,opus"';
+
+                if (hasVideo && !hasAudio) {
+                    mime = 'video/webm; codecs="vp8"';
+                } else if (!hasVideo && hasAudio) {
+                    mime = 'audio/webm; codecs="opus"';
+                }
+
+                if (!MediaRecorder.isTypeSupported(mime)) {
+                    if (hasVideo) mime = 'video/webm';
+                    else mime = 'audio/webm';
+                }
+
+                console.log("Starting broadcast with MIME:", mime);
+
+                const options = {
+                    mimeType: mime
+                };
+
+                // Add bitrate limits only if applicable
+                if (hasVideo) options.videoBitsPerSecond = 250000;
+                if (hasAudio) options.audioBitsPerSecond = 64000;
+
+                // Init Recorder
+                try {
+                    mediaRecorder = new MediaRecorder(mediaStream, options);
+
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0 && ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(e.data);
+                        }
+                    };
+
+                    mediaRecorder.start(250); // 250ms slice for better stability
+
+                    // UI
+                    isBroadcasting = true;
+                    btnAction.innerHTML = "⬛ 停止直播";
+                    btnAction.classList.add('stop');
+                    dot.classList.add('active');
+                    statusTxt.textContent = "直播中 (LIVE)";
+                } catch (e) {
+                    console.error("MediaRecorder init failed", e);
+                    alert("無法初始化錄製: " + e.message);
+                    stopLive();
+                }
+            };
+
+            ws.onerror = (e) => {
+                console.error(e);
+                alert("連線失敗");
+                stopLive();
+            };
+        }
+
+        function stopLive() {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                mediaRecorder = null;
+            }
+            if (ws) {
+                ws.onerror = null;
+                ws.onclose = null;
+                ws.close();
+                ws = null;
+            }
+
+            isBroadcasting = false;
+            btnAction.innerHTML = "🔴 開始直播";
+            btnAction.classList.remove('stop');
+            dot.classList.remove('active');
+            statusTxt.textContent = "準備就緒";
+        }
+
+        function playChime(type) {
+            fetch('/cmd', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'cmd=PlayChime:' + type
+            });
+        }
+    </script>
+</body>
+
+</html>

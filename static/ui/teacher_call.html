@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>教師端視訊通話 | Teacher Call</title>
+    <link href="app.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --surface-glass: rgba(30, 41, 59, 0.9);
+            --primary: #3b82f6;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --sidebar-width: 300px;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            height: 100vh;
+            /* Fallback */
+            height: 100dvh;
+            /* Mobile Dynamic Viewport */
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar for Student List */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--surface-glass);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            z-index: 50;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .student-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .student-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .student-item:hover,
+        .student-item:active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .student-item.active {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: var(--primary);
+        }
+
+        .student-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .student-name {
+            font-weight: 600;
+        }
+
+        .student-status {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Status Dot */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-dot.online {
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .btn-call {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            /* Larger touch target */
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        /* Main Video Area */
+        .main-stage {
+            flex: 1;
+            position: relative;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+
+        /* Remote Video (Full) */
+        #remoteVideo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Local Video (PIP) */
+        #localVideo {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            width: 240px;
+            /* 160 * 1.5 */
+            height: 160px;
+            background: #222;
+            border-radius: 0.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            z-index: 5;
+            object-fit: cover;
+            transition: all 0.3s;
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1.5rem;
+            padding: 1rem 2rem;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 3rem;
+            z-index: 10;
+        }
+
+        .ctrl-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        .ctrl-btn:active {
+            transform: scale(0.95);
+        }
+
+        .ctrl-btn.hangup {
+            background: var(--danger);
+        }
+
+        /* Overlay Status */
+        .call-status {
+            position: absolute;
+            top: 5rem;
+            /* Below menu button */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            font-size: 1rem;
+            color: white;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Sidebar Toggle Button (Mobile) */
+        #btnToggleSidebar {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 60;
+            /* Above sidebar */
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            font-size: 1.5rem;
+            display: none;
+            /* Hidden on desktop */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+        }
+
+        /* === Mobile Responsiveness === */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                transform: translateX(-100%);
+                /* Slide out by default */
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            #btnToggleSidebar {
+                display: flex;
+            }
+
+            /* Adjust controls for mobile */
+            .controls {
+                bottom: 6rem;
+                /* Move up to avoid bottom safe area / visualizer */
+                padding: 0.5rem 1.5rem;
+                gap: 1rem;
+                width: 80%;
+                justify-content: space-around;
+            }
+
+            /* Adjust Local Video for mobile */
+            #localVideo {
+                top: 1rem;
+                right: 1rem;
+                bottom: auto;
+                width: 120px;
+                height: 80px;
+                border-width: 1px;
+            }
+
+            /* Adjust Content Area */
+            .main-stage {
+                width: 100%;
+                height: 100%;
+            }
+
+            /* Visualizer height */
+            #audioVisualizer {
+                height: 80px !important;
+            }
+
+            /* Visualizer height */
+            #audioVisualizer {
+                height: 80px !important;
+            }
+        }
+
+        /* Modal for Permissions */
+        #mic-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            text-align: left;
+            color: #333;
+        }
+
+        .url-box {
+            background: #eee;
+            padding: 8px;
+            border-radius: 6px;
+            word-break: break-all;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 13px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button id="btnToggleSidebar" onclick="toggleSidebar()">👥</button>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span>📹 選擇班級</span>
+            <button onclick="toggleSidebar()"
+                style="background:none; border:none; color:#ddd; font-size:1.5rem; display:none;"
+                id="btnCloseSidebarMobile">✕</button>
+        </div>
+        <div id="studentList" class="student-list">
+            <!-- Items injected by JS -->
+            <div style="padding:1rem; text-align:center; color:gray;">正在載入...</div>
+        </div>
+        <div style="margin-top:1rem; display:flex; gap:1rem;">
+            <button onclick="window.close()"
+                style="flex:1; padding:1rem; background:#334; color:white; border:none; border-radius:8px; font-size:1rem;">退出</button>
+        </div>
+    </div>
+
+    <div class="main-stage">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <video id="localVideo" autoplay playsinline muted></video>
+
+        <div id="callStatus" class="call-status hidden">正在呼叫...</div>
+
+        <div class="controls">
+            <button class="ctrl-btn" id="btnMic" onclick="toggleMic()" title="麥克風">🎤</button>
+            <button class="ctrl-btn" id="btnCam" onclick="toggleCam()" title="攝影機">📷</button>
+            <button class="ctrl-btn" id="btnChat" onclick="toggleChat()" title="聊天">💬</button>
+            <button class="ctrl-btn hangup" id="btnHangup" onclick="hangup()" title="掛斷">📞</button>
+        </div>
+
+        <!-- Audio Visualizer Canvas -->
+        <canvas id="audioVisualizer"
+            style="position:absolute; bottom:0; left:0; width:100%; height:120px; pointer-events:none; z-index:3; opacity:0.8;"></canvas>
+    </div>
+
+    <!-- Permission Modal -->
+    <div id="mic-modal">
+        <div class="modal-content">
+            <h3 style="color:#d32f2f;margin-top:0">⚠️ 無法使用麥克風/攝影機</h3>
+            <p>因瀏覽器安全限制，非 HTTPS 環境需手動開啟權限。</p>
+            <ol style="padding-left:20px; font-size:14px; line-height:1.5;">
+                <li>複製下方網址：<br>
+                    <div class="url-box" id="flag-url">chrome://flags/#unsafely-treat-insecure-origin-as-secure</div>
+                </li>
+                <li>開新分頁貼上並前往。</li>
+                <li>填入本站網址：<br>
+                    <div class="url-box" id="site-url" style="color:#2196F3;font-weight:bold;"></div>
+                </li>
+                <li>設為 <b>Enabled</b> 並 Relaunch。</li>
+            </ol>
+            <div style="text-align:right">
+                <button onclick="copyUrl()"
+                    style="padding:8px 16px;background:#2196F3;color:white;border:none;border-radius:4px;">複製 Flag
+                    網址</button>
+                <button onclick="copySiteUrl()"
+                    style="padding:8px 16px;background:#4CAF50;color:white;border:none;border-radius:4px;margin-left:8px;">複製本站網址</button>
+                <button onclick="document.getElementById('mic-modal').style.display='none'"
+                    style="padding:8px 16px;background:#ddd;border:none;border-radius:4px;margin-left:8px;">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <script>
+        const studentListEl = document.getElementById('studentList');
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const callStatus = document.getElementById('callStatus');
+        const canvas = document.getElementById('audioVisualizer');
+        const canvasCtx = canvas.getContext('2d');
+        const sidebar = document.getElementById('sidebar');
+
+        let localStream;
+        let peerConnection;
+        let ws;
+        let currentTargetId = null;
+        let onlineSignalingUsers = new Set();
+        let loopInterval;
+        let ringbackCtx;
+        let ringbackOsc;
+        let iceCandidateQueue = [];
+        let audioContext;
+        let analyser;
+
+        const MY_ID = 'teacher';
+        const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+        // Responsive Sidebar Logic
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+            // Re-resize canvas after transition might be good, but resizeCanvas handles stage width
+            setTimeout(resizeCanvas, 350);
+        }
+
+        // Auto-resize canvas
+        function resizeCanvas() {
+            const stage = document.querySelector('.main-stage');
+            if (stage) {
+                canvas.width = stage.clientWidth;
+                // Height based on CSS (handled by internal canvas size usually, 
+                // but for pixel ratio lets keep it simple)
+                // canvas.height is separate from style.height
+                canvas.height = 120; // Internal resolution
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        // Also call on load
+        setTimeout(resizeCanvas, 100);
+
+        // Initialize
+        async function init() {
+            try {
+                // Constraints optimized for mobile compatibility
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error("MediaDevices API not supported");
+                }
+                const constraints = {
+                    video: { facingMode: 'user' },
+                    audio: { echoCancellation: true, noiseSuppression: true }
+                };
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                localVideo.srcObject = localStream;
+                setupVisualizer(localStream);
+            } catch (e) {
+                console.error('Media Error:', e);
+                showPermissionModal();
+            }
+
+            connectWS();
+            loadStudents();
+            setInterval(loadStudents, 5000);
+        }
+
+        function setupVisualizer(stream) {
+            try {
+                if (audioContext) { try { audioContext.close(); } catch (e) { } }
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                // For mobile Safari, we might need to resume context on user gesture.
+                // We'll add a listener just in case, though getUserMedia usually unlocks it.
+                if (audioContext.state === 'suspended') {
+                    const resume = () => { audioContext.resume(); document.removeEventListener('click', resume); };
+                    document.addEventListener('click', resume);
+                }
+
+                const source = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+                source.connect(analyser);
+                drawVisualizer();
+            } catch (e) {
+                console.error("Visualizer Error", e);
+            }
+        }
+
+        function drawVisualizer() {
+            if (!analyser) return;
+            requestAnimationFrame(drawVisualizer);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteTimeDomainData(dataArray);
+
+            canvasCtx.fillStyle = 'rgba(0, 0, 0, 0)';
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+            canvasCtx.lineWidth = 2;
+            canvasCtx.strokeStyle = 'rgba(59, 130, 246, 0.7)';
+            canvasCtx.beginPath();
+
+            const sliceWidth = canvas.width * 1.0 / bufferLength;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * canvas.height / 2 + (canvas.height / 4);
+
+                if (i === 0) canvasCtx.moveTo(x, y);
+                else canvasCtx.lineTo(x, y);
+
+                x += sliceWidth;
+            }
+
+            canvasCtx.lineTo(canvas.width, canvas.height / 2);
+            canvasCtx.stroke();
+        }
+
+        function connectWS() {
+            const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${proto}//${location.host}/ws/call`);
+
+            ws.onopen = () => {
+                console.log('WS Connected');
+                ws.send(JSON.stringify({ type: 'login', id: MY_ID }));
+                if (loopInterval) clearInterval(loopInterval);
+                loopInterval = setInterval(() => {
+                    if (ws.readyState === 1) ws.send(JSON.stringify({ type: 'list_users' }));
+                }, 2000);
+            };
+
+            ws.onmessage = async (event) => {
+                const msg = JSON.parse(event.data);
+                handleSignalingData(msg);
+                if (msg.type === 'text_message') {
+                    showDataChannelMessage(msg.text, false);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('WS Disconnected');
+                setTimeout(connectWS, 3000);
+            };
+        }
+
+        // --- Chat UI Functions ---
+        let chatContainer = null;
+        let chatBody = null;
+        let isChatOpen = false;
+
+        function createChatUI() {
+            if (chatContainer) return;
+
+            // Chat Container
+            chatContainer = document.createElement('div');
+            chatContainer.className = 'chat-container';
+            chatContainer.style.position = 'absolute';
+            chatContainer.style.bottom = '100px';
+            chatContainer.style.right = '20px'; // Shifted to right
+            chatContainer.style.width = '300px';
+            chatContainer.style.height = '400px';
+            chatContainer.style.background = 'rgba(15, 23, 42, 0.95)';
+            chatContainer.style.backdropFilter = 'blur(12px)';
+            chatContainer.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+            chatContainer.style.borderRadius = '12px';
+            chatContainer.style.display = 'flex';
+            chatContainer.style.flexDirection = 'column';
+            chatContainer.style.zIndex = '50';
+            chatContainer.style.overflow = 'hidden';
+            chatContainer.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+
+            // Header
+            const header = document.createElement('div');
+            header.style.padding = '12px 16px';
+            header.style.background = 'rgba(255, 255, 255, 0.05)';
+            header.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
+            header.style.display = 'flex';
+            header.style.justifyContent = 'space-between';
+            header.style.alignItems = 'center';
+            header.innerHTML = '<span style="font-weight:600">💬 文字訊息</span>';
+            const closeBtn = document.createElement('button');
+            closeBtn.innerText = '✕';
+            closeBtn.style.background = 'none';
+            closeBtn.style.border = 'none';
+            closeBtn.style.color = '#94a3b8';
+            closeBtn.style.fontSize = '1.2rem';
+            closeBtn.style.cursor = 'pointer';
+            closeBtn.onclick = toggleChat;
+            header.appendChild(closeBtn);
+            chatContainer.appendChild(header);
+
+            // Body
+            chatBody = document.createElement('div');
+            chatBody.className = 'chat-body';
+            chatBody.style.flex = '1';
+            chatBody.style.overflowY = 'auto';
+            chatBody.style.padding = '12px';
+            chatBody.style.display = 'flex';
+            chatBody.style.flexDirection = 'column';
+            chatBody.style.gap = '8px';
+            chatContainer.appendChild(chatBody);
+
+            // Input Area
+            const footer = document.createElement('div');
+            footer.style.padding = '12px';
+            footer.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)';
+            footer.style.display = 'flex';
+            footer.style.flexDirection = 'column'; // Stack rows
+            footer.style.gap = '8px';
+
+            // Checkbox Row
+            const optRow = document.createElement('div');
+            optRow.style.display = 'flex';
+            optRow.style.alignItems = 'center';
+            optRow.style.gap = '6px';
+            optRow.style.fontSize = '0.85rem';
+            optRow.style.color = '#ccc';
+
+            const chkSpeak = document.createElement('input');
+            chkSpeak.type = 'checkbox';
+            chkSpeak.id = 'chkSpeak';
+            optRow.appendChild(chkSpeak);
+
+            const lblSpeak = document.createElement('label');
+            lblSpeak.htmlFor = 'chkSpeak';
+            lblSpeak.innerText = '傳送並朗讀';
+            optRow.appendChild(lblSpeak);
+
+            footer.appendChild(optRow);
+
+            // Input Row
+            const inputRow = document.createElement('div');
+            inputRow.style.display = 'flex';
+            inputRow.style.gap = '8px';
+            inputRow.style.width = '100%';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = '輸入訊息...';
+            input.style.flex = '1';
+            input.style.background = 'rgba(0, 0, 0, 0.3)';
+            input.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+            input.style.borderRadius = '20px';
+            input.style.padding = '8px 12px';
+            input.style.color = 'white';
+            input.style.outline = 'none';
+            input.onkeydown = (e) => { if (e.key === 'Enter') sendChatMessage(input, chkSpeak); };
+
+            const sendBtn = document.createElement('button');
+            sendBtn.innerText = '➤';
+            sendBtn.style.background = 'var(--primary)';
+            sendBtn.style.color = 'white';
+            sendBtn.style.border = 'none';
+            sendBtn.style.borderRadius = '50%';
+            sendBtn.style.width = '36px';
+            sendBtn.style.height = '36px';
+            sendBtn.style.cursor = 'pointer';
+            sendBtn.style.display = 'flex';
+            sendBtn.style.alignItems = 'center';
+            sendBtn.style.justifyContent = 'center';
+            sendBtn.onclick = () => sendChatMessage(input, chkSpeak);
+
+            inputRow.appendChild(input);
+            inputRow.appendChild(sendBtn);
+
+            footer.appendChild(inputRow);
+            chatContainer.appendChild(footer);
+
+            document.querySelector('.main-stage').appendChild(chatContainer);
+        }
+
+        function toggleChat() {
+            if (!chatContainer) createChatUI();
+            isChatOpen = !isChatOpen;
+            chatContainer.style.display = isChatOpen ? 'flex' : 'none';
+
+            // Re-calc position for mobile if needed, though absolute bottom works
+        }
+
+        function sendChatMessage(inputEl, chkEl) {
+            const txt = inputEl.value.trim();
+            if (!txt || !ws) return;
+            if (!currentTargetId) { alert("尚未連線"); return; }
+
+            const shouldSpeak = chkEl ? chkEl.checked : false;
+
+            ws.send(JSON.stringify({
+                type: 'text_message',
+                target: currentTargetId,
+                text: txt,
+                speak: shouldSpeak
+            }));
+
+            showDataChannelMessage(txt, true);
+            inputEl.value = '';
+        }
+
+        function showDataChannelMessage(text, isSelf) {
+            if (!chatContainer) createChatUI();
+
+            // Auto-open if closed and receiving message
+            if (!isSelf && !isChatOpen) {
+                toggleChat();
+            }
+
+            const msgDiv = document.createElement('div');
+            msgDiv.style.maxWidth = '80%';
+            msgDiv.style.padding = '8px 12px';
+            msgDiv.style.borderRadius = '12px';
+            msgDiv.style.fontSize = '0.9rem';
+            msgDiv.style.lineHeight = '1.4';
+            msgDiv.style.wordBreak = 'break-word';
+
+            if (isSelf) {
+                msgDiv.style.alignSelf = 'flex-end';
+                msgDiv.style.background = 'var(--primary)';
+                msgDiv.style.color = 'white';
+                msgDiv.style.borderBottomRightRadius = '2px';
+            } else {
+                msgDiv.style.alignSelf = 'flex-start';
+                msgDiv.style.background = 'rgba(255, 255, 255, 0.1)';
+                msgDiv.style.color = '#f1f5f9';
+                msgDiv.style.borderBottomLeftRadius = '2px';
+            }
+
+            msgDiv.textContent = text;
+            chatBody.appendChild(msgDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        async function handleSignalingData(data) {
+            switch (data.type) {
+                case 'login_ack': break;
+                case 'user_list':
+                    onlineSignalingUsers = new Set(data.users);
+                    // Could update UI icons here if we wanted deeper integration
+                    break;
+                case 'answer':
+                    stopRingback();
+                    if (peerConnection) {
+                        try {
+                            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                            setStatus('通話建立中...');
+                            while (iceCandidateQueue.length > 0) {
+                                await peerConnection.addIceCandidate(iceCandidateQueue.shift());
+                            }
+                        } catch (e) { console.error("Error setting remote desc:", e); }
+                    }
+                    break;
+                case 'candidate':
+                    const candidate = new RTCIceCandidate(data.candidate);
+                    if (peerConnection && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+                        await peerConnection.addIceCandidate(candidate);
+                    } else {
+                        iceCandidateQueue.push(candidate);
+                    }
+                    break;
+                case 'ready':
+                    if (data.from === currentTargetId) {
+                        setTimeout(() => startWebRTC(currentTargetId), 500);
+                    }
+                    break;
+            }
+        }
+
+        function playRingback() {
+            stopRingback();
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                ringbackCtx = new AudioCtx();
+                const gain = ringbackCtx.createGain();
+                gain.connect(ringbackCtx.destination);
+                gain.gain.value = 0.1;
+
+                const osc1 = ringbackCtx.createOscillator();
+                const osc2 = ringbackCtx.createOscillator();
+                osc1.frequency.value = 440;
+                osc2.frequency.value = 480;
+                osc1.connect(gain);
+                osc2.connect(gain);
+                osc1.start();
+                osc2.start();
+
+                ringbackOsc = {
+                    stop: () => {
+                        try { osc1.stop(); osc2.stop(); } catch (e) { }
+                        setTimeout(() => { try { ringbackCtx.close(); } catch (e) { } }, 100);
+                    }
+                };
+
+                let on = true;
+                const pulse = setInterval(() => {
+                    if (!ringbackCtx) { clearInterval(pulse); return; }
+                    on = !on;
+                    try { gain.gain.setTargetAtTime(on ? 0.1 : 0.0, ringbackCtx.currentTime, 0.1); } catch (e) { }
+                }, 2000);
+
+            } catch (e) { console.error("Ringback error", e); }
+        }
+
+        function stopRingback() {
+            if (ringbackOsc) { ringbackOsc.stop(); ringbackOsc = null; }
+            ringbackCtx = null;
+        }
+
+        async function loadStudents() {
+            try {
+                const res = await fetch('/controller/api/clients');
+                const data = await res.json();
+                if (data.ok) renderStudents(data.clients);
+            } catch (e) { console.error('Load students failed', e); }
+        }
+
+        function renderStudents(clients) {
+            const prevTarget = currentTargetId;
+            studentListEl.innerHTML = '';
+            const list = Object.entries(clients).map(([id, info]) => ({ id, ...info }));
+
+            if (list.length === 0) {
+                studentListEl.innerHTML = '<div style="padding:1rem; text-align:center; color:gray;">無連線班級</div>';
+                return;
+            }
+
+            list.forEach(student => {
+                const div = document.createElement('div');
+                div.className = 'student-item';
+                if (prevTarget === student.id) div.classList.add('active');
+                const isSignalingReady = onlineSignalingUsers.has(student.id);
+
+                div.innerHTML = `
+                    <div class="student-info">
+                        <span class="student-name">${student.hostname || student.id}</span>
+                        <span class="student-status">
+                            <span class="status-dot ${student.online ? 'online' : ''}"></span>
+                            ${student.group || '未分組'} <span style="margin-left:8px; opacity:0.8;">${student.ip || ''}</span>
+                            ${isSignalingReady ? '<span title="通話就緒">📞</span>' : ''}
+                        </span>
+                    </div>
+                    <button class="btn-call" onclick="startCall(event, '${student.id}')">呼叫</button>
+                `;
+                studentListEl.appendChild(div);
+            });
+        }
+
+        async function startCall(event, clientId) {
+            if (event) event.stopPropagation(); // Prevent item click logic if any
+
+            // Mobile: Close sidebar when calling
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+            }
+
+            if (peerConnection) hangup();
+            currentTargetId = clientId;
+            setStatus(`正在呼叫 ${clientId}...`);
+            renderStudents({});
+            loadStudents();
+            playRingback();
+
+            // Trigger Agent Native Ringtone (ensure loud sound)
+            try {
+                fetch('/controller/api/send', {
+                    method: 'POST',
+                    body: JSON.stringify({ targets: [clientId], cmd: 'ring' })
+                });
+            } catch (e) { console.error("Ring trigger failed", e); }
+
+            // Send WS Ping to wake up existing session
+            if (ws && ws.readyState === 1) {
+                ws.send(JSON.stringify({ type: 'ping', target: clientId, from: MY_ID }));
+            }
+
+            if (onlineSignalingUsers.has(clientId)) {
+                setTimeout(() => startWebRTC(clientId), 500);
+            } else {
+                const classUrl = `${location.protocol}//${location.host}/static/ui/class_call.html?id=${clientId}&target=${MY_ID}`;
+                try {
+                    await fetch('/controller/api/send', {
+                        method: 'POST',
+                        body: JSON.stringify({ targets: [clientId], cmd: 'open_url', url: classUrl })
+                    });
+                    setStatus(`等待 ${clientId} 連線...`);
+                } catch (e) {
+                    alert('發送呼叫指令失敗');
+                    stopRingback();
+                }
+            }
+        }
+
+        async function startWebRTC(targetId) {
+            if (peerConnection) peerConnection.close();
+            iceCandidateQueue = [];
+            peerConnection = new RTCPeerConnection(config);
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            peerConnection.ontrack = (event) => {
+                remoteVideo.srcObject = event.streams[0];
+                remoteVideo.play().catch(e => console.log(e));
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) ws.send(JSON.stringify({ type: 'candidate', target: targetId, candidate: event.candidate }));
+            };
+
+            peerConnection.onconnectionstatechange = () => {
+                if (peerConnection.connectionState === 'disconnected') hangup();
+                if (peerConnection.connectionState === 'connected') {
+                    stopRingback();
+                    setStatus('通話中 (已連線)');
+                }
+            };
+
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            ws.send(JSON.stringify({ type: 'offer', target: targetId, sdp: offer }));
+        }
+
+        function hangup() {
+            stopRingback();
+            if (peerConnection) { peerConnection.close(); peerConnection = null; }
+            remoteVideo.srcObject = null;
+            currentTargetId = null;
+            setStatus('已掛斷');
+            setTimeout(() => setStatus('', true), 2000);
+            loadStudents();
+        }
+
+        function setStatus(msg, hide = false) {
+            callStatus.innerText = msg;
+            if (hide) callStatus.classList.add('hidden');
+            else callStatus.classList.remove('hidden');
+        }
+
+        function toggleMic() {
+            const track = localStream.getAudioTracks()[0];
+            track.enabled = !track.enabled;
+            document.getElementById('btnMic').style.background = track.enabled ? 'rgba(255,255,255,0.15)' : '#ef4444';
+        }
+
+        function toggleCam() {
+            const track = localStream.getVideoTracks()[0];
+            track.enabled = !track.enabled;
+            document.getElementById('btnCam').style.background = track.enabled ? 'rgba(255,255,255,0.15)' : '#ef4444';
+        }
+
+        // Show close button on mobile sidebar if open
+        const mobileCloseBtn = document.getElementById('btnCloseSidebarMobile');
+        const updateMobileUI = () => {
+            if (window.innerWidth <= 768) {
+                mobileCloseBtn.style.display = 'block';
+            } else {
+                mobileCloseBtn.style.display = 'none';
+                sidebar.classList.remove('open');
+            }
+        }
+        window.addEventListener('resize', updateMobileUI);
+        updateMobileUI();
+
+        init();
+
+        // --- Permission Modal Helpers ---
+        function showPermissionModal() {
+            const currentUrl = window.location.href;
+            document.getElementById('site-url').textContent = currentUrl;
+            document.getElementById('mic-modal').style.display = 'flex';
+        }
+
+        function copyText(txt) {
+            const ta = document.createElement("textarea");
+            ta.value = txt;
+            ta.style.position = "fixed"; ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.focus(); ta.select();
+            try {
+                document.execCommand('copy');
+                alert("已複製！");
+            } catch (e) {
+                prompt("請手動複製:", txt);
+            }
+            document.body.removeChild(ta);
+        }
+
+        function copyUrl() {
+            copyText(document.getElementById('flag-url').textContent);
+        }
+
+        function copySiteUrl() {
+            copyText(document.getElementById('site-url').textContent);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>📚 使用說明 - 校園廣播系統</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e7bd8">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="user_guide.css">
+    <script defer src="auth.js"></script>
+</head>
+
+<body>
+    <div id="auth-toolbar" style="position:fixed; top:72px; right:16px; z-index:9999;">
+        <button id="logoutBtn"
+            style="background:#f87171;border:none;border-radius:999px;color:white;padding:10px 14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.2);">登出</button>
+    </div>
+
+    <header>
+        <div class="title">📚 使用說明</div>
+        <div class="links">
+            <a href="index.html">🎛 主控台</a>
+            <a href="features.html">📖 功能</a>
+            <a href="guide.html">📚 說明</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Hero -->
+        <div class="hero">
+            <h1>📚 主控端使用說明</h1>
+            <p>完整的操作指南，讓您快速上手校園廣播系統</p>
+        </div>
+
+        <!-- 目錄 -->
+        <div class="toc">
+            <h2>📑 快速導覽</h2>
+            <ul>
+                <li><a href="#getting-started">快速開始</a></li>
+                <li><a href="#text-broadcast">文字廣播</a></li>
+                <li><a href="#media-playback">多媒體播放</a></li>
+                <li><a href="#voice-recording">即時錄音廣播</a></li>
+                <li><a href="#scheduling">排程管理</a></li>
+                <li><a href="#timetable">課表設定</a></li>
+                <li><a href="#reservation">單次預約</a></li>
+                <li><a href="#mobile-broadcast">行動廣播站</a></li>
+                <li><a href="#silent-broadcast">無聲廣播 (數位看板)</a></li>
+                <li><a href="#live-broadcast">即時直播 (Live)</a></li>
+                <li><a href="#video-call">雙向視訊通話</a></li>
+                <li><a href="#shortcuts">自訂快速鍵</a></li>
+                <li><a href="#teacher-console">教師端控制台 (媒體與管理)</a></li>
+                <li><a href="#client-manager">客戶端裝置管理</a></li>
+                <li><a href="#logs">事件紀錄查詢</a></li>
+                <li><a href="#earthquake">地震預警</a></li>
+                <li><a href="#settings">系統設定</a></li>
+                <li><a href="#troubleshooting">常見問題</a></li>
+            </ul>
+        </div>
+
+        <!-- 快速開始 -->
+        <div class="section" id="getting-started">
+            <h2>🚀 快速開始</h2>
+
+            <h3>1️⃣ 啟動系統</h3>
+            <ol class="step-list">
+                <li>
+                    <strong>執行程式</strong>
+                    <p>雙擊 <code>udp_receiver_0110.exe</code> 或執行：</p>
+                    <pre><code>python udp_receiver_0110.py</code></pre>
+                </li>
+                <li>
+                    <strong>開啟 Web 介面</strong>
+                    <p>方法 1：點擊桌面 UI 的「🌐 開啟前端(QR....)」按鈕</p>
+                    <p>方法 2：手動在瀏覽器訪問本機 IP：<code>http://本機IP:5050</code>（例如：<code>http://192.168.1.100:5050</code>）</p>
+                </li>
+                <li>
+                    <strong>登入系統</strong>
+                    <p>使用您的帳號密碼登入（預設管理員帳號請洽系統管理員）</p>
+                </li>
+            </ol>
+
+            <div class="alert alert-info">
+                <strong>💡 提示</strong>
+                系統啟動後會自動開啟 Tkinter 桌面 UI 和 Web 服務器。您可以選擇使用桌面介面或 Web 介面進行操作。
+            </div>
+
+            <h3>2️⃣ 介面概覽</h3>
+            <img src="img_arch.png" alt="System Architecture" class="screenshot"
+                style="border: 2px solid #2196F3; max-width: 100%; margin-bottom: 20px;">
+            <div class="grid-2">
+                <div class="card">
+                    <h4>🖥️ 桌面 UI (Tkinter)</h4>
+                    <ul>
+                        <li>主控台 - 即時日誌與快速操作</li>
+                        <li>課表 - 課表編輯與管理</li>
+                        <li>檔案 - MP3 上傳與管理</li>
+                        <li>排程 - 自訂排程設定</li>
+                        <li>設定 - 系統參數調整</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🌐 Web 介面</h4>
+                    <ul>
+                        <li>響應式設計，支援手機/平板</li>
+                        <li>多頁面導覽系統</li>
+                        <li>即時狀態更新</li>
+                        <li>PWA 支援，可安裝到桌面</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="margin-top:20px; text-align:center;">
+                <img src="img_web_ui_main.png" alt="RelayBell Web Interface" class="screenshot"
+                    style="border: 2px solid #ccc; max-width: 100%;">
+                <p style="font-size:14px; color:#666; margin-top:5px;">▲ RelayBell Web 操作介面 (實際畫面)</p>
+            </div>
+        </div>
+
+        <!-- 文字廣播 -->
+        <div class="section" id="text-broadcast">
+            <h2>🔊 文字廣播</h2>
+            <img src="img_flow.png" alt="Broadcast Flow" class="screenshot"
+                style="border: 2px solid #4CAF50; max-width: 100%; margin-bottom: 20px;">
+            <h3>基本操作教學</h3>
+            <ol class="step-list">
+                <li>
+                    <strong>步驟 1：輸入廣播內容</strong>
+                    <p>請找到左上角的 <strong>「📝 傳送文字訊息」</strong> 區塊。在白色的文字輸入框中，打字輸入您想要廣播的內容。</p>
+                    <p class="tip">範例：「各位老師同學大家早安，現在是晨間廣播時間。」</p>
+                </li>
+                <li>
+                    <strong>步驟 2：選擇語音與速度 (非必要)</strong>
+                    <p>若您想改變聲音，請看右側的 <strong>「🗣️ 語音設定」</strong> 面板：</p>
+                    <ul>
+                        <li><strong>語言</strong>：點選選單選擇中文、英文或日文等。</li>
+                        <li><strong>聲別</strong>：選擇您喜歡的「男聲」或「女聲」。</li>
+                        <li><strong>語速</strong>：拖動滑桿，向右 (快) 或向左 (慢) 調整說話速度。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>步驟 3：發送廣播</strong>
+                    <p>確認內容無誤後，點擊藍色的 <span class="button-demo">🔊 直接廣播</span> 按鈕。</p>
+                    <p>系統會立即將文字轉為語音並透過擴大機播放出來。</p>
+                </li>
+            </ol>
+
+            <div class="alert alert-success">
+                <strong>💡 小撇步</strong>
+                系統預設使用最高品質的 Edge TTS 引擎。如果網路不通，它會自動切換到備用的離線引擎，確保廣播不中斷。
+            </div>
+
+            <h3>進階功能教學</h3>
+
+            <h4>🤖 如何使用 AI 自動寫稿？</h4>
+            <p>不知道廣播稿怎麼寫？讓 AI 幫您！</p>
+            <ol class="step-list">
+                <li>
+                    在文字框中輸入簡單的關鍵字。
+                    <br><em>例如：輸入「放學提醒、帶雨傘、注意安全」</em>
+                </li>
+                <li>
+                    點擊紫色的 <span class="button-demo" style="background: linear-gradient(45deg, #1e7bd8, #8a2be2);">✨ AI
+                        直接生成</span> 按鈕。
+                </li>
+                <li>
+                    稍等約 2-3 秒，AI 會自動生成一篇通順、有禮貌的廣播稿，並自動填入文字框開始朗讀。
+                </li>
+            </ol>
+
+            <h4>🌤️ 如何播報即時氣象？</h4>
+            <p>想讓全校知道今天的天氣？</p>
+            <ol class="step-list">
+                <li>
+                    直接點擊白色的 <span class="button-demo" style="background: #fff; color: #333; border:1px solid #ccc;">🌥️
+                        氣象文字</span> 按鈕。
+                </li>
+                <li>
+                    系統會自動抓取學校目前的氣溫、天氣狀況及空氣品質。
+                </li>
+                <li>
+                    氣象資訊會自動貼上到文字框中，您只需按下「直接廣播」即可。
+                </li>
+            </ol>
+
+
+            <h4>🌍 多語言翻譯助手</h4>
+            <p>需要雙語廣播？不用自己查字典！</p>
+            <ol class="step-list">
+                <li>
+                    在「翻譯助手」區塊，選擇目標語言（如英文、日文、越語）。
+                </li>
+                <li>
+                    點擊 <strong>確定翻譯</strong>。
+                </li>
+                <li>
+                    系統會自動將上方文字框的內容翻譯成目標語言，並覆蓋上去。
+                </li>
+                <li>
+                    按下「直接廣播」，系統就會用該國語言朗讀出來囉！(TTS)
+                </li>
+            </ol>
+            <div class="alert alert-info">
+                <strong>💡 應用場景</strong>
+                適合外語教學、外賓參訪、或東南亞語系的校園廣播。
+            </div>
+        </div>
+
+        <!-- 多媒體播放 -->
+        <div class="section" id="media-playback">
+            <h2>🎵 多媒體播放</h2>
+
+            <h3>🎵 MP3 音樂檔案播放教學</h3>
+
+            <h4>情境 A：播放電腦裡的 MP3</h4>
+            <ol class="step-list">
+                <li>
+                    <strong>步驟 1：選擇檔案</strong>
+                    <p>找到「🎵 MP3 / YouTube」區塊，點擊灰色的 <span class="button-demo"
+                            style="background:#ddd; color:#333;">選擇檔案</span> 按鈕。</p>
+                    <p>在彈出的視窗中，選擇您電腦中的 <code>.mp3</code> 音樂檔。</p>
+                </li>
+                <li>
+                    <strong>步驟 2：上傳至系統</strong>
+                    <p>選好後，點擊藍色的 <span class="button-demo">⬆️ 上傳 MP3</span> 按鈕。</p>
+                    <p>系統會提示「上傳成功」，並自動幫您選取剛上傳的檔案。</p>
+                </li>
+                <li>
+                    <strong>步驟 3：開始播放</strong>
+                    <p>確認下拉選單已選取該檔案，動作為「播放」，然後點擊 <span class="button-demo">執行</span> 按鈕。</p>
+                </li>
+            </ol>
+
+            <h4>情境 B：播放已上傳過的檔案</h4>
+            <ol class="step-list">
+                <li>
+                    點擊下拉選單（顯示 <code>uploads/...</code>），從清單中選擇檔案。
+                </li>
+                <li>
+                    點擊 <span class="button-demo">執行</span> 即可播放。
+                </li>
+            </ol>
+
+            <h3>📹 如何播放 YouTube 影片/音樂？</h3>
+
+            <h4>模式 1：純聽音樂 (推薦)</h4>
+            <p>想播 YouTube 上的音樂，但不需要畫面？用這個模式最穩！</p>
+            <ol class="step-list">
+                <li>
+                    複製 YouTube 影片的網址 (URL)。
+                </li>
+                <li>
+                    貼上到「貼上 MP3 或 YouTube 連結...」的輸入框中。
+                </li>
+                <li>
+                    點擊深藍色的 <span class="button-demo">▶️ 播放音訊</span> 按鈕。
+                </li>
+                <li>
+                    <strong>請稍候！</strong> 系統會自動下載音軌（主控台會顯示進度），下載完成後會自動開始播放。
+                    <br><span style="color:#d97706; font-size:0.9em;">(下載過的檔案會自動存檔，下次播就不用等了！)</span>
+                </li>
+            </ol>
+
+            <h4>模式 2：全螢幕播放影片</h4>
+            <p>適合在教室或禮堂投影大螢幕使用。</p>
+            <ol class="step-list">
+                <li>
+                    同樣貼上 YouTube 網址。
+                </li>
+                <li>
+                    點擊黑色的 <span class="button-demo" style="background: #333;">🎬 全螢幕播放 (YouTube)</span> 按鈕。
+                </li>
+                <li>
+                    電腦螢幕會跳出全螢幕播放視窗。若要結束，請按 <span class="button-demo">⏹ 關閉全螢幕</span>。
+                </li>
+            </ol>
+
+            <h3>常用控制按鈕說明</h3>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>⏸ 暫停 / ▶️ 繼續</h4>
+                    <p>暫時離開一下？按暫停保留進度，回來再按繼續。</p>
+                </div>
+                <div class="card">
+                    <h4>⏹ 停止</h4>
+                    <p>完全卡歌，下次會從頭開始播。</p>
+                </div>
+                <div class="card" style="border-color: #ef4444; background: #fef2f2;">
+                    <h4 style="color:#991b1b;">🟥 強制取消 (緊急按鈕)</h4>
+                    <p>遇到任何狀況（播錯歌、聲音關不掉、當機），請直接按右下角的紅色 <strong>強制取消</strong>！</p>
+                    <p>它會強制殺死所有播放程序，讓系統瞬間安靜。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 即時錄音廣播 -->
+        <div class="section" id="voice-recording">
+            <h2>🎤 即時錄音廣播</h2>
+
+            <div class="feature-box">
+                <h4>✨ 什麼是遠端麥克風？</h4>
+                <p>簡單說，就是把您的手機或筆電當成校長的麥克風！</p>
+                <p>只要您的裝置有麥克風，連上這個網頁，就能隨時隨地對全校廣播，不用跑到主控室。</p>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>⚠️ 第一次使用請注意</strong>
+                <br>瀏覽器會詢問「是否允許使用麥克風？」，請務必點選 <strong>[允許]</strong>。
+                <br>如果按到拒絕，請點擊網址列左側的鎖頭圖示 🔒 來重新開啟權限。
+            </div>
+
+            <h3>方法 1：按住說話 (對講機模式)</h3>
+            <p>最快、最直覺的方式，就像在使用對講機。</p>
+            <ol class="step-list">
+                <li>
+                    <strong>步驟 1：按住不放</strong>
+                    <p>滑鼠按住（或手指壓住）藍色的 <span class="button-demo" style="background: #0ea5e9;">🎤 按住廣播</span> 按鈕。</p>
+                </li>
+                <li>
+                    <strong>步驟 2：開始說話</strong>
+                    <p>當按鈕變紅並顯示「🎙️ 放開即播」時，對著麥克風講話。</p>
+                </li>
+                <li>
+                    <strong>步驟 3：放開手指</strong>
+                    <p>講完後，放開按鈕。系統會「立刻」將剛剛那段話廣播出去。</p>
+                </li>
+            </ol>
+
+            <h3>方法 2：錄音後預覽 (謹慎模式)</h3>
+            <p>怕講錯話？先錄起來聽聽看，滿意再送出。</p>
+            <ol class="step-list">
+                <li>
+                    <strong>步驟 1：開始錄音</strong>
+                    <p>點擊紅色的 <span class="button-demo" style="background: #ef4444;">🔴 開始錄音</span> 按鈕。</p>
+                </li>
+                <li>
+                    <strong>步驟 2：錄製內容</strong>
+                    <p>開始說話...（此時按鈕會變成「⏹ 停止錄音」）。講完後再次點擊該按鈕停止。</p>
+                </li>
+                <li>
+                    <strong>步驟 3：試聽檢查</strong>
+                    <p>畫面會出現一個播放器，點擊 ▶️ 播放鍵聽聽看剛剛錄的聲音。</p>
+                </li>
+                <li>
+                    <strong>步驟 4：決定去留</strong>
+                    <p>如果不滿意，點 <span class="button-demo" style="background: #fee2e2; color: #991b1b;">🗑 放棄</span> 重錄。
+                    </p>
+                    <p>如果滿意，點 <span class="button-demo">📤 傳送</span>，聲音才會真正廣播出去。</p>
+                </li>
+            </ol>
+        </div>
+
+        <!-- 排程管理 -->
+        <div class="section" id="scheduling">
+            <h2>🕐 排程管理教學</h2>
+
+            <h3>什麼是排程？</h3>
+            <p>排程就是讓系統當您的「自動報時員」。您可以設定系統在每天、每週甚至是特定日期的某個時間點，自動播放音樂或講話。</p>
+            <img src="img_sched_ui.jpg" alt="排程介面"
+                style="width:100%; max-width:800px; border:1px solid #ddd; border-radius:8px;">
+            <p class="tip">範例：每天 12:00 播放午餐輕音樂、每週五 16:00 提醒大掃除。</p>
+
+            <h3>實戰演練：設定一個「午休結束鈴」</h3>
+            <p>我們來練習設定一個：<strong>每週一到週五，下午 13:00，播放《上課鐘聲.mp3》</strong>。</p>
+
+            <ol class="step-list">
+                <li>
+                    <strong>步驟 1：新增排程</strong>
+                    <p>進入 <code>🕐 排程</code> 頁面，點擊右上角的 <span class="button-demo" style="background:#246ed7;">➕
+                            新增排程</span> 按鈕。</p>
+                </li>
+                <li>
+                    <strong>步驟 2：填寫基本資料</strong>
+                    <ul>
+                        <li><strong>標題</strong>：輸入「午休結束」。</li>
+                        <li><strong>時間</strong>：輸入 <code>13:00</code>。</li>
+                        <li><strong>天數</strong>：勾選 <code>Mon (一)</code>, <code>Tue (二)</code>, <code>Wed (三)</code>,
+                            <code>Thu (四)</code>, <code>Fri (五)</code>。
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>步驟 3：設定動作</strong>
+                    <ul>
+                        <li><strong>類型</strong>：選擇 <code>sendmp3</code> (播放檔案)。</li>
+                        <li><strong>內容</strong>：輸入檔名 <code>bell_ring.mp3</code> (需確認檔案已上傳)。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>步驟 4：儲存生效</strong>
+                    <p>點擊 <span class="button-demo">💾 儲存</span>。列表中看到它顯示「啟用中」就成功了！</p>
+                </li>
+            </ol>
+
+            <h3>排程類型總整理</h3>
+            <p>除了播放 MP3，排程還能做很多事：</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h4>📝 TTS 語音廣播</h4>
+                    <p><strong>類型代碼</strong>：<code>tts</code></p>
+                    <p><strong>說明</strong>：時間到自動講話。</p>
+                    <p><strong>內容範例</strong>：「現在是打掃時間，請同學開始打掃環境。」</p>
+                </div>
+                <div class="card">
+                    <h4>🎵 MP3 音樂</h4>
+                    <p><strong>類型代碼</strong>：<code>sendmp3</code></p>
+                    <p><strong>說明</strong>：播放已上傳的音樂檔。</p>
+                    <p><strong>內容範例</strong>：<code>song.mp3</code></p>
+                </div>
+                <div class="card">
+                    <h4>📹 YouTube 影片</h4>
+                    <p><strong>類型代碼</strong>：<code>youtube</code></p>
+                    <p><strong>說明</strong>：自動播放 YouTube。</p>
+                    <p><strong>內容範例</strong>：(貼上影片網址)</p>
+                </div>
+                <div class="card">
+                    <h4>🌤️ 氣象播報</h4>
+                    <p><strong>類型代碼</strong>：<code>cmd</code></p>
+                    <p><strong>說明</strong>：執行系統指令。</p>
+                    <p><strong>內容範例</strong>：<code>WeatherReport</code></p>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>💡 關於「課表」與「排程」的差別</strong>
+                <br>
+                <strong>排程 (Schedule)</strong>：適合特殊的、單次的、或非上課鐘聲類的任務（如打掃、升旗）。<br>
+                <strong>課表 (Timetable)</strong>：專門管理每天固定的上下課鐘聲（早自習、第一節、下課...），結構較固定。
+            </div>
+        </div>
+
+        <!-- 課表設定 -->
+        <div class="section" id="timetable">
+            <h2>📚 課表設定教學</h2>
+
+            <h3>Q: 課表跟排程有什麼不同？</h3>
+            <div class="alert alert-info">
+                <strong>簡單分辨法：</strong>
+                <ul>
+                    <li><strong>課表</strong> = 學校每天固定的上下課鐘聲（7:30早自習、8:10第一節...）。</li>
+                    <li><strong>排程</strong> = 偶爾才做一次的廣播（週會、大掃除、英聽測驗）。</li>
+                </ul>
+            </div>
+
+            <h3>實戰演練：設定週一的課表</h3>
+            <p>假設我們要設定週一早上的作息：<strong>08:00 升旗典禮、08:10 第一節上課</strong>。</p>
+
+            <ol class="step-list">
+                <li>
+                    <strong>步驟 1：進入課表頁面</strong>
+                    <p>點擊導覽列的 <code>📚 課表</code> 或訪問 <code>tt.html</code>。</p>
+                </li>
+                <li>
+                    <strong>步驟 2：選擇星期</strong>
+                    <p>在頁面最上方，點選 <strong>Monday (週一)</strong>。</p>
+                </li>
+                <li>
+                    <strong>步驟 3：新增第一節作息</strong>
+                    <p>點擊列表右上的 <span class="button-demo">➕ 新增項目</span>，依序填入：</p>
+                    <ul>
+                        <li><strong>時間</strong>：<code>08:00</code></li>
+                        <li><strong>動作</strong>：<code>play_mp3</code> (播放音樂)</li>
+                        <li><strong>參數</strong>：<code>flag_raising.mp3</code> (升旗歌)</li>
+                        <li><strong>說明</strong>：升旗典禮</li>
+                    </ul>
+                    <p>填完後按下「✅ 確定」或是儲存。</p>
+                </li>
+                <li>
+                    <strong>步驟 4：新增第二節作息</strong>
+                    <p>再次點擊新增，填入：</p>
+                    <ul>
+                        <li><strong>時間</strong>：<code>08:10</code></li>
+                        <li><strong>動作</strong>：<code>bell</code> (系統鐘聲)</li>
+                        <li><strong>參數</strong>：<code>ClassStart</code> (上課鐘)</li>
+                        <li><strong>說明</strong>：第一節上課</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>步驟 5：完成儲存</strong>
+                    <p>確認列表無誤後，務必點擊頁面下方的 <span class="button-demo">💾 儲存課表</span> 按鈕。</p>
+                </li>
+            </ol>
+
+            <h3>進階：課表動作代碼表</h3>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>🔔 系統鐘聲</h4>
+                    <p><strong>動作</strong>：<code>bell</code></p>
+                    <p><strong>參數</strong>：</p>
+                    <ul>
+                        <li><code>ClassStart</code> (上課)</li>
+                        <li><code>ClassDismiss</code> (下課)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🎵 播放音樂</h4>
+                    <p><strong>動作</strong>：<code>play_mp3</code></p>
+                    <p><strong>參數</strong>：輸入完整的檔名</p>
+                    <p><em>例如：clean_up_song.mp3</em></p>
+                </div>
+                <div class="card">
+                    <h4>📝 TTS 廣播</h4>
+                    <p><strong>動作</strong>：<code>tts</code></p>
+                    <p><strong>參數</strong>：輸入要講的中文</p>
+                    <p><em>例如：午餐時間到了</em></p>
+                </div>
+                <div class="card">
+                    <h4>📹 YouTube</h4>
+                    <p><strong>動作</strong>：<code>youtube</code></p>
+                    <p><strong>參數</strong>：貼上影片網址</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 單次預約 -->
+        <div class="section" id="reservation">
+            <h2>📅 單次預約 (Single Day)</h2>
+
+            <h3>Q: 這跟排程又有什麼不同？</h3>
+            <div class="alert alert-info">
+                <strong>簡單分辨法：</strong>
+                <ul>
+                    <li><strong>排程 (Schedule)</strong> = 週期性的（每個禮拜一...）。</li>
+                    <li><strong>預約 (Reservation)</strong> = 「只做這一次」的（例如：下週三的疫苗接種廣播）。</li>
+                    <li>執行完畢後，預約項目不會自動刪除，但會過期失效。</li>
+                </ul>
+            </div>
+
+            <h3>功能特色</h3>
+            <div class="feature-box">
+                <p>不用等到當天，您可以提前幾週先將要廣播的事項設定好。時間一到，系統自動執行！</p>
+                <p>不用等到當天，您可以提前幾週先將要廣播的事項設定好。時間一到，系統自動執行！</p>
+                <!-- <img src="img_res_ui.jpg" alt="單次預約介面" class="screenshot"> (圖片暫缺) -->
+                <p>支援：文字廣播 (TTS)、播放 MP3、甚至執行系統指令。</p>
+                <p>支援：文字廣播 (TTS)、播放 MP3、甚至執行系統指令。</p>
+            </div>
+
+            <h3>實戰演練：預約下週三的「疫苗接種提醒」</h3>
+            <ol class="step-list">
+                <li>
+                    <strong>步驟 1：進入頁面</strong>
+                    <p>點擊導覽列的 <code>📅 預約</code> 或訪問 <code>single_reservation.html</code>。</p>
+                </li>
+                <li>
+                    <strong>步驟 2：設定時間</strong>
+                    <p>在左側的「新增單次預約」表單中：</p>
+                    <ul>
+                        <li><strong>日期</strong>：選擇 <code>下週三的日期</code>。</li>
+                        <li><strong>時間</strong>：選擇 <code>08:15</code>。</li>
+                        <li><strong>標題</strong>：輸入 <code>疫苗接種提醒</code> (給自己看的備註)。</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>步驟 3：設定內容</strong>
+                    <ul>
+                        <li><strong>動作類型</strong>：選擇 <code>/send 文字播報</code>。</li>
+                        <li><strong>內容</strong>：輸入「請三年級同學，現在集合準備施打疫苗。」</li>
+                    </ul>
+                    <p class="tip">💡 如果需要播放音樂，動作選 <code>/sendmp3</code>，然後在下方「快速插入 MP3」選單中選擇檔案即可。</p>
+                </li>
+                <li>
+                    <strong>步驟 4：加入清單</strong>
+                    <p>按下 <span class="button-demo" style="background:#1e7bd8;">💾 加入排程</span> 按鈕。</p>
+                    <p>您會在右側的「📋 預約清單」中看到剛剛新增的項目。</p>
+                </li>
+            </ol>
+
+            <h3>進階功能：台語廣播小幫手</h3>
+            <p>這頁面還內建了超強的台語翻譯功能喔！</p>
+            <ol class="step-list">
+                <li><strong>輸入中文</strong>：在內容框輸入中文。</li>
+                <li><strong>翻譯</strong>：點擊 <span class="button-demo secondary">📝 先翻成台文</span>，系統會自動翻成台語漢字。</li>
+                <li><strong>試聽</strong>：點擊 <span class="button-demo secondary">🗣️ 講台語</span>，確認發音是否正確。</li>
+                <li><strong>預約</strong>：確認無誤後，直接加入預約即可！</li>
+            </ol>
+        </div>
+
+        <!-- 行動廣播站 -->
+        <div class="section" id="mobile-broadcast">
+            <h2>🎙️ 行動廣播站 (Mobile App)</h2>
+            <div class="alert alert-info">
+                <strong>手機變身無線麥克風！</strong>
+                <p>這是專為手機設計的介面，讓老師或教官可以在操場、走廊等任何地方，直接用手機對全校廣播。</p>
+            </div>
+
+            <h3>兩大廣播模式</h3>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>1. 錄音傳送 (標準模式)</h4>
+                    <p><strong>特色</strong>：講完才送出，不會吃螺絲。</p>
+                    <p><strong>適合</strong>：重要宣布、朗讀文章。</p>
+                    <hr>
+                    <p><strong>操作方法</strong>：</p>
+                    <ul>
+                        <li><strong>按住 ‧ 即說</strong>：像對講機一樣，按著講，放開就送出。</li>
+                        <li><strong>點擊開始錄音</strong>：點一下開始錄，錄完再點一下停止，可以先「試聽」滿意再送出。</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>2. 🔴 即時直播 (Live Mode)</h4>
+                    <p><strong>特色</strong>：低延遲，講什麼播什麼。</p>
+                    <p><strong>適合</strong>：緊急狀況、升旗典禮指揮。</p>
+                    <hr>
+                    <p><strong>操作方法</strong>：</p>
+                    <ul>
+                        <li>切換上方開關到 <strong>🔴 即時直播</strong>。</li>
+                        <li>按下紅色按鈕，即刻開始連線廣播。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>其他好用功能</h3>
+            <ul>
+                <li><strong>🔊 現場音量</strong>：覺得廣播聲音太小？直接在手機上拉動拉桿調整。</li>
+                <li><strong>🔌 Relay 控制</strong>：可以直接用手機遠端開啟/關閉擴大機電源。</li>
+                <li><strong>📲 安裝成 App</strong>：在手機瀏覽器選單點選「加入主畫面」，就能像 App 一樣全螢幕使用。</li>
+            </ul>
+
+            <h3>實戰演練：操場升旗指揮</h3>
+            <ol class="step-list">
+                <li>
+                    <strong>步驟 1：開啟擴大機</strong>
+                    <p>拿出手機打開網頁，滑到下方點擊 <span class="button-demo" style="background:#4CAF50;">🔌 Relay
+                            ON</span>，確認廣播系統電源已開。</p>
+                </li>
+                <li>
+                    <strong>步驟 2：切換直播模式</strong>
+                    <p>因為要喊口令，需要即時性。將上方模式切換為 <strong>🔴 即時直播</strong>。</p>
+                </li>
+                <li>
+                    <strong>步驟 3：開始廣播</strong>
+                    <p>按下中間大大的 <strong>🔴 點擊開始直播</strong> 按鈕。</p>
+                    <p><em>「全體注意！現在開始升旗典禮...」</em></p>
+                </li>
+                <li>
+                    <strong>步驟 4：結束</strong>
+                    <p>典禮結束後，再按一次停止直播，並點擊 <span class="button-demo secondary">🔌 Relay OFF</span> 關閉擴大機。</p>
+                </li>
+            </ol>
+        </div>
+
+        <!-- 無聲廣播 -->
+        <div class="section" id="silent-broadcast">
+            <h2>🔇 無聲廣播 (數位看板)</h2>
+
+            <div class="alert alert-danger">
+                <strong>⚠️ 重要前提：學生端必須安裝接收程式</strong>
+                <p>要使用無聲廣播與遠端控制功能，被控制的電腦（學生端）必須先安裝 <code>Student Agent</code> 軟體。</p>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>🛠️ 如何安裝學生端程式？</strong>
+                <ol>
+                    <li>在學生電腦上，打開瀏覽器訪問本系統的 <code>announce.html</code> (原本的公告頁面)。</li>
+                    <li>首次訪問時，畫面會跳出提示視窗。</li>
+                    <li>點選 <strong>「同意並下載」</strong>，下載 <code>student_agent.exe</code> 安裝檔。</li>
+                    <li>執行安裝檔，安裝完成後程式會自動在背景執行等待廣播。</li>
+                </ol>
+            </div>
+
+            <h3>功能介紹</h3>
+            <ul>
+                <li><strong>📝 文字公告</strong>：輸入文字，學生端螢幕會跳出公告視窗。</li>
+                <li><strong>🖼️ 圖片/影片推播</strong>：可以上傳海報、照片或宣導短片，直接在學生端全螢幕播放。</li>
+                <li><strong>🔇 靜音 vs 🔊 朗讀</strong>：您可以選擇「靜音送出」或是「朗讀送出」(TTS唸給你聽)。</li>
+            </ul>
+
+            <h3>學生端控制 (進階)</h3>
+            <p>除了廣播，這個頁面也是電腦教室管理的好幫手：</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>💻 狀態監控</h4>
+                    <p>可以看到目前有哪些電腦上線 (Green)、IP、以及最後連線時間。</p>
+                </div>
+                <div class="card">
+                    <h4>🛠️ 遠端指令</h4>
+                    <ul>
+                        <li><span class="button-demo secondary">🔒 鎖定螢幕</span>：讓學生暫時無法操作。</li>
+                        <li><span class="button-demo warn">⚠️ 立即關機</span>：放學時一鍵關閉所有電腦。</li>
+                        <li><span class="button-demo secondary">🌐 開啟網址</span>：統一幫學生打開指定網頁。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>實戰演練：發布「午餐菜單」圖卡</h3>
+            <ol class="step-list">
+                <li>
+                    <strong>步驟 1：準備圖檔</strong>
+                    <p>準備好今天的午餐菜單圖片 (JPG/PNG)。</p>
+                </li>
+                <li>
+                    <strong>步驟 2：上傳圖片</strong>
+                    <p>在面板上點選 <span class="button-demo secondary">選擇檔案</span>，選取菜單圖片，然後點 <span
+                            class="button-demo secondary">上傳圖片</span>。</p>
+                    <p>成功後應該會看到圖片預覽。</p>
+                </li>
+                <li>
+                    <strong>步驟 3：送出公告</strong>
+                    <p>點擊 <span class="button-demo warn">送出（無聲）</span>。</p>
+                    <p>此時全校電腦螢幕上都會自動跳出這張午餐菜單，而且完全不會有聲音打擾午休！</p>
+                </li>
+            </ol>
+        </div>
+
+
+
+        <!-- Live Broadcast -->
+        <div class="section" id="live-broadcast">
+            <h2>🔴 即時直播 (Live Broadcast)</h2>
+            <div class="alert alert-danger">
+                <strong>⚠️ 重要前提</strong>
+                <p>觀眾端（學生電腦）必須安裝並執行 <code>Student Agent</code> 才能自動彈出直播視窗。</p>
+            </div>
+
+            <p>這是一個專為校園設計的低延遲直播系統，老師可以直接使用電腦或手機的鏡頭，對全校或特定班級進行畫面廣播。</p>
+
+            <h3>功能特色</h3>
+            <ul>
+                <li><strong>👥 指定觀眾</strong>：左側選單可以勾選特定班級或「全選」。</li>
+                <li><strong>🔔 上下課鐘聲</strong>：內建「片頭/片尾」音效按鈕，廣播前後可以按一下提示學生。</li>
+                <li><strong>📷 雙鏡頭切換</strong>：支援切換前後鏡頭 (手機) 或不同 WebCam (電腦)。</li>
+            </ul>
+
+            <h3>實戰演練：校長朝會直播</h3>
+            <ol class="step-list">
+                <li>
+                    <strong>步驟 1：進入直播間</strong>
+                    <p>點擊首頁的 <span class="button-demo" style="background:#f44336;">🔴 直播</span> 按鈕。</p>
+                </li>
+                <li>
+                    <strong>步驟 2：選擇觀眾</strong>
+                    <p>點擊左上角的 <strong>👥 選擇觀眾</strong>，勾選全校班級，或直接按「全選」。</p>
+                </li>
+                <li>
+                    <strong>步驟 3：開始直播</strong>
+                    <p>確認預覽畫面正常後，按下中間大大的 <strong>🔴 開始直播</strong>。</p>
+                    <p>此時全校電腦會自動彈出全螢幕直播畫面。</p>
+                </li>
+            </ol>
+        </div>
+
+        <!-- Video Call -->
+        <div class="section" id="video-call">
+            <h2>📹 雙向視訊通話 (Two-way Call)</h2>
+            <div class="alert alert-danger">
+                <strong>⚠️ 重要前提</strong>
+                <p>被呼叫的學生端電腦必須安裝並執行 <code>Student Agent</code>。</p>
+            </div>
+
+            <p>這不只是廣播，更是雙向溝通工具。老師可以單獨「呼叫」某一台學生電腦，進行一對一視訊對話。</p>
+
+            <h3>功能介紹</h3>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>💬 文字聊天 + 朗讀</h4>
+                    <p>通話中可以傳送文字訊息，並勾選「傳送並朗讀」，系統會直接在學生端把文字唸出來 (TTS)。</p>
+                </div>
+                <div class="card">
+                    <h4>🎤 音頻視覺化</h4>
+                    <p>介面下方有波形圖，可以直觀看到對方的聲音訊號強度。</p>
+                </div>
+            </div>
+
+            <h3>操作流程</h3>
+            <ol class="step-list">
+                <li>點擊首頁的 <strong>📹 通話</strong> 進入教師端介面。</li>
+                <li>左側列表會顯示目前上線的學生電腦 (綠燈表示在線)。</li>
+                <li>點擊目標學生，系統會自動對該電腦發送連線請求。</li>
+                <li>連線建立後，即可開始雙向視訊與對話。</li>
+            </ol>
+        </div>
+
+
+
+        <!-- Custom Shortcuts -->
+        <div class="section" id="shortcuts">
+            <h2>⚡ 自訂快速鍵 (Shortcuts)</h2>
+            <div class="alert alert-info">
+                <strong>專為「高頻率使用」設計</strong>
+                <p>如果您有一些每天都要播的音樂（如：打掃歌、升旗歌）或是常講的廣播詞（如：放學叮嚀），不用每次都重選檔案或重打字。</p>
+                <p>將它們設定成「快速鍵」，下次只要一鍵就能發送！</p>
+            </div>
+
+            <h3>如何新增快速鍵？</h3>
+            <h4>範例：設定「打掃時間」音樂快速鍵</h4>
+            <ol class="step-list">
+                <li>
+                    <strong>步驟 1：進入頁面</strong>
+                    <p>點擊導覽列的 <code>⚡ 快捷</code> 或訪問 <code>shortcuts.html</code>。</p>
+                </li>
+                <li>
+                    <strong>步驟 2：輸入名稱</strong>
+                    <p>在「新增快速鍵」區塊，名稱欄位輸入：<code>打掃時間音樂</code>。</p>
+                </li>
+                <li>
+                    <strong>步驟 3：選擇類型與檔案</strong>
+                    <p>類型勾選 <strong>播放 MP3</strong>。</p>
+                    <p>在檔案選單中選擇 <code>clean_up.mp3</code> (若檔案不在清單中，請先點「⬆ 上傳」)。</p>
+                </li>
+                <li>
+                    <strong>步驟 4：勾選選項 (推薦)</strong>
+                    <p>勾選 <strong>播放前提示音</strong>，讓學生聽到「噹噹噹」注意聽廣播。</p>
+                </li>
+                <li>
+                    <strong>步驟 5：完成</strong>
+                    <p>按下 <strong>＋ 新增快速鍵</strong>。右側列表就會出現這個新按鈕了！</p>
+                </li>
+            </ol>
+
+            <h4>範例：設定「反詐騙宣導」語音快速鍵</h4>
+            <ol class="step-list">
+                <li>名稱輸入：<code>反詐騙提醒</code>。</li>
+                <li>類型勾選 <strong>播報文字</strong>。</li>
+                <li>內容輸入：<code>「各位同學請注意，請勿輕信網路上來源不明的連結...」</code>。</li>
+                <li>按下新增，搞定！</li>
+            </ol>
+
+            <h3>如何使用？</h3>
+            <p>設定好之後，您隨時回到這個頁面，在右側的列表中找到該項目，點擊綠色的 <span class="button-demo" style="background:#0a8754;">▶ 播放</span>
+                按鈕即可。
+            </p>
+
+            <h3>⚡ 頁面專屬功能</h3>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>🔄 音量控制</h4>
+                    <p>頁面上方有獨立的音量拉桿，方便您隨時調整背景音樂的大小。</p>
+                </div>
+                <div class="card" style="border-color:#ef4444;background:#fff5f5;">
+                    <h4>⏹ 緊急停止</h4>
+                    <p>上方紅色的 <span class="button-demo warn">⏹ 強制取消</span> 按鈕，可以隨時中斷目前的廣播。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teacher Console -->
+        <div class="section" id="teacher-console">
+            <h2>🎵 教師端控制台 (媒體與管理)</h2>
+            <p>「教師端控制台」是專為教室與分組廣播設計的綜合面板，整合了<strong>媒體播放</strong>、<strong>學生狀態監控</strong>與<strong>分組控制</strong>功能。</p>
+            <p>請點擊導覽列的 <code>🎵 媒體</code> 或訪問 <code>teacher.html</code> 進入。</p>
+
+            <h3>1. 學生狀態與全域控制</h3>
+            <p>頁面最上方顯示了學生端的連線狀態與快速操作按鈕：</p>
+            <ul class="feature-list">
+                <li><strong>上線統計：</strong> 即時顯示目前上線的設備數量。</li>
+                <li><strong>分組快開 (G1-G6)：</strong> 一鍵開啟特定分組的視窗，將畫面導向到指定網址。</li>
+                <li><strong>電源控制：</strong>
+                    <ul>
+                        <li><span class="button-demo warn">全體關機</span>：對所有連線中的學生端發送關機指令。</li>
+                        <li><span class="button-demo warn">全體重開</span>：對所有連線中的學生端發送重開機指令。</li>
+                        <li><span class="button-demo">勾選開機 (WOL)</span>：透過網路喚醒功能 (Wake-on-LAN) 嘗試開啟選取的電腦。</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <h3>2. 分組媒體播放 (Media Playback)</h3>
+            <p>畫面主要區域分為 6 個分組卡片 (Group Cards)，每個卡片對應一個學生群組。這裡的控制功能非常細緻，適合語言教學或影片欣賞。</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h4>📂 選擇與上傳</h4>
+                    <p>您可以從伺服器清單選擇，或直接上傳新檔案。</p>
+                    <ul>
+                        <li><strong>清單選擇：</strong> 下拉選單包含所有已上傳的 MP3/MP4。</li>
+                        <li><strong>即時上傳：</strong> 點擊「選擇檔案」後按「上傳」，檔案會自動進入清單並選取。</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🎛️ 進階播放控制 (全同步)</h4>
+                    <p>所有的播放操作都會<strong>即時同步</strong>到學生端：</p>
+                    <ul class="feature-list">
+                        <li><strong>▶ 播放/暫停：</strong> 教師端按下，學生端同步動作。</li>
+                        <li><strong>⏩ 調整進度 (Seek)：</strong> 拉動教師端的進度條，學生端會跳轉到相同時間點。</li>
+                        <li><strong>🔊 音量控制：</strong> 拉動音量桿，直接改變該組學生電腦的音量。</li>
+                        <li><strong>🐢 變速播放 (0.5x - 2x)：</strong> 支援調整播放速度！適合<strong>英語聽力練習</strong>，放慢速度讓學生聽得更清楚。</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>3. 分組預約播放 (Advanced Scheduling)</h3>
+            <p>每個分組卡片下方都有獨立的「預約區塊」，這比主控台的排程更靈活，可以針對單一組別設定。</p>
+            <div class="alert alert-info">
+                <strong>💡 獨家功能：預覽同步預約</strong>
+                <p>設定預約時，您可以選擇<strong>「起點模式 (Seek Mode)」</strong>：</p>
+                <ul>
+                    <li><strong>從頭 (Zero)：</strong> 時間到時，從檔案最開始播放。</li>
+                    <li><strong>依本卡預覽時間 (Preview)：</strong> 超強功能！您可以先在教師端將影片拉到特定段落 (例如 10:30)，然後選擇此選項。系統會在預約時間到時，讓學生端直接從
+                        10:30 開始播放！</li>
+                </ul>
+            </div>
+
+            <h3>4. 其他管理功能</h3>
+            <ul class="feature-list">
+                <li><strong>即時訊息插播：</strong> 輸入文字與秒數，發送跑馬燈到該組螢幕上方 (不影響正在播放的媒體)。</li>
+                <li><strong>鎖定/解鎖控制：</strong> 防止學生操作電腦 (需搭配對應 Client 程式)。</li>
+                <li><strong>關閉視窗：</strong> 若學生端視窗無法關閉，可點擊「關閉本組視窗」強制把學生端的媒體視窗關掉。</li>
+            </ul>
+        </div>
+
+        <!-- Client Manager -->
+        <div class="section" id="client-manager">
+            <h2>👥 客戶端裝置管理</h2>
+            <p>此頁面用於管理學生端設備的識別身分 (ID) 與檢視詳細連線資訊。請點擊導覽列的 <code>👥 設備</code> 進入。</p>
+
+            <h3>功能說明</h3>
+            <ol class="step-list">
+                <li>
+                    <strong>檢視連線列表</strong>
+                    <p>列表顯示了所有曾經連線過的設備，包含 ID、IP 位址、MAC 位址與目前狀態 (Online/Offline)。</p>
+                </li>
+                <li>
+                    <strong>修改設備 ID (重新命名)</strong>
+                    <p>若要更改學生端的顯示名稱 (例如將 <code>Student-01</code> 改為 <code>一年甲班-01</code>)：</p>
+                    <ul>
+                        <li>點擊該設備卡片右側的 <span class="button-demo">修改 ID</span> 按鈕。</li>
+                        <li>輸入新的 ID 名稱並確認。</li>
+                        <li>系統會發送指令給學生端，學生端會自動更新設定檔並重新連線。</li>
+                    </ul>
+                </li>
+            </ol>
+            <div class="alert alert-warning">
+                <strong>注意</strong>
+                <p>修改 ID 會導致學生端重新啟動 Agent 程式。請避免在廣播進行中執行此操作。</p>
+            </div>
+        </div>
+
+        <!-- System Logs -->
+        <div class="section" id="logs">
+            <h2>🗒 事件紀錄 (System Logs)</h2>
+            <p>系統會自動記錄所有的廣播操作、連線狀態與錯誤訊息，方便管理員進行稽核與除錯。</p>
+            <p>請點擊導覽列的 <code>🗒 紀錄</code> 進入查詢頁面。</p>
+
+            <h3>1. 查詢功能</h3>
+            <p>您可以透過上方工具列進行篩選：</p>
+            <ul class="feature-list">
+                <li><strong>日期選擇：</strong> 系統每日會產生一個新的紀錄檔 (Log File)，請先選擇要查詢的日期。</li>
+                <li><strong>關鍵字搜尋：</strong> 輸入 IP 位址 (如 <code>192.168</code>) 或動作關鍵字 (如
+                    <code>PlayMP3</code>、<code>Shutdown</code>) 來快速找到特定紀錄。
+                </li>
+            </ul>
+
+            <h3>2. 紀錄欄位說明</h3>
+            <table style="width:100%; border-collapse: collapse; margin-top:10px;">
+                <tr style="background:#f3f4f6; border-bottom:2px solid #e5e7eb;">
+                    <th style="padding:8px; text-align:left;">欄位</th>
+                    <th style="padding:8px; text-align:left;">說明</th>
+                </tr>
+                <tr style="border-bottom:1px solid #e5e7eb;">
+                    <td style="padding:8px; font-weight:bold;">時間</td>
+                    <td style="padding:8px;">事件發生的精確時間點。</td>
+                </tr>
+                <tr style="border-bottom:1px solid #e5e7eb;">
+                    <td style="padding:8px; font-weight:bold;">來源 (Sender)</td>
+                    <td style="padding:8px;">觸發該事件的角色 (例如：<code>WebConsole</code> 代表主控台、<code>StudentAgent</code>
+                        代表學生端的回報)。
+                    </td>
+                </tr>
+                <tr style="border-bottom:1px solid #e5e7eb;">
+                    <td style="padding:8px; font-weight:bold;">IP/MAC</td>
+                    <td style="padding:8px;">發送者的網路位址，可用於追蹤是哪一台電腦執行的操作。</td>
+                </tr>
+                <tr style="border-bottom:1px solid #e5e7eb;">
+                    <td style="padding:8px; font-weight:bold;">動作/內容</td>
+                    <td style="padding:8px;">具體執行的指令或訊息內容 (例如：<code>播放: school_bell.mp3</code>)。</td>
+                </tr>
+            </table>
+
+            <h3>3. 匯出紀錄</h3>
+            <p>若需要保存紀錄或進行統計分析，點擊右上角的 <span class="button-demo">⬇️ 下載 CSV</span> 按鈕，即可將當日的紀錄依 Excel 格式匯出。</p>
+        </div>
+
+        <!-- Earthquake -->
+        <div class="section" id="earthquake">
+            <h2>🚨 地震預警 (CWA)</h2>
+            <div class="alert alert-danger">
+                <strong>⚠️ 重要須知</strong>
+                <p>本功能依賴交通部中央氣象署 (CWA) 的公開資料。為了能正常收到警報，請務必：</p>
+                <ul>
+                    <li>保持主機網路連線暢通。</li>
+                    <li>申請並填入正確的 <strong>CWA API 授權碼</strong>。</li>
+                </ul>
+            </div>
+
+            <h3>1. 基本設定</h3>
+            <p>進入 <code>🌋 地震</code> 頁面後，請檢查左側的設定面板：</p>
+            <ul class="feature-list">
+                <li><strong>啟用輪詢：</strong> 務必打勾，系統才會每分鐘向氣象署查詢最新地震資訊。</li>
+                <li><strong>輪詢間隔：</strong> 建議設定為 <code>60</code> 秒。</li>
+                <li><strong>警報門檻 (震度)：</strong> 設定警報觸發門檻 (例如：<code>3級</code>)。只有當預估震度達到此等級時，才會發送廣播。</li>
+                <li><strong>所在縣市：</strong> 輸入您的所在地
+                    (例如：<code>臺北市</code>、<code>高雄市</code>)。系統會自動過濾，只有當<strong>您所在的縣市</strong>震度達標時才警報。</li>
+            </ul>
+
+            <h3>2. 警報運作流程</h3>
+            <ol class="step-list">
+                <li>
+                    <strong>偵測與比對</strong>
+                    <p>系統偵測到 CWA 發布顯著有感地震。</p>
+                </li>
+                <li>
+                    <strong>條件判斷</strong>
+                    <p>系統計算您所在縣市的預估震度。若大於設定門檻 (例如 3級)，則觸發警報。</p>
+                </li>
+                <li>
+                    <strong>自動廣播</strong>
+                    <p>主控台會自動對全校廣播警報音效 (依設定的 MP3) 與語音播報 (震央、規模、預估震度)。</p>
+                </li>
+            </ol>
+
+            <h3>3. 測試與緊急操作</h3>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>🧪 演練測試</h4>
+                    <p>為了防災演練，您可以隨時點擊 <strong>🧪 送出測試警報</strong> 按鈕。</p>
+                    <p>系統會模擬一個規模 6.5 的地震警報，讓師生熟悉警報聲響。</p>
+                </div>
+                <div class="card" style="border-color:#ef4444;background:#fff5f5;">
+                    <h4>⛔ 強制取消</h4>
+                    <p>若發生誤報或演練結束，請點擊紅色的 <strong>⛔ 強制取消</strong> 按鈕。</p>
+                    <p>系統會立即停止所有廣播並發送「警報解除」訊號。</p>
+                </div>
+            </div>
+
+            <h3>4. 天氣警特報</h3>
+            <p>頁面右側會即時顯示所在縣市的天氣警特報 (例如：豪雨特報、低溫特報)，供行政人員參考。</p>
+        </div>
+
+        <!-- Settings -->
+        <div class="section" id="settings">
+            <h2>⚙️ 系統設定</h2>
+
+            <h3>Ollama AI 設定</h3>
+            <p>若要使用 AI 生成廣播稿，請確認：</p>
+            <ol class="step-list">
+                <li>本機已安裝 Ollama 服務</li>
+                <li>已下載 <code>gemma2:2b</code> 或其他相容模型</li>
+                <li>確認 Ollama 服務正在執行 (預設 port 11434)</li>
+            </ol>
+
+            <h3>擴大機控制 (USB Relay)</h3>
+            <p>支援 USB 繼電器控制擴大機電源。</p>
+            <ul>
+                <li>**COM Port**：選擇繼電器連接的序列埠 (COM1, COM3...)</li>
+                <li>**測試**：點擊 [ON] / [OFF] 測試開關</li>
+                <li>**自動啟動**：勾選「自動啟動擴大機」，則每次播放聲音時會自動過電，播放完畢後自動斷電。</li>
+            </ul>
+        </div>
+
+        <!-- Troubleshooting -->
+        <div class="section" id="troubleshooting">
+            <h2>❓ 常見問題</h2>
+
+            <div class="card">
+                <h4>Q: 網頁無法連線？</h4>
+                <p>A: 請確認防火牆已允許 Python 程式通過，並確認手機與電腦連接同一個 Wi-Fi 網路。</p>
+            </div>
+            <div class="card" style="margin-top:10px;">
+                <h4>Q: 聲音出不來？</h4>
+                <p>A: 檢查電腦靜音設定、喇叭連接、以及網頁上的 [靜音] 按鈕狀態。</p>
+            </div>
+            <div class="card" style="margin-top:10px;">
+                <h4>Q: 麥克風無法使用？</h4>
+                <p>A: 這是瀏覽器安全性限制。請參考「即時錄音廣播」章節的權限設定教學。</p>
+            </div>
+        </div>
+
+    </div>
+
+    <footer style="text-align:center; padding:40px 20px; color:#64748b; font-size:14px;">
+        <p>© 2026 RelayBell 校園廣播系統 v0.1.16</p>
+        <p>Designed for Education & Public Broadcasting</p>
+    </footer>
+</body>
+
+</html>
