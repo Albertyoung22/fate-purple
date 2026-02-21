@@ -105,36 +105,34 @@ users_collection = None
 chats_collection = None
 MONGO_AVAILABLE = False
 
-if MONGO_URI and USE_MONGODB:
-    print(f"DEBUG: Found MONGO_URI environment variable (Length: {len(MONGO_URI)})") # Debug check
-    # MongoDB connection setup
-    try:
-        import pymongo
-        from pymongo import MongoClient
-        print(f"DEBUG: Pymongo 版本: {pymongo.version}")
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000, connectTimeoutMS=10000, socketTimeoutMS=15000)
-        
-        # Try to get default database, if fails (e.g. URI has no path), use 'fate_purple'
+if USE_MONGODB:
+    if MONGO_URI:
+        print(f"📡 正在嘗試連線至 MongoDB (URI 長度: {len(MONGO_URI)})...")
         try:
-            db = client.get_database()
-        except:
-            db = client["fate_purple"]
-        users_collection = db["user_records"]
-        chats_collection = db["chat_history"]
-        print(f"✅ MongoDB 客戶端已連接資料庫: {db.name}")
-        
-        # REMOVED synchronous ping check to avoid blocking startup
-        # client.admin.command('ping') 
-
-        if "test" in db.name and not "?" in MONGO_URI: # Heuristic check
-             print("警告: 預設資料庫為 'test'。您可能需要在 URI 中指定資料庫名稱。")
-        MONGO_AVAILABLE = True
-    except Exception as e:
-        import traceback
-        print(f"❌ MongoDB 連線失敗。詳細錯誤:\n{traceback.format_exc()}")
-        db = None
-        users_collection = None
-        chats_collection = None
+            import pymongo
+            from pymongo import MongoClient
+            client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000, connectTimeoutMS=10000)
+            
+            # 檢查連線是否真的成功
+            client.admin.command('ping')
+            
+            try:
+                db = client.get_database()
+            except:
+                db = client["fate_purple"]
+                
+            users_collection = db["user_records"]
+            chats_collection = db["chat_history"]
+            MONGO_AVAILABLE = True
+            print(f"✅ MongoDB 連線成功！資料庫: {db.name}，數據將永久保存。")
+        except Exception as e:
+            print(f"❌ MongoDB 連線失敗。將使用本地 JSON 儲存，但在 GitHub/Render 重啟後資料會消失！")
+            print(f"   錯誤訊息: {e}")
+            MONGO_AVAILABLE = False
+    else:
+        print("⚠️ 帳號未設定 MONGO_URI，目前使用本地儲存。")
+        if os.environ.get('RENDER') or os.environ.get('PORT'):
+            print("🚨 警告：偵測到雲端部署環境，若不設定 MONGO_URI，每次更新 GitHub 後使用者資料都會歸零！")
         MONGO_AVAILABLE = False
 
 # --- Google Sheets Integration ---
@@ -262,7 +260,13 @@ def log_chat(model, prompt, response, user_info=None):
         entry.update(user_info)
     
     if db is not None and chats_collection is not None:
-        chats_collection.insert_one(entry)
+        try:
+            chats_collection.insert_one(entry)
+        except Exception as e:
+            print(f"⚠️ MongoDB 寫入對話紀錄失敗: {e}，切換至本地儲存。")
+            logs = load_json_file(CHAT_LOG_FILE)
+            logs.append(entry)
+            save_json_file(CHAT_LOG_FILE, logs[-1000:])
     else:
         logs = load_json_file(CHAT_LOG_FILE)
         logs.append(entry)
@@ -1021,7 +1025,11 @@ def save_record():
     }
     
     if db is not None and users_collection is not None:
-        users_collection.insert_one(record)
+        try:
+            users_collection.insert_one(record)
+        except Exception as e:
+            print(f"⚠️ MongoDB 寫入使用者紀錄失敗: {e}，切換至本地儲存。")
+            recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
     else:
         recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
 
