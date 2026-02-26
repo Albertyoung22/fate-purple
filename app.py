@@ -27,7 +27,6 @@ import lunar_python
 from lunar_python import Lunar, Solar
 
 # --- FORCE IPV4 PATCH (Gemini Connectivity Fix) ---
-import google.generativeai as genai
 import socket
 import urllib3.util.connection as urllib3_cn
 
@@ -36,6 +35,7 @@ def allowed_gai_family():
 urllib3_cn.allowed_gai_family = allowed_gai_family
 # ------------------------------------------------
 
+from google import genai
 from master_book import MASTER_BOOK
 from rule_engine import create_chart_from_dict, evaluate_rules, PALACE_NAMES
 
@@ -709,9 +709,10 @@ def get_key_list(env_name, config_key):
 GROQ_KEYS = get_key_list("GROQ_API_KEY", "groq_key")
 GEMINI_KEYS = get_key_list("GEMINI_API_KEY", "api_key")
 
-conf_model = CONFIG['gemini'].get('model', 'gemini-1.5-flash')
-GEMINI_MODEL = conf_model if "gemini" in conf_model or "flash" in conf_model else "gemini-1.5-flash"
-GROQ_MODEL = conf_model if "llama" in conf_model or "mixtral" in conf_model or "gemma" in conf_model else "llama-3.1-8b-instant"
+# --- AI Configuration & Model Selection ---
+conf_model = CONFIG['gemini'].get('model', 'gemini-2.0-flash')
+GEMINI_MODEL = conf_model if ("gemini" in conf_model or "flash" in conf_model) else "gemini-2.0-flash"
+GROQ_MODEL = conf_model if ("llama" in conf_model or "mixtral" in conf_model or "gemma" in conf_model) else "llama-3.3-70b-versatile"
 import random
 
 # --- AI Engine Callers ---
@@ -782,9 +783,17 @@ def stream_gemini_api(prompt, system_prompt=""):
     
     for current_key in available_keys:
         try:
-            genai.configure(api_key=current_key)
-            model_instance = genai.GenerativeModel(GEMINI_MODEL)
-            response = model_instance.generate_content(f"{system_prompt}\n\n{prompt}", stream=True)
+            client = genai.Client(api_key=current_key)
+            # Use safer model fallback for simulation future
+            test_model = GEMINI_MODEL
+            if "flash" in test_model and "1.5" in test_model:
+                # Try to use latest flash if old one is 404
+                test_model = "gemini-1.5-flash-latest"
+            
+            response = client.models.generate_content_stream(
+                model=test_model,
+                contents=f"{system_prompt}\n\n{prompt}"
+            )
             for chunk in response:
                 if chunk.text: yield chunk.text
             return

@@ -1,4 +1,3 @@
-好
 import os
 import json
 import requests

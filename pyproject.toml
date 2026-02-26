@@ -6,7 +6,25 @@ build-backend = "setuptools.build_meta"
 name = "fatepurple"
 version = "2.0.0"
 description = "紫微天機命譜系統 - 伺服器後端 (無介面版)"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
+dependencies = [
+    "flask",
+    "flask-cors",
+    "requests",
+    "lunar-python",
+    "gunicorn",
+    "groq",
+    "google-generativeai",
+    "pymongo[srv]",
+    "dnspython",
+    "edge-tts",
+    "pandas",
+    "openpyxl",
+    "google-api-python-client",
+    "google-auth",
+    "google-auth-oauthlib",
+    "google-auth-httplib2"
+]
 
 [tool.setuptools]
 packages = []
