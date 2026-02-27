@@ -90,7 +90,6 @@
             }
         }
 
-        /* --- 時辰氣場儀 --- */
         .energy-ring {
             width: 120px;
             height: 120px;
@@ -98,6 +97,72 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        /* --- 天機翻牌特效 --- */
+        .flip-card-container {
+            perspective: 1000px;
+            position: relative;
+        }
+
+        .flip-card {
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .flip-card.flipping {
+            animation: flipTick 0.6s ease-in-out;
+        }
+
+        .flip-card.flipping-jieqi {
+            animation: flipTickJieQi 0.8s ease-in-out;
+        }
+
+        @keyframes flipTick {
+            0% {
+                transform: rotateX(0deg);
+            }
+
+            50% {
+                transform: rotateX(-90deg);
+            }
+
+            100% {
+                transform: rotateX(0deg);
+            }
+        }
+
+        @keyframes flipTickJieQi {
+            0% {
+                transform: rotateX(0deg);
+                scale: 1;
+            }
+
+            50% {
+                transform: rotateX(-90deg);
+                scale: 1.05;
+            }
+
+            100% {
+                transform: rotateX(0deg);
+                scale: 1;
+            }
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
         }
 
         .energy-vibration {
@@ -2115,91 +2180,192 @@
         };
 
         const AlmanacWidget = ({ userBirthDate }) => {
+            const today = new Date();
+            const [queryDate, setQueryDate] = React.useState({
+                y: today.getFullYear(),
+                m: today.getMonth() + 1,
+                d: today.getDate()
+            });
             const [data, setData] = React.useState(null);
             const [loading, setLoading] = React.useState(true);
 
             const fetchData = async () => {
+                const dateStr = `${queryDate.y}-${String(queryDate.m).padStart(2, '0')}-${String(queryDate.d).padStart(2, '0')}`;
+                setLoading(true);
                 try {
-                    const res = await axios.post('/api/daily_omens', { birth_date: userBirthDate });
-                    setData(res.data);
-                } catch (e) { console.error("Almanac fetch error", e); }
-                setLoading(false);
+                    const res = await fetch('/api/daily_omens', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            birth_date: userBirthDate,
+                            target_date: dateStr
+                        })
+                    });
+                    if (!res.ok) throw new Error("API error");
+                    const json = await res.json();
+                    setData(json);
+                } catch (e) {
+                    console.error("Almanac Fetch Error:", e);
+                    setData(null);
+                } finally {
+                    setLoading(false);
+                }
             };
 
-            React.useEffect(() => {
-                fetchData();
-                const now = new Date();
-                const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
-                const msUntilMidnight = midnight.getTime() - now.getTime();
-                const timer = setTimeout(fetchData, msUntilMidnight);
-                return () => clearTimeout(timer);
-            }, [userBirthDate]);
+            React.useEffect(() => { fetchData(); }, [userBirthDate]);
+            React.useEffect(() => { fetchData(); }, [queryDate.y, queryDate.m, queryDate.d]);
 
-            if (loading) return <div className="h-40 flex items-center justify-center opacity-50"><Icon name="loader" className="animate-spin" /></div>;
-            if (!data) return null;
+            const resetToday = () => {
+                const now = new Date();
+                setQueryDate({ y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate() });
+            };
+
+            // Ultra-Compact Flip Card (Mini) with Interaction
+            const FlipCard = ({ value, subLabel, onUp, onDown }) => {
+                const [isFlipping, setIsFlipping] = React.useState(false);
+                React.useEffect(() => {
+                    setIsFlipping(true);
+                    const timer = setTimeout(() => setIsFlipping(false), 600);
+                    return () => clearTimeout(timer);
+                }, [value]);
+
+                return (
+                    <div className="flex flex-col items-center">
+                        <div className={`relative flip-card ${isFlipping ? 'flipping' : ''} group`}>
+                            <div className="bg-slate-800 rounded-lg w-10 h-12 shadow-md border-b-2 border-black flex items-center justify-center relative overflow-hidden">
+                                <div className="absolute top-1/2 left-0 w-full h-[1px] bg-black/40 z-10"></div>
+                                <span className="text-xl font-black text-white tabular-nums">{value}</span>
+                                <div className="absolute top-0.5 left-1/2 -translate-x-1/2 text-[6px] font-bold text-white/30 uppercase tracking-tighter">{subLabel}</div>
+
+                                {/* Clickable Overlays */}
+                                <div onClick={(e) => { e.stopPropagation(); onUp(); }} className="absolute top-0 left-0 w-full h-1/2 z-30 cursor-pointer hover:bg-white/10 transition-colors"></div>
+                                <div onClick={(e) => { e.stopPropagation(); onDown(); }} className="absolute bottom-0 left-0 w-full h-1/2 z-30 cursor-pointer hover:bg-white/10 transition-colors"></div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Ultra-Compact JieQi (Mini)
+            const JieQiBanner = ({ name }) => {
+                return (
+                    <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 rounded-xl px-3 py-1 shadow-md border-b-2 border-indigo-950 relative overflow-hidden">
+                        <span className="text-md font-black text-white tracking-[0.2em] z-20 drop-shadow-sm font-serif">{name}</span>
+                    </div>
+                );
+            };
+
+            const adjustDate = (type, delta) => {
+                const current = new Date(queryDate.y, queryDate.m - 1, queryDate.d);
+                if (type === 'month') {
+                    current.setMonth(current.getMonth() + delta);
+                } else if (type === 'day') {
+                    current.setDate(current.getDate() + delta);
+                }
+                setQueryDate({
+                    y: current.getFullYear(),
+                    m: current.getMonth() + 1,
+                    d: current.getDate()
+                });
+            };
 
             return (
-                <div className="bg-white/95 backdrop-blur-md rounded-[2rem] border-2 border-slate-100 shadow-xl p-6 mb-8 relative overflow-hidden group hover:shadow-2xl transition-all duration-500 no-print mx-auto max-w-4xl">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <Icon name="calendar" className="w-24 h-24" />
-                    </div>
-
-                    <div className="flex flex-col md:flex-row gap-6 relative z-10">
-                        {/* Left Side: Date & Jieqi */}
-                        <div className="md:w-1/3 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-100 pb-6 md:pb-0 md:pr-6">
-                            <div className="text-sm font-black text-indigo-600 tracking-widest mb-1">{data.jieqi.name}</div>
-                            <div className="text-4xl font-black text-slate-800 tracking-tighter mb-2">
-                                {data.date.split('-')[1]}<span className="text-xl text-slate-400 mx-1">/</span>{data.date.split('-')[2]}
+                <div className="w-full mb-4 no-print">
+                    <div className="bg-white/95 backdrop-blur-xl rounded-[1.5rem] border-2 border-indigo-400/20 shadow-xl overflow-hidden group transition-all duration-500">
+                        {/* Status bar merged with Query Selectors Mini */}
+                        <div className="bg-slate-900 px-4 py-1 flex justify-between items-center text-[9px] font-bold text-white/60">
+                            <div className="flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping"></span>
+                                <span className="uppercase tracking-widest text-indigo-300">Celestial Sync · 天機同步</span>
                             </div>
-                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
-                                {data.jieqi.start} <br className="md:hidden" /> ~ {data.jieqi.end}
-                            </div>
-                            {data.user && (
-                                <div className="mt-4 px-4 py-1.5 bg-amber-50 text-amber-700 rounded-full text-[11px] font-black border border-amber-100 shadow-sm">
-                                    {data.user.zodiac}年 ({data.user.ganzhi}) · {data.user.age}歲
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Right Side: Yi/Ji & Omen */}
-                        <div className="flex-1 space-y-4">
-                            <div className="flex gap-2">
-                                <div className="shrink-0 w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-sm border border-emerald-100">宜</div>
-                                <div className="flex-1 flex flex-wrap gap-2 py-1">
-                                    {data.yi.map((item, i) => (
-                                        <span key={i} className="px-2 py-0.5 bg-emerald-50/30 text-emerald-700 rounded text-[11px] font-bold border border-emerald-50">{item}</span>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <div className="shrink-0 w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-black text-sm border border-rose-100">忌</div>
-                                <div className="flex-1 flex flex-wrap gap-2 py-1">
-                                    {data.ji.map((item, i) => (
-                                        <span key={i} className="px-2 py-0.5 bg-rose-50/30 text-rose-700 rounded text-[11px] font-bold border border-rose-50">{item}</span>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className={`p-4 rounded-2xl border ${data.omen.is_bad ? 'bg-rose-50/30 border-rose-200 text-rose-900' : 'bg-indigo-50/30 border-indigo-200 text-indigo-900'}`}>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <Icon name={data.omen.is_bad ? "alert-triangle" : "sparkles"} className={`w-4 h-4 ${data.omen.is_bad ? 'text-rose-500' : 'text-indigo-500'}`} />
-                                    <span className="font-black text-xs uppercase tracking-wider">{data.omen.title}</span>
-                                </div>
-                                <p className="text-[11px] font-bold opacity-80 leading-relaxed">{data.omen.desc}</p>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row justify-between items-center text-[10px] font-black tracking-widest pt-2 border-t border-slate-50 gap-2">
-                                <div className="flex gap-4">
-                                    <span className="text-slate-400">煞位：<span className="text-slate-800">{data.sha}方</span></span>
-                                    <span className="text-slate-400">吉時：<span className="text-slate-800">{data.lucky_hours.join('、')}</span></span>
-                                </div>
-                                <div className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded">財神位：{data.cai_dir}</div>
+                            <div className="flex items-center gap-2">
+                                <select value={queryDate.y} onChange={e => setQueryDate({ ...queryDate, y: parseInt(e.target.value) })} className="bg-white/10 rounded px-1 outline-none text-white">
+                                    {Array.from({ length: 41 }, (_, i) => today.getFullYear() - 20 + i).map(y => <option key={y} value={y} className="text-slate-800">{y}年</option>)}
+                                </select>
+                                <select value={queryDate.m} onChange={e => setQueryDate({ ...queryDate, m: parseInt(e.target.value) })} className="bg-white/10 rounded px-1 outline-none text-white">
+                                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m} className="text-slate-800">{m}月</option>)}
+                                </select>
+                                <select value={queryDate.d} onChange={e => setQueryDate({ ...queryDate, d: parseInt(e.target.value) })} className="bg-white/10 rounded px-1 outline-none text-white">
+                                    {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d} className="text-slate-800">{d}日</option>)}
+                                </select>
+                                <button onClick={resetToday} className="hover:text-white transition-colors">歸位今日</button>
                             </div>
                         </div>
+
+                        {loading ? (
+                            <div className="h-20 flex items-center justify-center"><Icon name="loader" className="w-5 h-5 animate-spin text-indigo-500 opacity-30" /></div>
+                        ) : data ? (
+                            <div className="flex flex-wrap lg:flex-nowrap p-3 gap-4 items-center justify-between">
+                                {/* Section 1: Date & JieQi */}
+                                <div className="flex items-center gap-3 pr-4 border-r border-slate-100 min-w-fit">
+                                    <JieQiBanner name={data.jieqi.name} />
+                                    <div className="flex items-center gap-1.5">
+                                        <FlipCard subLabel="M" value={data.date.split('-')[1]} onUp={() => adjustDate('month', -1)} onDown={() => adjustDate('month', 1)} />
+                                        <span className="text-lg font-black text-slate-200">/</span>
+                                        <FlipCard subLabel="D" value={data.date.split('-')[2]} onUp={() => adjustDate('day', -1)} onDown={() => adjustDate('day', 1)} />
+                                    </div>
+                                    <div className="flex flex-col text-[8px] font-black leading-tight text-slate-400">
+                                        <span>{data.jieqi.start}</span>
+                                        <span className="h-[1px] bg-slate-200 my-0.5"></span>
+                                        <span>{data.jieqi.end}</span>
+                                    </div>
+                                </div>
+
+                                {/* Section 2: Yi/Ji (Inline) */}
+                                <div className="flex-1 min-w-[200px] flex flex-col gap-1.5">
+                                    <div className="flex gap-2 items-center">
+                                        <span className="w-5 h-5 rounded-md bg-emerald-500 text-white flex items-center justify-center font-black text-[10px]">宜</span>
+                                        <div className="flex flex-wrap gap-1">
+                                            {data.yi.slice(0, 5).map((item, i) => (
+                                                <span key={i} className="text-[11px] font-bold text-emerald-800 bg-emerald-50/50 px-1.5 rounded">{item}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 items-center">
+                                        <span className="w-5 h-5 rounded-md bg-rose-500 text-white flex items-center justify-center font-black text-[10px]">忌</span>
+                                        <div className="flex flex-wrap gap-1">
+                                            {data.ji.slice(0, 5).map((item, i) => (
+                                                <span key={i} className="text-[11px] font-bold text-rose-800 bg-rose-50/50 px-1.5 rounded">{item}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section 3: Omen (Compact) */}
+                                <div className={`px-4 py-2 rounded-xl flex items-center gap-3 border ${data.omen.is_bad ? 'bg-rose-50/30 border-rose-100' : 'bg-indigo-50/30 border-indigo-100'} max-w-[300px]`}>
+                                    <Icon name={data.omen.is_bad ? "alert-circle" : "sparkles"} className={`w-4 h-4 shrink-0 ${data.omen.is_bad ? 'text-rose-500' : 'text-indigo-500'}`} />
+                                    <div className="overflow-hidden">
+                                        <div className="text-[10px] font-black truncate">{data.omen.title}</div>
+                                        <div className="text-[9px] font-bold opacity-60 line-clamp-1">{data.omen.desc}</div>
+                                    </div>
+                                </div>
+
+                                {/* Section 4: Stats (Ultra Mini) */}
+                                <div className="flex items-center gap-4 pl-4 border-l border-slate-100">
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[8px] font-black text-slate-400">煞位</span>
+                                        <span className="text-xs font-black text-rose-600">{data.sha}方</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[8px] font-black text-slate-400">財神</span>
+                                        <span className="text-xs font-black text-amber-600">{data.cai_dir}</span>
+                                    </div>
+                                    <div className="bg-slate-900 rounded-lg p-2 text-center min-w-[60px]">
+                                        <span className="block text-[7px] font-black text-white/40 uppercase">沖煞</span>
+                                        <span className="text-sm font-black text-amber-400 leading-none">{data.chong}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="p-4 text-center">
+                                <button onClick={fetchData} className="text-[10px] font-black text-rose-500">天機重連</button>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
         };
+
 
         const App = () => {
             const [inputType, setInputType] = useState(() => localStorage.getItem('ziwei_input_type') || 'solar');
@@ -3514,7 +3680,7 @@ ${chartContext}
                                         const sm = parseInt(parts[1]) || 1;
                                         const sd = parseInt(parts[2]) || 1;
                                         const handleSolar = (y, m, d) => {
-                                            setBirthDate(`${y} -${String(m).padStart(2, '0')} -${String(d).padStart(2, '0')} `);
+                                            setBirthDate(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
                                             setIsDateModified(true);
                                         };
                                         return (
@@ -3614,6 +3780,8 @@ ${chartContext}
                                 </div>
                             </div>
                         </header>
+
+                        <AlmanacWidget userBirthDate={birthDate} />
 
                         <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 print:block">
                             <div className="xl:col-span-8 print:w-full relative">

@@ -472,10 +472,18 @@ def get_stock_prediction(query, user_seed_str):
     
     return f"\n【股票神識感應－針對「{query}」】：\n- {element_info}{prediction}\n- 指令：請大師結合此股票的『五行屬性』與緣主命盤中的『財帛宮/福德宮』，以宗師點撥的方式，神祕地預測此股與緣主的因果連結與今日佈局建議。"
 
-def get_raw_omens(user_info=None):
+def get_raw_omens(user_info=None, target_date=None):
     """獲取精準農民曆黃曆原始數據 (使用 lunar_python)"""
     try:
-        now = datetime.now(timezone(timedelta(hours=8)))
+        if target_date:
+            try:
+                t_parts = [p.strip() for p in str(target_date).split('-')]
+                now = datetime(int(t_parts[0]), int(t_parts[1]), int(t_parts[2]), 12, 0, 0, tzinfo=timezone(timedelta(hours=8)))
+            except:
+                now = datetime.now(timezone(timedelta(hours=8)))
+        else:
+            now = datetime.now(timezone(timedelta(hours=8)))
+            
         ln = Lunar.fromDate(now)
         solar = ln.getSolar()
         
@@ -505,15 +513,20 @@ def get_raw_omens(user_info=None):
         user_identity = ""
         if user_info and user_info.get("birth_date"):
             try:
-                b_parts = user_info["birth_date"].split('-')
-                b_solar = Solar.fromYmd(int(b_parts[0]), int(b_parts[1]), int(b_parts[2]))
-                b_lunar = b_solar.getLunar()
-                user_identity = {
-                    "zodiac": b_lunar.getYearShengXiao(),
-                    "ganzhi": b_lunar.getYearInGanZhi(),
-                    "age": datetime.now().year - int(b_parts[0]) + 1
-                }
-            except: pass
+                # Robust parsing
+                b_str = str(user_info["birth_date"]).strip()
+                if b_str:
+                    b_parts = [p.strip() for p in b_str.split('-')]
+                    if len(b_parts) >= 3:
+                        b_solar = Solar.fromYmd(int(b_parts[0]), int(b_parts[1]), int(b_parts[2]))
+                        b_lunar = b_solar.getLunar()
+                        user_identity = {
+                            "zodiac": b_lunar.getYearShengXiao(),
+                            "ganzhi": b_lunar.getYearInGanZhi(),
+                            "age": datetime.now().year - int(b_parts[0]) + 1
+                        }
+            except Exception as e:
+                print(f"User identity parsing error: {e}")
 
         # 宜忌
         yi = ln.getDayYi() if ln.getDayYi() else ["諸事不宜"]
@@ -522,8 +535,8 @@ def get_raw_omens(user_info=None):
         # 沖煞與神煞
         chong = ln.getDayChongDesc()
         sha = ln.getDaySha()
-        zhishen = ln.getDayZhiShen()
-        luck = ln.getDayZhiShenLuck()
+        zhishen = ln.getDayTianShen()
+        luck = ln.getDayTianShenLuck()
         
         month_zhi = ln.getMonthZhi()
         day_zhi = ln.getDayZhi()
@@ -532,10 +545,16 @@ def get_raw_omens(user_info=None):
         
         # 吉時
         lucky_hours = []
-        for h_idx in range(12):
-            h_ln = Lunar.fromYmdHms(solar.getYear(), solar.getMonth(), solar.getDay(), h_idx * 2, 0, 0)
-            if h_ln.getTimeZhiShen() in ["青龍", "明堂", "金匱", "天德", "玉堂", "司命"]:
-                lucky_hours.append(BRANCHES[h_idx])
+        try:
+            for h_idx in range(12):
+                # Use Solar to ensure correct time-based Lunar object
+                h_solar = Solar.fromYmdHms(solar.getYear(), solar.getMonth(), solar.getDay(), h_idx * 2, 0, 0)
+                h_ln = h_solar.getLunar()
+                if h_ln.getTimeTianShen() in ["青龍", "明堂", "金匱", "天德", "玉堂", "司命"]:
+                    lucky_hours.append(BRANCHES[h_idx])
+        except Exception as e:
+            print(f"Error calculating lucky hours: {e}")
+            lucky_hours = ["子", "午", "卯", "酉"] # Default fallback
 
         return {
             "date": solar.toYmd(),
@@ -576,17 +595,7 @@ def get_daily_omens(user_info=None):
             f"{'、'.join(data['lucky_hours'])}\n"
             f"\n【黃曆啟示指令】：若緣主詢問今日吉凶、錦囊或避諱，請大師『先行呈現』上述顯現之黃曆資訊內容（原封不動），隨後再進行宗師級的深度解析。")
 
-@app.route('/api/daily_omens', methods=['POST', 'OPTIONS'])
-def daily_omens_api():
-    if request.method == 'OPTIONS':
-        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
-    data = request.json or {}
-    user_info = {
-        "birth_date": data.get("birth_date")
-    }
-    raw = get_raw_omens(user_info)
-    if not raw: return jsonify({"error": "Failed to fetch omens"}), 500
-    return jsonify(raw)
+
 
 def get_lottery_prediction(user_seed_str):
     """
@@ -848,6 +857,32 @@ def get_nearby_temples(location, inquiry_text):
 # --- App Globals ---
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
+
+@app.route('/api/daily_omens', methods=['POST', 'OPTIONS'])
+def daily_omens_api():
+    if request.method == 'OPTIONS':
+        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
+    print("--- [DAILY OMENS API START] ---")
+    data = request.json or {}
+    print(f"Request data: {data}")
+    user_info = {
+        "birth_date": data.get("birth_date")
+    }
+    target_date = data.get("target_date")
+    try:
+        raw = get_raw_omens(user_info, target_date=target_date)
+        if not raw:
+            print("ERROR: get_raw_omens returned None")
+            return jsonify({"error": "Failed to fetch omens"}), 500
+        print(f"OMENS SUCCESS: {raw.get('date')} {raw.get('jieqi', {}).get('name')}")
+        return jsonify(raw)
+    except Exception as e:
+        import traceback
+        print(f"FATAL ERROR in daily_omens_api: {e}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        print("--- [DAILY OMENS API END] ---")
 
 # AI Priority & Key Pools (Supports multiple keys separated by comma)
 def get_key_list(env_name, config_key):
