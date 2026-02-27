@@ -885,12 +885,15 @@ def daily_omens_api():
         print("--- [DAILY OMENS API END] ---")
 
 # AI Priority & Key Pools (Supports multiple keys separated by comma)
+# Render or other PAAS will provide env vars, local relies on config.json
 def get_key_list(env_name, config_key):
-    # Render or other PAAS will provide env vars, local relies on config.json
-    val = os.environ.get(env_name) or CONFIG['gemini'].get(config_key, "")
+    # Priority: Specific Env Var > Generic AI_API_KEY > Config.json
+    val = os.environ.get(env_name) or os.environ.get("AI_API_KEY") or CONFIG['gemini'].get(config_key, "")
     if isinstance(val, list): return val
     if not val: return []
-    return [k.strip() for k in str(val).split(",") if k.strip()]
+    # Support comma-separated or space-separated keys
+    raw_keys = str(val).replace("\n", ",").replace(" ", ",").split(",")
+    return [k.strip() for k in raw_keys if k.strip() and len(k.strip()) > 10]
 
 GROQ_KEYS = get_key_list("GROQ_API_KEY", "groq_key")
 GEMINI_KEYS = get_key_list("GEMINI_API_KEY", "api_key")
