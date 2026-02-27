@@ -45,12 +45,14 @@ def load_config():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(base_dir, 'config.json')
     defaults = {
+        "use_mongodb": False,
+        "mongo_uri": "",
         "server": {"host": "0.0.0.0", "port": 5000, "debug": False},
         "gemini": {
-            "provider": "groq", 
+            "provider": "gemini", 
             "api_key": "", 
             "groq_key": "",
-            "model": "llama-3.1-8b-instant", 
+            "model": "gemini-2.0-flash", 
             "temperature": 0.7, 
             "max_output_tokens": 3000
         },
@@ -60,6 +62,8 @@ def load_config():
             "model": "gemma2:2b"
         }
     }
+    
+    # Load from file if exists
     if os.path.exists(config_path):
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -69,6 +73,26 @@ def load_config():
                     else: defaults[k] = v
         except Exception as e:
             print(f"Error loading config.json: {e}")
+
+    # --- CLOUD OVERRIDES (Prioritize Render Env Vars) ---
+    if os.environ.get('AI_PROVIDER'):
+        defaults['gemini']['provider'] = os.environ.get('AI_PROVIDER')
+    if os.environ.get('AI_MODEL'):
+        defaults['gemini']['model'] = os.environ.get('AI_MODEL')
+    
+    # MongoDB Cloud Sync
+    env_mongo = os.environ.get('MONGO_URI')
+    if env_mongo:
+        defaults['mongo_uri'] = env_mongo
+        defaults['use_mongodb'] = True # Auto-enable if URI exists
+    
+    # Individual Keys
+    env_gemini = os.environ.get('GEMINI_API_KEY') or os.environ.get('AI_API_KEY')
+    if env_gemini: defaults['gemini']['api_key'] = env_gemini
+    
+    env_groq = os.environ.get('GROQ_API_KEY')
+    if env_groq: defaults['gemini']['groq_key'] = env_groq
+
     return defaults
 
 def load_constants():
