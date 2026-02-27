@@ -472,19 +472,16 @@ def get_stock_prediction(query, user_seed_str):
     
     return f"\n【股票神識感應－針對「{query}」】：\n- {element_info}{prediction}\n- 指令：請大師結合此股票的『五行屬性』與緣主命盤中的『財帛宮/福德宮』，以宗師點撥的方式，神祕地預測此股與緣主的因果連結與今日佈局建議。"
 
-def get_daily_omens(user_info=None):
-    """獲取精準農民曆黃曆資訊 (使用 lunar_python)，並結合緣主身分"""
+def get_raw_omens(user_info=None):
+    """獲取精準農民曆黃曆原始數據 (使用 lunar_python)"""
     try:
         now = datetime.now(timezone(timedelta(hours=8)))
         ln = Lunar.fromDate(now)
         solar = ln.getSolar()
         
         # 1. 節氣資訊與區間
-        # 獲取當前節氣及其起止日期
         cur_jq = ln.getJieQi()
         if not cur_jq:
-            # 若當天不是節氣當日，尋找所屬節氣
-            # 遍歷尋找最近的前一個節氣
             prev_ln = ln
             while not prev_ln.getJieQi():
                 prev_ln = prev_ln.next(-1)
@@ -493,74 +490,103 @@ def get_daily_omens(user_info=None):
         else:
             jq_start = solar
             
-        # 尋找下一個節氣作為結束日
         next_ln = ln.next(1)
         while not next_ln.getJieQi():
             next_ln = next_ln.next(1)
-        jq_end = next_ln.getSolar()
+        jq_end_solar = next_ln.next(-1).getSolar()
         
-        jieqi_info = f"所處節氣：{cur_jq} (國曆{jq_start.toYmd()} ~ 國曆{next_ln.next(-1).getSolar().toYmd()})"
+        jieqi_info = {
+            "name": cur_jq,
+            "start": jq_start.toYmd(),
+            "end": jq_end_solar.toYmd()
+        }
         
-        # 2. 緣主身分感應 (屬性與歲數)
+        # 2. 緣主身分感應
         user_identity = ""
         if user_info and user_info.get("birth_date"):
             try:
                 b_parts = user_info["birth_date"].split('-')
                 b_solar = Solar.fromYmd(int(b_parts[0]), int(b_parts[1]), int(b_parts[2]))
                 b_lunar = b_solar.getLunar()
-                zodiac = b_lunar.getYearShengXiao()
-                ganzhi = b_lunar.getYearInGanZhi()
-                age = datetime.now().year - int(b_parts[0]) + 1 # 虛歲
-                user_identity = f"屬{zodiac} ({ganzhi}，{age}歲)"
+                user_identity = {
+                    "zodiac": b_lunar.getYearShengXiao(),
+                    "ganzhi": b_lunar.getYearInGanZhi(),
+                    "age": datetime.now().year - int(b_parts[0]) + 1
+                }
             except: pass
 
-        # 3. 宜忌
-        yi = "".join(ln.getDayYi()) if ln.getDayYi() else "諸事不宜"
-        ji = "".join(ln.getDayJi()) if ln.getDayJi() else "諸事不忌"
+        # 宜忌
+        yi = ln.getDayYi() if ln.getDayYi() else ["諸事不宜"]
+        ji = ln.getDayJi() if ln.getDayJi() else ["諸事不忌"]
         
-        # 4. 沖煞與特殊神煞
+        # 沖煞與神煞
         chong = ln.getDayChongDesc()
         sha = ln.getDaySha()
         zhishen = ln.getDayZhiShen()
-        luck = ln.getDayZhiShenLuck() # 吉 / 凶
+        luck = ln.getDayZhiShenLuck()
         
-        # 檢測月破 (日支與月支相沖)
         month_zhi = ln.getMonthZhi()
         day_zhi = ln.getDayZhi()
-        # 簡易判斷相沖 (子午、丑未、寅申、卯酉、辰戌、巳亥)
         zhi_list = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
-        m_idx = zhi_list.index(month_zhi)
-        d_idx = zhi_list.index(day_zhi)
-        is_yue_po = (abs(m_idx - d_idx) == 6)
+        is_yue_po = (abs(zhi_list.index(month_zhi) - zhi_list.index(day_zhi)) == 6)
         
-        omen_title = f"日值【{zhishen}{'大耗' if is_yue_po else ''}】"
-        omen_desc = "最為不吉之凶神，除必要之事外，宜事少取！" if luck == "凶" or is_yue_po else "天德合氣，萬事大吉，宜把握良機。"
-        
-        # 5. 吉位與方位
-        cai_dir = ln.getDayPositionCaiDesc()
-        xi_dir = ln.getDayPositionXiDesc()
-        
-        # 6. 吉時
+        # 吉時
         lucky_hours = []
         for h_idx in range(12):
             h_ln = Lunar.fromYmdHms(solar.getYear(), solar.getMonth(), solar.getDay(), h_idx * 2, 0, 0)
             if h_ln.getTimeZhiShen() in ["青龍", "明堂", "金匱", "天德", "玉堂", "司命"]:
                 lucky_hours.append(BRANCHES[h_idx])
-        lucky_hours_str = "、".join(lucky_hours) if lucky_hours else "隨緣"
 
-        # 構造完全符合緣主要求的格式
-        return (f"\n【今日農民曆黃曆資訊（神識顯現）】：\n"
-                f"所處節氣：{cur_jq} (國曆{jq_start.toYmd()} ~ 國曆{next_ln.next(-1).getSolar().toYmd()})\n"
-                f"{user_identity if user_identity else '天機運轉中'}\n"
-                f"{yi}\n"
-                f"★ {omen_title}{omen_desc}\n"
-                f"{'月破' if is_yue_po else ''}\n"
-                f"{sha}方\n"
-                f"{lucky_hours_str}\n"
-                f"\n【黃曆啟示指令】：若緣主詢問今日吉凶、錦囊或避諱，請大師『先行呈現』上述顯現之黃曆資訊內容（原封不動），隨後再進行宗師級的深度解析。")
+        return {
+            "date": solar.toYmd(),
+            "jieqi": jieqi_info,
+            "user": user_identity,
+            "yi": yi,
+            "ji": ji,
+            "omen": {
+                "title": f"日值【{zhishen}{'大耗' if is_yue_po else ''}】",
+                "desc": "最為不吉之凶神，除必要之事外，宜事少取！" if luck == "凶" or is_yue_po else "天德合氣，萬事大吉，宜把握良機。",
+                "is_bad": (luck == "凶" or is_yue_po)
+            },
+            "chong": chong,
+            "sha": sha,
+            "cai_dir": ln.getDayPositionCaiDesc(),
+            "lucky_hours": lucky_hours
+        }
     except Exception as e:
-        print(f"Huangli Error: {e}")
+        print(f"Raw Huangli Error: {e}")
+        return None
+
+def get_daily_omens(user_info=None):
+    """獲取精準農民曆黃曆資訊 (格式化字串)"""
+    data = get_raw_omens(user_info)
+    if not data:
         return "\n【今日天機】：大氣流動平順，宜靜心修持。"
+        
+    u = data['user']
+    user_str = f"屬{u['zodiac']} ({u['ganzhi']}，{u['age']}歲)" if u else "天機運轉中"
+    
+    return (f"\n【今日農民曆黃曆資訊（神識顯現）】：\n"
+            f"所處節氣：{data['jieqi']['name']} (國曆{data['jieqi']['start']} ~ 國曆{data['jieqi']['end']})\n"
+            f"{user_str}\n"
+            f"{' '.join(data['yi'])}\n"
+            f"★ {data['omen']['title']}{data['omen']['desc']}\n"
+            f"{'月破' if '大耗' in data['omen']['title'] else ''}\n"
+            f"{data['sha']}方\n"
+            f"{'、'.join(data['lucky_hours'])}\n"
+            f"\n【黃曆啟示指令】：若緣主詢問今日吉凶、錦囊或避諱，請大師『先行呈現』上述顯現之黃曆資訊內容（原封不動），隨後再進行宗師級的深度解析。")
+
+@app.route('/api/daily_omens', methods=['POST', 'OPTIONS'])
+def daily_omens_api():
+    if request.method == 'OPTIONS':
+        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
+    data = request.json or {}
+    user_info = {
+        "birth_date": data.get("birth_date")
+    }
+    raw = get_raw_omens(user_info)
+    if not raw: return jsonify({"error": "Failed to fetch omens"}), 500
+    return jsonify(raw)
 
 def get_lottery_prediction(user_seed_str):
     """
