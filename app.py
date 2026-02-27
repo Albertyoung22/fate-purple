@@ -905,10 +905,60 @@ def daily_omens_api():
         print(f"FATAL ERROR in daily_omens_api: {e}")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-    finally:
-        print("--- [DAILY OMENS API END] ---")
+@app.route('/api/stock_data', methods=['POST', 'OPTIONS'])
+def stock_data_api():
+    if request.method == 'OPTIONS':
+        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
+    
+    data = request.json or {}
+    symbol = data.get('symbol', '').strip()
+    if not symbol: return jsonify({"error": "Symbol missing"}), 400
 
-# AI Priority & Key Pools (Supports multiple keys separated by comma)
+    # Basic mapping for common Taiwan stocks if only number is given
+    stocks_to_try = [symbol]
+    if symbol.isdigit() and len(symbol) == 4:
+        stocks_to_try = [symbol + ".TW", symbol + ".TWO"]
+
+    try:
+        import yfinance as yf
+        hist = None
+        ticker = None
+        
+        print(f"DEBUG: Trying stocks: {stocks_to_try}")
+        for s in stocks_to_try:
+            print(f"DEBUG: Fetching {s}...")
+            ticker = yf.Ticker(s)
+            hist = ticker.history(period="3mo")
+            if not hist.empty:
+                print(f"DEBUG: Successfully fetched {s}")
+                symbol = s
+                break
+            else:
+                print(f"DEBUG: {s} returned empty data")
+        
+        if hist is None or hist.empty:
+            print(f"DEBUG: All symbols failed for {symbol}")
+            return jsonify({"error": f"No data found for {symbol}. (Yahoo Finance API limit or invalid symbol)"}), 404
+            
+        chart_data = []
+        for index, row in hist.iterrows():
+            chart_data.append({
+                "x": index.strftime('%Y-%m-%d'),
+                "y": [round(row['Open'], 2), round(row['High'], 2), round(row['Low'], 2), round(row['Close'], 2)]
+            })
+            
+        return jsonify({
+            "success": True,
+            "symbol": symbol,
+            "name": ticker.info.get('longName', symbol),
+            "currency": ticker.info.get('currency', 'TWD'),
+            "data": chart_data
+        })
+    except Exception as e:
+        print(f"Stock Data Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# --- AI Priority & Key Pools (Supports multiple keys separated by comma) ---
 # Render or other PAAS will provide env vars, local relies on config.json
 def get_key_list(env_name, config_key):
     # Priority: Specific Env Var > Generic AI_API_KEY > Config.json

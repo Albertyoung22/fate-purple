@@ -29,6 +29,7 @@
             });
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap');
 
@@ -3082,6 +3083,7 @@
                 if (type === 'ritual') systemPrompt = "你是一位大師。禁止原理說明、問候。\n\n【格式】：直接列出 3 個最具威力的轉運行動：\n✦ 錦囊一：(內容)\n✦ 錦囊二：(內容)\n✦ 錦囊三：(內容)\n每點不超過 35 字。強制繁體。";
                 if (type === 'love') systemPrompt = "你是一位精通人性的情場宗師，語氣帶著一絲看透紅塵、半真半假的曖昧與挑逗。請針對緣主的命盤與「目前年齡」進行桃花分析，語氣要像是與其私下低語。請給予 3 個極具畫面感的桃花攻略，內容要針對性別與年輪需求。強制繁體。";
                 if (type === 'finance') systemPrompt = "你是一位財運大師。禁說廢話。直接給予 3 個財運重點：\n✦ 佈局一：(內容)\n✦ 佈局二：(內容)\n✦ 佈局三：(內容)\n每點不超過 35 字。強制繁體。";
+                if (type === 'stock') systemPrompt = "你是一位結合了「大數據分析」、「技術指標」、「市場情緒」與「紫微斗數」的股市天機專家。請針對緣主詢問的股票，結合其命盤的【財帛宮】、【官祿宮】能量，給予多維度的漲跌預測。\n\n【分析維度】：\n1. **大數據與技術面**：分析股價趨勢、支撐與壓力位。\n2. **網路市場調研**：基於當前市場消息與輿情分析散戶與主力動向。\n3. **紫微命理合參**：根據緣主今日的財運磁場，判斷是否適合操作此標的。\n4. **天機定論**：最終預測該股票之漲跌傾向。\n\n強制繁體，語氣專業且神祕。";
                 if (type === 'chat') systemPrompt = "你是一位精通紫微斗數的命理宗師。請針對緣主提問進行解答。\n\n【核心指令】：\n1. **個性分析**：請務必參照【命宮】、【身宮】及三方四正的星曜組合，精準分析緣主的內在性格與外在表現。\n2. **前途展望**：結合【官祿宮】與【財帛宮】，分析適合的職業方向與未來發展潛力。\n3. **劫難預警**：若命盤中有【化忌】、【羊陀火鈴】等煞星衝擊，請慈悲提點緣主何時（大限或流年）可能面臨挑戰或劫難，並給予化解之道。\n\n【排版要求】：\n- 分段清晰，重點處可使用「✦」標示。\n- 語氣需如得道高僧般慈悲溫暖。\n- 強制使用繁體中文 (Traditional Chinese)。";
                 if (type === 'bazi') systemPrompt = "你是一位精通《子平八字》的命理宗師。請略過紫微斗數，專注分析緣主的四柱八字。請撰寫一份結構清晰的【八字命書】，必須包含以下章節：\n\n### 1. 八字排盤與格局\n(分析日主強弱、五行喜忌、定格局)\n\n### 2. 性格特質分析\n(依據十神與五行生剋論斷)\n\n### 3. 事業與財運\n(分析喜用神對事業財運的影響)\n\n### 4. 感情與婚姻\n(男命看財，女命看官殺，論斷姻緣)\n\n### 5. 流年運勢提點\n(簡述近期流年吉凶)\n\n【排版要求】：\n- 請務必使用 Markdown 格式。\n- 每個章節必須換行分段。\n- 內容不要擠成一團，請適當分段以利閱讀。\n- 強制使用繁體中文。";
                 if (type === 'report') systemPrompt = `你是一位精通《紫微斗數全書》與《子平八字》的雙盤整合宗師。請為這位緣主(性別:${gender})撰寫一份【命譜詳評】。
@@ -3467,20 +3469,6 @@ ${chartContext}
                 setActionLoading(null);
             };
 
-            const handleStock = async () => {
-                if (!checkName() || !checkDate()) return;
-                const stockName = prompt("【大師神識感應】：請輸入您想查詢的「股票名稱」或「代號」（如：2330 或 台積電）：");
-                if (!stockName) return;
-                playRitualSound('start');
-                await saveUserProfile(true);
-                setChat(prev => [...prev, { role: 'user', text: `請大師為我感應這支股票的氣場：${stockName} ` }, { role: 'assistant', text: "" }]);
-                setIsChatLoading(true);
-                setActionLoading('stock');
-                await callAiApi(`${getFullChartContext()} \n\n【緣主詢問】：關於股票「${stockName}」。\n\n【大師指令】：請結合今日磁場、股票五行與緣主財宮，給予神祕預測與建議。`, 'finance', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
-                playRitualSound('end');
-                setIsChatLoading(false);
-                setActionLoading(null);
-            };
 
             const handleOmens = async () => {
                 if (!checkName() || !checkDate()) return;
@@ -3550,6 +3538,83 @@ ${chartContext}
                 playRitualSound('end');
                 setIsChatLoading(false);
                 setActionLoading(null);
+            };
+
+            const [showStockModal, setShowStockModal] = React.useState(false);
+            const [stockChartData, setStockChartData] = React.useState(null);
+            const stockChartRef = React.useRef(null);
+
+            React.useEffect(() => {
+                if (showStockModal && stockChartData && stockChartRef.current) {
+                    // Clear previous chart if any
+                    stockChartRef.current.innerHTML = '';
+                    const options = {
+                        series: [{ data: stockChartData.data }],
+                        chart: {
+                            type: 'candlestick',
+                            height: 350,
+                            background: 'transparent',
+                            animations: { enabled: true, easing: 'easeinout', speed: 800 },
+                            toolbar: { show: true, tools: { download: true, zoom: true, zoomin: true, zoomout: true, pan: true } }
+                        },
+                        xaxis: { type: 'datetime', labels: { style: { colors: '#64748b', fontWeight: 700 } } },
+                        yaxis: { labels: { style: { colors: '#64748b', fontWeight: 700 } } },
+                        plotOptions: {
+                            candlestick: {
+                                colors: { upward: '#ef4444', downward: '#22c55e' },
+                                wick: { useFillColor: true }
+                            }
+                        }
+                    };
+                    const chart = new ApexCharts(stockChartRef.current, options);
+                    chart.render();
+                    return () => { if (chart) chart.destroy(); };
+                }
+            }, [showStockModal, stockChartData]);
+
+            const toggleStockModal = () => {
+                if (stockChartData) setShowStockModal(prev => !prev);
+            };
+
+            const handleStockPrediction = async () => {
+                if (!checkName() || !checkDate()) return;
+                const stockName = prompt("請輸入您想預測的股票名稱或代號 (例如: 台積電 或 2330)：", "2330");
+                if (!stockName) return;
+
+                setIsChatLoading(true);
+                setActionLoading('stock');
+
+                try {
+                    const res = await fetch('/api/stock_data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ symbol: stockName })
+                    });
+                    const data = await res.json();
+
+                    if (data.error) throw new Error(data.error);
+
+                    setStockChartData(data);
+                    setShowStockModal(true);
+
+                    playRitualSound('start');
+                    await saveUserProfile(true);
+
+                    const lastData = data.data[data.data.length - 1];
+                    const lastPrice = lastData.y[3];
+                    const msg = `請分析股票【${data.name} (${data.symbol})】。目前成交價約為 ${lastPrice} ${data.currency}。請根據其歷史K線數據，結合大數據趨勢與我的命盤財運，預測未來一週的走勢。`;
+
+                    setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
+
+                    await callAiApi(`${getFullChartContext()} \n\n【近期K線數據(最後5天)】：${JSON.stringify(data.data.slice(-5))} \n\n【緣主祈求】：${msg} \n\n【大師指令】：請運用「歷史大數據趨勢」、「均線型態感應」與「緣主財帛宮能量」進行合參。最終預測下週可能的漲跌百分比(%)，並給予操作建議。`, 'stock', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+
+                } catch (e) {
+                    alert(`【天機暫斷】獲取股市數據失敗：${e.message}`);
+                } finally {
+                    playRitualSound('end');
+                    setIsChatLoading(false);
+                    setActionLoading(null);
+                }
             };
 
             const formatLuckyCardText = (text) => {
@@ -3991,6 +4056,9 @@ ${chartContext}
                                     <button onClick={() => handleReport()} disabled={actionLoading === 'report'} className={`bg-indigo-900 text-white p-3 rounded-2xl shadow-lg hover:bg-indigo-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'report' ? 'opacity-75 cursor-not-allowed' : ''} `}>
                                         {actionLoading === 'report' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="feather" className="w-4 h-4" />} 詳盡命盤解析
                                     </button>
+                                    <button onClick={() => handleStockPrediction()} disabled={actionLoading === 'stock'} className={`bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-3 rounded-2xl shadow-lg hover:from-blue-800 hover:to-indigo-900 transition-all flex items-center justify-center gap-1 font-black text-[11px] border border-blue-400/30 ${actionLoading === 'stock' ? 'opacity-75 cursor-not-allowed' : ''} `}>
+                                        {actionLoading === 'stock' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="trending-up" className="w-4 h-4" />} 天機股市預測分析
+                                    </button>
                                     <div className="flex gap-2">
                                         <button onClick={handleDailyTip} disabled={actionLoading === 'daily'} className="flex-1 bg-gradient-to-tr from-amber-500 to-orange-500 text-white rounded-2xl py-3 font-black shadow-lg shadow-amber-200 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group disabled:opacity-50 text-sm">
                                             {actionLoading === 'daily' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkles" className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
@@ -4019,7 +4087,7 @@ ${chartContext}
                                             財運預測
                                         </div>
                                     </button>
-                                    <button onClick={() => handleStock()} disabled={actionLoading === 'stock'} className={`bg-rose-700 text-white p-3 rounded-2xl shadow-lg hover:bg-rose-800 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ring-2 ring-rose-200 ring-offset-1 ${actionLoading === 'stock' ? 'opacity-75 cursor-not-allowed' : ''} `}>
+                                    <button onClick={() => handleStockPrediction()} disabled={actionLoading === 'stock'} className={`bg-rose-700 text-white p-3 rounded-2xl shadow-lg hover:bg-rose-800 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ring-2 ring-rose-200 ring-offset-1 ${actionLoading === 'stock' ? 'opacity-75 cursor-not-allowed' : ''} `}>
                                         <div className="flex items-center gap-1">
                                             {actionLoading === 'stock' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="bar-chart-2" className="w-3 h-3" />}
                                             股市分析
@@ -4243,6 +4311,67 @@ ${chartContext}
                         {wisdomText && <WisdomCardModal text={wisdomText} onClose={() => setWisdomText("")} />}
                         {showDestinyCard && <DestinyShareModal userName={userName} gender={gender} destiny={destiny} chartData={chartData} onClose={() => setShowDestinyCard(false)} />}
                         {showTalisman && <TalismanModal text={talismanText} onClose={() => setShowTalisman(false)} />}
+
+                        {showStockModal && stockChartData && (
+                            <div className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                                <div className="bg-white/95 w-full max-w-4xl p-0 rounded-[2.5rem] shadow-2xl border border-white/50 relative overflow-hidden flex flex-col max-h-[90vh]">
+                                    <div className="bg-gradient-to-r from-blue-700 to-indigo-900 p-6 flex justify-between items-center text-white">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-white/10 rounded-xl backdrop-blur-md">
+                                                <Icon name="trending-up" className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-black">{stockChartData.name} ({stockChartData.symbol})</h3>
+                                                <p className="text-[10px] opacity-70 uppercase tracking-widest font-bold">天機財經 · 大數據感應中心</p>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setShowStockModal(false)} className="w-10 h-10 rounded-full hover:bg-white/10 transition-colors flex items-center justify-center">
+                                            <Icon name="x" className="w-6 h-6" />
+                                        </button>
+                                    </div>
+
+                                    <div className="p-6 overflow-y-auto">
+                                        <div id="stock-chart-container" className="bg-slate-50 rounded-3xl p-4 border border-slate-100 shadow-inner min-h-[400px]" ref={stockChartRef}></div>
+
+                                        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="p-5 bg-blue-50/50 rounded-3xl border border-blue-100/50">
+                                                <h4 className="text-sm font-black text-blue-900 mb-2 flex items-center gap-2">
+                                                    <Icon name="bar-chart-3" className="w-4 h-4" /> 技術盤面解析
+                                                </h4>
+                                                <p className="text-xs text-blue-800/80 leading-relaxed font-bold">
+                                                    當前價格：{stockChartData.data[stockChartData.data.length - 1].y[3]} {stockChartData.currency}<br />
+                                                    近三個月趨勢感應中... 正在結合均線與成交量能進行天機運算。
+                                                </p>
+                                            </div>
+                                            <div className="p-5 bg-indigo-50/50 rounded-3xl border border-indigo-100/50 text-indigo-900">
+                                                <h4 className="text-sm font-black mb-2 flex items-center gap-2">
+                                                    <Icon name="atom" className="w-4 h-4" /> 紫微命理合參
+                                                </h4>
+                                                <p className="text-xs opacity-80 leading-relaxed font-bold">
+                                                    結合緣主【{bureau}】氣場，本標的之金流屬性與您的財帛宮位相位正在進行同步共振。
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-wider">※ 預測僅供參考，天機不可洩漏過度，投資請謹慎。</p>
+                                        <div className="flex gap-2 text-xs font-black text-indigo-600">
+                                            <span>歷史數據由 YFinance 提供</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Floating Chart Toggle Button */}
+                        {stockChartData && !showStockModal && (
+                            <div className="fixed bottom-6 right-20 z-50 animate-bounce scroll-mt-20">
+                                <button onClick={toggleStockModal} className="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-700 text-white shadow-2xl hover:scale-110 transition-all flex items-center justify-center ring-4 ring-white/30 group" title="開啟最近一次股市圖表">
+                                    <Icon name="line-chart" className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                                    <div className="absolute -top-1 -right-1 bg-red-500 text-[8px] px-1.5 py-0.5 rounded-full border border-white font-black animate-pulse">ON</div>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
