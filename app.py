@@ -1685,18 +1685,26 @@ def chat():
                         yield chunk
                     return has_content
 
+                if not GROQ_KEYS and not GEMINI_KEYS:
+                    yield "【天機未啟】系統尚未配置 AI 金鑰。若是部署在雲端，請檢查環境變數 (Environment Variables) 設定。\n"
+                    return
+
                 if provider == 'groq':
                     print(">>> 優先嘗試 Groq 串流模式...")
-                    if not (yield from try_groq_flow()):
-                        print(">>> Groq 失敗，嘗試 Gemini 備援...")
-                        if not (yield from try_gemini_flow()):
-                            yield "連線忙碌，請稍後再試。"
+                    if (GROQ_KEYS and (yield from try_groq_flow())):
+                        return
+                    print(">>> Groq 失敗或未配置，嘗試 Gemini 備援...")
+                    if (GEMINI_KEYS and (yield from try_gemini_flow())):
+                        return
+                    yield "【天機中斷】目前 API 服務暫時無法感應，請確認金鑰配額或網路連線。"
                 else:
                     print(">>> 優先嘗試 Gemini 串流模式...")
-                    if not (yield from try_gemini_flow()):
-                        print(">>> Gemini 失敗，嘗試 Groq 備援...")
-                        if not (yield from try_groq_flow()):
-                            yield "連線忙碌，請稍後再試。"
+                    if (GEMINI_KEYS and (yield from try_gemini_flow())):
+                        return
+                    print(">>> Gemini 失敗或未配置，嘗試 Groq 備援...")
+                    if (GROQ_KEYS and (yield from try_groq_flow())):
+                        return
+                    yield "【天機中斷】目前 API 服務暫時無法感應，請確認金鑰配額或網路連線。"
             
             finally:
                 # 務必釋放許可證，否則會造成死鎖 (Deadlock)
