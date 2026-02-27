@@ -4,7 +4,7 @@ requests
 lunar-python
 gunicorn
 groq
-google-generativeai
+google-genai
 pymongo[srv]
 dnspython
 edge-tts
