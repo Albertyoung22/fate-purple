@@ -905,6 +905,10 @@ def daily_omens_api():
         print(f"FATAL ERROR in daily_omens_api: {e}")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+# --- Stock Data Cache ---
+STOCK_CACHE = {} # {symbol: {"data": [...], "timestamp": float}}
+CACHE_TTL = 3600 # 1 hour
+
 @app.route('/api/stock_data', methods=['POST', 'OPTIONS'])
 def stock_data_api():
     if request.method == 'OPTIONS':
@@ -918,6 +922,15 @@ def stock_data_api():
     stocks_to_try = [symbol]
     if symbol.isdigit() and len(symbol) == 4:
         stocks_to_try = [symbol + ".TW", symbol + ".TWO"]
+    
+    # Check cache first
+    now = time.time()
+    for s in stocks_to_try:
+        if s in STOCK_CACHE:
+            entry = STOCK_CACHE[s]
+            if now - entry['timestamp'] < CACHE_TTL:
+                print(f"DEBUG: Returning CACHED data for {s}")
+                return jsonify(entry['data'])
 
     try:
         import yfinance as yf
@@ -938,7 +951,7 @@ def stock_data_api():
         
         if hist is None or hist.empty:
             print(f"DEBUG: All symbols failed for {symbol}")
-            return jsonify({"error": f"No data found for {symbol}. (Yahoo Finance API limit or invalid symbol)"}), 404
+            return jsonify({"error": f"No data found for {symbol}. (可能因 Yahoo 限制請求過於頻繁，請稍後再試)"}), 404
             
         chart_data = []
         for index, row in hist.iterrows():
@@ -947,15 +960,22 @@ def stock_data_api():
                 "y": [round(row['Open'], 2), round(row['High'], 2), round(row['Low'], 2), round(row['Close'], 2)]
             })
             
-        return jsonify({
+        res_data = {
             "success": True,
             "symbol": symbol,
             "name": ticker.info.get('longName', symbol),
             "currency": ticker.info.get('currency', 'TWD'),
             "data": chart_data
-        })
+        }
+        
+        # Save to cache
+        STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
+        
+        return jsonify(res_data)
     except Exception as e:
         print(f"Stock Data Error: {e}")
+        if "Too Many Requests" in str(e) or "429" in str(e):
+            return jsonify({"error": "天機感應頻繁：Yahoo 財經目前限制了數據請求，請 5-10 分鐘後再試。"}), 429
         return jsonify({"error": str(e)}), 500
 
 # --- AI Priority & Key Pools (Supports multiple keys separated by comma) ---
