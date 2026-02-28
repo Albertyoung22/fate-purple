@@ -12,6 +12,8 @@ import edge_tts
 if os.name == 'nt':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 import pandas as pd
+from werkzeug.exceptions import HTTPException
+import yfinance as yf
 
 # --- GUI Support Check ---
 try:
@@ -902,10 +904,22 @@ def daily_omens_api():
         print(f"OMENS SUCCESS: {raw.get('date')} {raw.get('jieqi', {}).get('name')}")
         return jsonify(raw)
     except Exception as e:
-        import traceback
-        print(f"FATAL ERROR in daily_omens_api: {e}")
-        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Global error handler to ensure all errors return JSON instead of HTML error pages."""
+    if isinstance(e, HTTPException):
+        response = e.get_response()
+        response.data = json.dumps({
+            "code": e.code, "name": e.name, "description": e.description, "error": e.name
+        })
+        response.content_type = "application/json"
+        return response
+    # Log and return generic error as JSON
+    print(f"DEBUG: Unhandled Exception: {e}")
+    return jsonify({"error": str(e)}), 500
+
 # --- Stock Data Cache ---
 STOCK_CACHE = {} # {symbol: {"data": [...], "timestamp": float}}
 CACHE_TTL = 3600 # 1 hour
@@ -1043,26 +1057,28 @@ def stock_data_api():
             entry = STOCK_CACHE[s]
             if now - entry['timestamp'] < CACHE_TTL:
                 print(f"DEBUG: Returning CACHED data for {s}")
-                return jsonify(entry['data'])
+                return make_response(jsonify(entry['data']), 200, {"Access-Control-Allow-Origin": "*"})
+
+    # Initialize variables for the fallback chain
+    hist = None
+    ticker = None
+    res_data = None
 
     try:
         import yfinance as yf
-        hist = None
-        ticker = None
-        
         print(f"DEBUG: Trying stocks: {stocks_to_try}")
         for s in stocks_to_try:
-            if s != stocks_to_try[0]:
-                time.sleep(0.5) # Brief pause between attempts
-            print(f"DEBUG: Fetching {s}...")
-            ticker = yf.Ticker(s)
-            hist = ticker.history(period="3mo")
-            if not hist.empty:
-                print(f"DEBUG: Successfully fetched {s}")
-                symbol = s
-                break
-            else:
-                print(f"DEBUG: {s} returned empty data")
+            try:
+                if s != stocks_to_try[0]: time.sleep(0.5)
+                print(f"DEBUG: Fetching {s}...")
+                ticker = yf.Ticker(s)
+                # Reduced period to current 3 months to be faster
+                hist = ticker.history(period="3mo")
+                if not hist.empty:
+                    print(f"DEBUG: Successfully fetched {s}")
+                    symbol = s
+                    break
+            except: continue
         
         if hist is None or hist.empty:
             print(f"DEBUG: yfinance failed for {symbol}, trying twstock fallback...")
@@ -1169,72 +1185,54 @@ def stock_data_api():
         return jsonify(res_data)
     except Exception as e:
         print(f"Stock Data Error (Main): {e}")
-        # One last check: If it was a Taiwan stock and we didn't get any data yet, try twstock one last time
+        # Final fallback chain for Taiwan stocks
         tw_code = symbol.split('.')[0]
         if tw_code.isdigit():
-            print(f"DEBUG: Final fallback attempt for {symbol} using twstock...")
+            print(f"DEBUG: Final fallback chain for {symbol}...")
             try:
                 import twstock
                 stock = twstock.Stock(tw_code)
                 now_dt = datetime.now()
                 all_data = []
                 for i in range(3):
-                    target_month = now_dt.month - i
-                    target_year = now_dt.year
-                    while target_month <= 0:
-                        target_month += 12
-                        target_year -= 1
+                    target_month = now_dt.month - i; target_year = now_dt.year
+                    while target_month <= 0: target_month += 12; target_year -= 1
                     try:
                         month_data = stock.fetch_from(target_year, target_month)
                         if month_data: all_data = month_data + all_data
                     except: continue
-
-                    if all_data:
-                        # Convert to chart format and de-duplicate by date
-                        seen_dates = set()
-                        unique_data = []
-                        for d in all_data:
-                            date_str = d.date.strftime('%Y-%m-%d')
-                            if date_str not in seen_dates:
-                                unique_data.append(d); seen_dates.add(date_str)
-                        unique_data.sort(key=lambda x: x.date)
-                        
-                        # Indicators for custom scraper
-                        df_s = pd.DataFrame([{
-                            "Date": datetime.strptime(d['x'], '%Y-%m-%d'),
-                            "Open": d['y'][0], "High": d['y'][1], "Low": d['y'][2], "Close": d['y'][3], "Volume": 0
-                        } for d in all_data]) # Volume is not available in basic scraper
-                        df_s.set_index("Date", inplace=True)
-                        indicators = calculate_technical_indicators(df_s)
-                        
-                        chart_data = [{"x": d.date.strftime('%Y-%m-%d'), "y": [round(d.open, 2), round(d.high, 2), round(d.low, 2), round(d.close, 2)]} for d in unique_data]
-                        res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (twstock 終極備援)", "currency": "TWD", "data": chart_data, "indicators": indicators}
-                        STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
-                        return jsonify(res_data)
-            except Exception as final_e:
-                print(f"twstock fallback failed: {final_e}, trying custom scraper...")
-                try:
-                    # Custom Scraper as last resort
-                    tw_data = fetch_tw_stock_custom_scraper(tw_code)
-                    if tw_data:
-                        # Prepare indicators for custom scraper
-                        import pandas as pd
-                        df_c = pd.DataFrame([{
-                            "Date": datetime.strptime(d['x'], '%Y-%m-%d'),
-                            "Open": d['y'][0], "High": d['y'][1], "Low": d['y'][2], "Close": d['y'][3], "Volume": 0
-                        } for d in tw_data])
-                        df_c.set_index("Date", inplace=True)
-                        indicators = calculate_technical_indicators(df_c)
-                        
-                        res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (終極感應)", "currency": "TWD", "data": tw_data, "indicators": indicators}
-                        STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
-                        return jsonify(res_data)
-                except Exception as scraper_e:
-                    print(f"Custom scraper failed: {scraper_e}")
-                print(f"Final twstock fallback failed: {final_e}")
+                
+                if all_data:
+                    seen_dates = set(); unique_data = []
+                    for d in all_data:
+                        date_str = d.date.strftime('%Y-%m-%d')
+                        if date_str not in seen_dates: unique_data.append(d); seen_dates.add(date_str)
+                    unique_data.sort(key=lambda x: x.date)
+                    df_s = pd.DataFrame([{"Date": d.date, "Open": d.open, "High": d.high, "Low": d.low, "Close": d.close, "Volume": d.capacity} for d in unique_data])
+                    df_s.set_index("Date", inplace=True)
+                    indicators = calculate_technical_indicators(df_s)
+                    chart_data = [{"x": d.date.strftime('%Y-%m-%d'), "y": [round(d.open, 2), round(d.high, 2), round(d.low, 2), round(d.close, 2)]} for d in unique_data]
+                    res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (twstock 終極備援)", "currency": "TWD", "data": chart_data, "indicators": indicators}
+                    STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
+                    return jsonify(res_data)
+            except Exception as final_tw_e:
+                print(f"Final twstock fallback failed: {final_tw_e}")
+            
+            try:
+                # Last resort: Custom Scraper
+                tw_data = fetch_tw_stock_custom_scraper(tw_code)
+                if tw_data:
+                    df_c = pd.DataFrame([{"Date": datetime.strptime(d['x'], '%Y-%m-%d'), "Open": d['y'][0], "High": d['y'][1], "Low": d['y'][2], "Close": d['y'][3], "Volume": 0} for d in tw_data])
+                    df_c.set_index("Date", inplace=True)
+                    indicators = calculate_technical_indicators(df_c)
+                    res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (終極感應)", "currency": "TWD", "data": tw_data, "indicators": indicators}
+                    STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
+                    return jsonify(res_data)
+            except Exception as scraper_e:
+                print(f"Custom scraper failed: {scraper_e}")
 
         if "Too Many Requests" in str(e) or "429" in str(e):
-            return jsonify({"error": "天機感應頻繁：Yahoo 財經限制了數據請求，且備援方案亦無法獲取數據，請稍後再試。"}), 429
+            return jsonify({"error": "天機感應頻繁：Yahoo 財經過熱，且備援感應器亦無法捕捉數據，請片刻後再試。"}), 429
         return jsonify({"error": str(e)}), 500
 
 # --- AI Priority & Key Pools (Supports multiple keys separated by comma) ---
@@ -1547,7 +1545,14 @@ class BackendApp(BaseClass):
 
 # --- Flask Routes ---
 @app.route('/')
-def index(): return send_file('fate.html')
+def index():
+    try:
+        # Use abs path for safer file transmission in cloud environments
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, 'fate.html')
+        return send_file(file_path, mimetype='text/html')
+    except Exception as e:
+        return f"【天機故障】首頁文件載入失敗: {e}", 500
 
 @app.route('/admin')
 def admin_page(): return send_file('admin.html')
