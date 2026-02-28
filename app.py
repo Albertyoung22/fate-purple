@@ -1217,7 +1217,16 @@ def stock_data_api():
                     # Custom Scraper as last resort
                     tw_data = fetch_tw_stock_custom_scraper(tw_code)
                     if tw_data:
-                        res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (終極感應)", "currency": "TWD", "data": tw_data}
+                        # Prepare indicators for custom scraper
+                        import pandas as pd
+                        df_c = pd.DataFrame([{
+                            "Date": datetime.strptime(d['x'], '%Y-%m-%d'),
+                            "Open": d['y'][0], "High": d['y'][1], "Low": d['y'][2], "Close": d['y'][3], "Volume": 0
+                        } for d in tw_data])
+                        df_c.set_index("Date", inplace=True)
+                        indicators = calculate_technical_indicators(df_c)
+                        
+                        res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (終極感應)", "currency": "TWD", "data": tw_data, "indicators": indicators}
                         STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
                         return jsonify(res_data)
                 except Exception as scraper_e:
