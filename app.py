@@ -11,6 +11,7 @@ import asyncio
 import edge_tts
 if os.name == 'nt':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+import pandas as pd
 
 # --- GUI Support Check ---
 try:
@@ -909,6 +910,118 @@ def daily_omens_api():
 STOCK_CACHE = {} # {symbol: {"data": [...], "timestamp": float}}
 CACHE_TTL = 3600 # 1 hour
 
+def calculate_technical_indicators(df):
+    """
+    Calculate MA10, BBI, EMA30 and Volume trends.
+    df must have 'Close' and 'Volume' columns.
+    """
+    try:
+        if df is None or len(df) < 24:
+            return None
+        
+        # Latest Close
+        last_close = float(df['Close'].iloc[-1])
+        
+        # MA10
+        ma10 = df['Close'].rolling(window=10).mean()
+        curr_ma10 = float(ma10.iloc[-1])
+        prev_ma10 = float(ma10.iloc[-2])
+        ma10_trend = "up" if curr_ma10 > prev_ma10 else "down"
+        
+        # BBI = (MA3 + MA6 + MA12 + MA24) / 4
+        ma3 = df['Close'].rolling(window=3).mean()
+        ma6 = df['Close'].rolling(window=6).mean()
+        ma12 = df['Close'].rolling(window=12).mean()
+        ma24 = df['Close'].rolling(window=24).mean()
+        bbi = (ma3 + ma6 + ma12 + ma24) / 4
+        curr_bbi = float(bbi.iloc[-1])
+        prev_bbi = float(bbi.iloc[-2])
+        bbi_trend = "up" if curr_bbi > prev_bbi else "down"
+        
+        # EMA30
+        ema30 = df['Close'].ewm(span=30, adjust=False).mean()
+        curr_ema30 = float(ema30.iloc[-1])
+        prev_ema30 = float(ema30.iloc[-2])
+        ema30_trend = "up" if curr_ema30 > prev_ema30 else "down"
+        
+        # Volume Trend (Last 5 days vs Previous 5 days)
+        recent_vol = df['Volume'].iloc[-5:].mean()
+        prev_vol = df['Volume'].iloc[-10:-5].mean()
+        vol_ratio = recent_vol / prev_vol if prev_vol > 0 else 1.0
+        vol_status = "increasing" if vol_ratio > 1.1 else ("decreasing" if vol_ratio < 0.9 else "stable")
+        
+        return {
+            "price_above_ma10": last_close > curr_ma10,
+            "ma10": round(curr_ma10, 2),
+            "ma10_trend": ma10_trend,
+            "bbi": round(curr_bbi, 2),
+            "bbi_trend": bbi_trend,
+            "ema30": round(curr_ema30, 2),
+            "ema30_trend": ema30_trend,
+            "vol_status": vol_status,
+            "vol_ratio": round(vol_ratio, 2)
+        }
+    except Exception as e:
+        print(f"DEBUG: Indicator calculation error: {e}")
+        return None
+
+def fetch_tw_stock_custom_scraper(code):
+    """
+    Directly fetch data from TWSE (Exchange) or TPEX (OTC) JSON APIs.
+    """
+    print(f"DEBUG: Custom Scraper activated for {code}...")
+    import requests
+    from datetime import datetime
+    
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+    now = datetime.now()
+    chart_data = []
+
+    # Try both TWSE and TPEX
+    apis = [
+        # TWSE
+        f"https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date={now.strftime('%Y%m%d')}&stockNo={code}",
+        # TPEX
+        f"https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/stk_quote_result.php?l=zh-tw&d={now.year-1911}/{now.strftime('%m')}&stkno={code}"
+    ]
+
+    for url in apis:
+        try:
+            res = requests.get(url, headers=headers, timeout=10)
+            if res.status_code != 200: continue
+            data = res.json()
+            
+            # TWSE Format
+            if 'data' in data and isinstance(data['data'], list):
+                for row in data['data']:
+                    # TWSE: [Date, Vol, Val, Open, High, Low, Close, Diff, Trans]
+                    # Date is in ROC: 112/05/02 -> 2023-05-02
+                    parts = row[0].split('/')
+                    y = int(parts[0]) + 1911
+                    date_str = f"{y}-{parts[1]}-{parts[2]}"
+                    try:
+                        prices = [float(row[3].replace(',', '')), float(row[4].replace(',', '')), 
+                                  float(row[5].replace(',', '')), float(row[6].replace(',', ''))]
+                        chart_data.append({"x": date_str, "y": prices})
+                    except: continue
+                if chart_data: return chart_data
+
+            # TPEX Format
+            if 'aaData' in data and isinstance(data['aaData'], list):
+                for row in data['aaData']:
+                    # TPEX: [Date, Vol, Val, Open, High, Low, Close, ...]
+                    parts = row[0].split('/')
+                    y = int(parts[0]) + 1911
+                    date_str = f"{y}-{parts[1]}-{parts[2]}"
+                    try:
+                        prices = [float(row[3].replace(',', '')), float(row[4].replace(',', '')), 
+                                  float(row[5].replace(',', '')), float(row[6].replace(',', ''))]
+                        chart_data.append({"x": date_str, "y": prices})
+                    except: continue
+                if chart_data: return chart_data
+        except: continue
+    return None
+
 @app.route('/api/stock_data', methods=['POST', 'OPTIONS'])
 def stock_data_api():
     if request.method == 'OPTIONS':
@@ -987,6 +1100,14 @@ def stock_data_api():
                         # Sort by date
                         unique_data.sort(key=lambda x: x.date)
                         
+                        # Prepare for indicators
+                        df_tw = pd.DataFrame([{
+                            "Date": d.date,
+                            "Open": d.open, "High": d.high, "Low": d.low, "Close": d.close, "Volume": d.capacity
+                        } for d in unique_data])
+                        df_tw.set_index("Date", inplace=True)
+                        indicators = calculate_technical_indicators(df_tw)
+                        
                         chart_data = []
                         for d in unique_data:
                             chart_data.append({
@@ -999,7 +1120,8 @@ def stock_data_api():
                             "symbol": symbol,
                             "name": f"台股 {tw_code} (twstock 備援)",
                             "currency": "TWD",
-                            "data": chart_data
+                            "data": chart_data,
+                            "indicators": indicators
                         }
                         # Save to cache
                         STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
@@ -1028,13 +1150,17 @@ def stock_data_api():
         except Exception as info_err:
             print(f"DEBUG: Could not fetch ticker.info for {symbol} (likely 429): {info_err}")
             # We already have data, so we can continue with defaults
+        
+        # Calculate indicators for yfinance data
+        indicators = calculate_technical_indicators(hist)
 
         res_data = {
             "success": True,
             "symbol": symbol,
             "name": stock_name,
             "currency": currency,
-            "data": chart_data
+            "data": chart_data,
+            "indicators": indicators
         }
         
         # Save to cache
@@ -1042,9 +1168,64 @@ def stock_data_api():
         
         return jsonify(res_data)
     except Exception as e:
-        print(f"Stock Data Error: {e}")
+        print(f"Stock Data Error (Main): {e}")
+        # One last check: If it was a Taiwan stock and we didn't get any data yet, try twstock one last time
+        tw_code = symbol.split('.')[0]
+        if tw_code.isdigit():
+            print(f"DEBUG: Final fallback attempt for {symbol} using twstock...")
+            try:
+                import twstock
+                stock = twstock.Stock(tw_code)
+                now_dt = datetime.now()
+                all_data = []
+                for i in range(3):
+                    target_month = now_dt.month - i
+                    target_year = now_dt.year
+                    while target_month <= 0:
+                        target_month += 12
+                        target_year -= 1
+                    try:
+                        month_data = stock.fetch_from(target_year, target_month)
+                        if month_data: all_data = month_data + all_data
+                    except: continue
+
+                    if all_data:
+                        # Convert to chart format and de-duplicate by date
+                        seen_dates = set()
+                        unique_data = []
+                        for d in all_data:
+                            date_str = d.date.strftime('%Y-%m-%d')
+                            if date_str not in seen_dates:
+                                unique_data.append(d); seen_dates.add(date_str)
+                        unique_data.sort(key=lambda x: x.date)
+                        
+                        # Indicators for custom scraper
+                        df_s = pd.DataFrame([{
+                            "Date": datetime.strptime(d['x'], '%Y-%m-%d'),
+                            "Open": d['y'][0], "High": d['y'][1], "Low": d['y'][2], "Close": d['y'][3], "Volume": 0
+                        } for d in all_data]) # Volume is not available in basic scraper
+                        df_s.set_index("Date", inplace=True)
+                        indicators = calculate_technical_indicators(df_s)
+                        
+                        chart_data = [{"x": d.date.strftime('%Y-%m-%d'), "y": [round(d.open, 2), round(d.high, 2), round(d.low, 2), round(d.close, 2)]} for d in unique_data]
+                        res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (twstock 終極備援)", "currency": "TWD", "data": chart_data, "indicators": indicators}
+                        STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
+                        return jsonify(res_data)
+            except Exception as final_e:
+                print(f"twstock fallback failed: {final_e}, trying custom scraper...")
+                try:
+                    # Custom Scraper as last resort
+                    tw_data = fetch_tw_stock_custom_scraper(tw_code)
+                    if tw_data:
+                        res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (終極感應)", "currency": "TWD", "data": tw_data}
+                        STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
+                        return jsonify(res_data)
+                except Exception as scraper_e:
+                    print(f"Custom scraper failed: {scraper_e}")
+                print(f"Final twstock fallback failed: {final_e}")
+
         if "Too Many Requests" in str(e) or "429" in str(e):
-            return jsonify({"error": "天機感應頻繁：Yahoo 財經目前限制了數據請求，請 5-10 分鐘後再試。"}), 429
+            return jsonify({"error": "天機感應頻繁：Yahoo 財經限制了數據請求，且備援方案亦無法獲取數據，請稍後再試。"}), 429
         return jsonify({"error": str(e)}), 500
 
 # --- AI Priority & Key Pools (Supports multiple keys separated by comma) ---
@@ -1474,7 +1655,6 @@ def save_record():
             recs = load_json_file(RECORD_FILE)
             
         if recs:
-            import pandas as pd
             df = pd.DataFrame(recs)
             df.rename(columns={
                 "timestamp": "紀錄時間", "name": "姓名", "gender": "性別",

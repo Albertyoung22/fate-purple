@@ -3574,13 +3574,39 @@ ${chartContext}
                     playRitualSound('start');
                     await saveUserProfile(true);
 
+                    const indicators = data.indicators;
+                    const indicatorStats = indicators ? `
+【技術指標即時感應】：
+- 目前價格是否在 MA10 之上：${indicators.price_above_ma10 ? '是 (強勢)' : '否 (弱勢)'}
+- MA10 趨勢：${indicators.ma10_trend === 'up' ? '↗ 向上 (多頭)' : '↘ 向下 (空頭)'}
+- BBI 買賣意願均衡線：${indicators.bbi} (趨勢：${indicators.bbi_trend === 'up' ? '↗ 向上' : '↘ 向下'})
+- EMA30 長期均線趨勢：${indicators.ema30_trend === 'up' ? '↗ 向上' : '↘ 向下'}
+- 成交量能狀態：${indicators.vol_status} (量比：${indicators.vol_ratio})
+` : "";
+
                     const lastData = data.data[data.data.length - 1];
                     const lastPrice = lastData.y[3];
-                    const msg = `請分析股票【${data.name} (${data.symbol})】。目前成交價約為 ${lastPrice} ${data.currency}。請根據其歷史K線數據，結合大數據趨勢與我的命盤財運，預測未來一週的走勢。`;
+                    const msg = `請分析股票【${data.name} (${data.symbol})】。目前成交價約為 ${lastPrice} ${data.currency}。${indicatorStats}請根據這些指標，結合大數據趨勢與我的命盤財運，給予具體的操作建議（例如：持股觀望、破線止損、或小量分批介入）。`;
 
                     setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
 
-                    await callAiApi(`${getFullChartContext()} \n\n【近期K線數據(最後5天)】：${JSON.stringify(data.data.slice(-5))} \n\n【緣主祈求】：${msg} \n\n【大師指令】：請運用「歷史大數據趨勢」、「均線型態感應」與「緣主財帛宮能量」進行合參。最終預測下週可能的漲跌百分比(%)，並給予操作建議。`, 'stock', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                    const aiPrompt = `
+${getFullChartContext()} 
+
+【近期數據(最後5天)】：${JSON.stringify(data.data.slice(-5))} 
+${indicatorStats}
+
+【操作策略準則】：
+1. 股價守住 MA10 之上且 MA10 趨勢往上，屬多頭觀望持股。若跌破 MA10 且下彎，建議出清。
+2. 觀察 BBI 是否由低往上（趨勢向上）。
+3. 成交量應遞增而不可暴增（量能溫和放量）。
+4. EMA30 往上則可視為正常買點。
+
+【緣主祈求】：${msg} 
+
+【大師指令】：請運用上述「技術指標準則」、「技術型態辨識 (如 M頭、支撐壓力位)」與「紫微財帛宮能量」進行合參。最終預測下週可能的漲跌百分比(%)，並給予極具針對性的操作指令（如：先行獲利、觀望、或等待介入點）。`;
+
+                    await callAiApi(aiPrompt, 'stock', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
 
                 } catch (e) {
                     alert(`【天機暫斷】獲取股市數據失敗：${e.message}`);
@@ -4308,7 +4334,13 @@ ${chartContext}
                                                 </h4>
                                                 <p className="text-xs text-blue-800/80 leading-relaxed font-bold">
                                                     當前價格：{stockChartData.data[stockChartData.data.length - 1].y[3]} {stockChartData.currency}<br />
-                                                    近三個月趨勢感應中... 正在結合均線與成交量能進行天機運算。
+                                                    {stockChartData.indicators ? (
+                                                        <span className="space-y-1 block mt-2">
+                                                            <span className="flex items-center gap-1">MA10: {stockChartData.indicators.ma10} ({stockChartData.indicators.ma10_trend === 'up' ? '↗ 向上' : '↘ 向下'}) - {stockChartData.indicators.price_above_ma10 ? <span className="text-rose-600">站上線</span> : <span className="text-emerald-600">跌破線</span>}</span>
+                                                            <span className="flex items-center gap-1">BBI均衡: {stockChartData.indicators.bbi} (趨勢 {stockChartData.indicators.bbi_trend === 'up' ? '↗' : '↘'})</span>
+                                                            <span className="flex items-center gap-1">量能感應: {stockChartData.indicators.vol_status} (量比 {stockChartData.indicators.vol_ratio})</span>
+                                                        </span>
+                                                    ) : "正在結合均線與成交量能進行天機運算..."}
                                                 </p>
                                             </div>
                                             <div className="p-5 bg-indigo-50/50 rounded-3xl border border-indigo-100/50 text-indigo-900">
