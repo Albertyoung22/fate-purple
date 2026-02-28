@@ -939,6 +939,8 @@ def stock_data_api():
         
         print(f"DEBUG: Trying stocks: {stocks_to_try}")
         for s in stocks_to_try:
+            if s != stocks_to_try[0]:
+                time.sleep(0.5) # Brief pause between attempts
             print(f"DEBUG: Fetching {s}...")
             ticker = yf.Ticker(s)
             hist = ticker.history(period="3mo")
@@ -950,8 +952,62 @@ def stock_data_api():
                 print(f"DEBUG: {s} returned empty data")
         
         if hist is None or hist.empty:
-            print(f"DEBUG: All symbols failed for {symbol}")
-            return jsonify({"error": f"No data found for {symbol}. (可能因 Yahoo 限制請求過於頻繁，請稍後再試)"}), 404
+            print(f"DEBUG: yfinance failed for {symbol}, trying twstock fallback...")
+            try:
+                import twstock
+                # Extract numeric part (e.g., '2330' from '2330.TW')
+                tw_code = symbol.split('.')[0]
+                if tw_code.isdigit():
+                    stock = twstock.Stock(tw_code)
+                    # Fetch last 3 months (approx 60-90 days)
+                    # twstock fetch() returns current month. fetch_from(y, m) is better.
+                    now_dt = datetime.now()
+                    all_data = []
+                    # Fetch current and previous 2 months
+                    for i in range(3):
+                        target_month = now_dt.month - i
+                        target_year = now_dt.year
+                        while target_month <= 0:
+                            target_month += 12
+                            target_year -= 1
+                        month_data = stock.fetch_from(target_year, target_month)
+                        if month_data:
+                            all_data = month_data + all_data
+                    
+                    if all_data:
+                        # Convert to chart format and de-duplicate by date
+                        seen_dates = set()
+                        unique_data = []
+                        for d in all_data:
+                            date_str = d.date.strftime('%Y-%m-%d')
+                            if date_str not in seen_dates:
+                                unique_data.append(d)
+                                seen_dates.add(date_str)
+                        
+                        # Sort by date
+                        unique_data.sort(key=lambda x: x.date)
+                        
+                        chart_data = []
+                        for d in unique_data:
+                            chart_data.append({
+                                "x": d.date.strftime('%Y-%m-%d'),
+                                "y": [round(d.open, 2), round(d.high, 2), round(d.low, 2), round(d.close, 2)]
+                            })
+                        
+                        res_data = {
+                            "success": True,
+                            "symbol": symbol,
+                            "name": f"台股 {tw_code} (twstock 備援)",
+                            "currency": "TWD",
+                            "data": chart_data
+                        }
+                        # Save to cache
+                        STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
+                        return jsonify(res_data)
+            except Exception as tw_err:
+                print(f"twstock fallback failed: {tw_err}")
+                
+            return jsonify({"error": f"No data found for {symbol}. (Yahoo 限制頻繁且 twstock 備援失敗，請稍後再試)"}), 404
             
         chart_data = []
         for index, row in hist.iterrows():
@@ -960,11 +1016,24 @@ def stock_data_api():
                 "y": [round(row['Open'], 2), round(row['High'], 2), round(row['Low'], 2), round(row['Close'], 2)]
             })
             
+        # Default values if ticker.info fails due to 429
+        stock_name = symbol
+        currency = 'TWD'
+        
+        try:
+            # ticker.info often triggers 429 because it's a heavy scraping call
+            info = ticker.info
+            stock_name = info.get('longName', symbol)
+            currency = info.get('currency', 'TWD')
+        except Exception as info_err:
+            print(f"DEBUG: Could not fetch ticker.info for {symbol} (likely 429): {info_err}")
+            # We already have data, so we can continue with defaults
+
         res_data = {
             "success": True,
             "symbol": symbol,
-            "name": ticker.info.get('longName', symbol),
-            "currency": ticker.info.get('currency', 'TWD'),
+            "name": stock_name,
+            "currency": currency,
             "data": chart_data
         }
         
@@ -1388,29 +1457,35 @@ def save_record():
         "birth_hour": data.get("birth_hour"), "lunar_date": data.get("lunar_date")
     }
     
-    if db is not None and users_collection is not None:
-        try:
-            users_collection.insert_one(record)
-        except Exception as e:
-            print(f"⚠️ MongoDB 寫入使用者紀錄失敗: {e}，切換至本地儲存。")
-            recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
-    else:
-        recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
-
-    # --- Local Excel Fallback ---
+    # --- Persistence Logic ---
     try:
-        import pandas as pd
-        df = pd.DataFrame(recs)
-        df.rename(columns={
-            "timestamp": "紀錄時間", "name": "姓名", "gender": "性別",
-            "birth_date": "國曆生日", "birth_hour": "時辰(支)", "lunar_date": "農曆日期"
-        }, inplace=True)
-        excel_path = 'user_records.xlsx'
-        df.to_excel(excel_path, index=False, engine='openpyxl')
-        print(f"💾 已同步備份至本地 Excel: {excel_path}")
+        if db is not None and users_collection is not None:
+            try:
+                users_collection.insert_one(record)
+            except Exception as e:
+                print(f"⚠️ MongoDB 寫入使用者紀錄失敗: {e}，切換至本地儲存。")
+                recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
+        else:
+            recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
+
+        # --- Local Excel Sync ---
+        # Ensure we have a list of records to write to Excel
+        if 'recs' not in locals():
+            recs = load_json_file(RECORD_FILE)
+            
+        if recs:
+            import pandas as pd
+            df = pd.DataFrame(recs)
+            df.rename(columns={
+                "timestamp": "紀錄時間", "name": "姓名", "gender": "性別",
+                "birth_date": "國曆生日", "birth_hour": "時辰(支)", "lunar_date": "農曆日期"
+            }, inplace=True)
+            excel_path = 'user_records.xlsx'
+            df.to_excel(excel_path, index=False, engine='openpyxl')
+            print(f"💾 已同步備份至本地 Excel: {excel_path}")
     except Exception as e:
         if "pandas" not in str(e).lower(): 
-            print(f"⚠️ 本地 Excel 備份失敗: {e}")
+            print(f"⚠️ 紀錄儲存或 Excel 備份失敗: {e}")
 
     # --- Google Sheets Export ---
     try:
