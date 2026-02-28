@@ -3516,6 +3516,7 @@ ${chartContext}
 
             const [showStockModal, setShowStockModal] = React.useState(false);
             const [stockChartData, setStockChartData] = React.useState(null);
+            const [stockAnalysis, setStockAnalysis] = React.useState("");
             const stockChartRef = React.useRef(null);
 
             React.useEffect(() => {
@@ -3569,6 +3570,7 @@ ${chartContext}
                     if (data.error) throw new Error(data.error);
 
                     setStockChartData(data);
+                    setStockAnalysis("（大師正在入定，感應乾坤走勢...）");
                     setShowStockModal(true);
 
                     playRitualSound('start');
@@ -3589,6 +3591,7 @@ ${chartContext}
                     const msg = `請分析股票【${data.name} (${data.symbol})】。目前成交價約為 ${lastPrice} ${data.currency}。${indicatorStats}請根據這些指標，結合大數據趨勢與我的命盤財運，給予具體的操作建議（例如：持股觀望、破線止損、或小量分批介入）。`;
 
                     setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
+                    setStockAnalysis("");
 
                     const aiPrompt = `
 ${getFullChartContext()} 
@@ -3606,7 +3609,10 @@ ${indicatorStats}
 
 【大師指令】：請運用上述「技術指標準則」、「技術型態辨識 (如 M頭、支撐壓力位)」與「紫微財帛宮能量」進行合參。最終預測下週可能的漲跌百分比(%)，並給予極具針對性的操作指令（如：先行獲利、觀望、或等待介入點）。`;
 
-                    await callAiApi(aiPrompt, 'stock', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                    await callAiApi(aiPrompt, 'stock', (c) => {
+                        setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; });
+                        setStockAnalysis(prev => prev + c);
+                    });
 
                 } catch (e) {
                     alert(`【天機暫斷】獲取股市數據失敗：${e.message}`);
@@ -4350,6 +4356,25 @@ ${indicatorStats}
                                                 <p className="text-xs opacity-80 leading-relaxed font-bold">
                                                     結合緣主【{bureau}】氣場，本標的之金流屬性與您的財帛宮位相位正在進行同步共振。
                                                 </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Master's Analysis Section inside Modal */}
+                                        <div className="mt-6 p-6 bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-900 rounded-[2rem] border border-white/20 shadow-2xl relative overflow-hidden group">
+                                            {/* Aura background for analysis */}
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl group-hover:bg-purple-500/30 transition-all"></div>
+                                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl group-hover:bg-indigo-500/30 transition-all"></div>
+
+                                            <div className="relative z-10">
+                                                <h4 className="text-lg font-black text-white mb-4 flex items-center gap-3">
+                                                    <div className="p-2 bg-white/10 rounded-lg">
+                                                        <Icon name="sparkles" className="w-5 h-5 text-amber-400" />
+                                                    </div>
+                                                    大師天機感應 · 股市詳評
+                                                </h4>
+                                                <div className="text-sm text-indigo-50 leading-loose font-bold whitespace-pre-wrap bg-white/5 p-5 rounded-2xl border border-white/5 backdrop-blur-sm min-h-[150px]">
+                                                    {stockAnalysis || "（正在等待天機降臨...）"}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
