@@ -182,8 +182,13 @@ def get_sheets_service():
             from googleapiclient.discovery import build
             
             SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+            
+            # Robust private key formatting check
+            if 'private_key' in info and '\\n' in info['private_key']:
+                info['private_key'] = info['private_key'].replace('\\n', '\n')
+            
             creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
-            sheets_service = build('sheets', 'v4', credentials=creds)
+            sheets_service = build('sheets', 'v4', credentials=creds, cache_discovery=False)
             print(f"✅ Google 試算表服務已初始化")
             return sheets_service
         except Exception as e:
@@ -211,7 +216,13 @@ def append_to_sheet(sheet_name, row_data):
             else:
                 print("提示：請檢查 config.json 中的 spreadsheet_id 是否正確且為有效的試算表（非資料夾）。")
         else:
-            print(f"⚠️ 試算表寫入錯誤 ({sheet_name}): {e}")
+            err_msg = str(e)
+            if "invalid_grant" in err_msg.lower():
+                print(f"❌ Google Sheets 授權失敗 (Invalid Grant)。請檢查 credentials.json 的私鑰或憑證信箱是否正確。")
+            elif "quota" in err_msg.lower():
+                print(f"⚠️ Google Sheets 額度限制。")
+            else:
+                print(f"⚠️ 試算表寫入錯誤 ({sheet_name}): {e}")
 
 
 def load_json_file(filename):
@@ -1308,6 +1319,12 @@ def stream_groq_api(prompt, system_prompt=""):
             if "429" in err_str:
                 print(f">>> Groq API (Key: {current_key[:10]}...) 繁忙/限流，嘗試備援金鑰...")
                 continue
+            elif "413" in err_str or "Request too large" in err_str:
+                print(f"⚠️ Groq API 請求過大 (413)，嘗試簡化 Prompt 後續傳...")
+                # We can't really "simplify" mid-stream easily, so we just log and move on to next key (though it might have same limit)
+                # If it's a model limit, trying another key with same model won't help. 
+                # Better to return and let caller try Gemini.
+                break
             elif "401" in err_str or "Invalid API Key" in err_str:
                 print(f"❌ Groq API 金鑰失效 ({current_key[:10]}...)，已從清單移除。")
                 if current_key in GROQ_KEYS:
@@ -1344,9 +1361,13 @@ def stream_gemini_api(prompt, system_prompt=""):
             return
         except Exception as e:
             err_str = str(e)
-            if "429" in err_str:
+            if "429" in err_str or "quota" in err_str.lower():
                 print(f">>> Gemini API (Key: {current_key[:10]}...) 繁忙/限流，嘗試備援金鑰...")
                 continue
+            elif "403" in err_str and "leaked" in err_str.lower():
+                 print(f"❌ Gemini API 金鑰洩漏被封禁 ({current_key[:10]}...)，已從清單移除。")
+                 if current_key in GEMINI_KEYS:
+                     GEMINI_KEYS.remove(current_key)
             elif "401" in err_str or "Invalid API Key" in err_str or "API_KEY_INVALID" in err_str:
                  print(f"❌ Gemini API 金鑰失效 ({current_key[:10]}...)，已從清單移除。")
                  if current_key in GEMINI_KEYS:
@@ -1735,10 +1756,11 @@ def chat():
                 print(f"規則引擎錯誤: {e}")
         
         is_full = any(kw in (user_prompt + client_sys) for kw in ["詳評", "命譜詳評", "格局報告", "八字詳解", "命盤解析", "詳細解析", "八字論命"])
+        target_type = data.get("model", "chat")
+        if target_type == "stock": is_full = True # 股市分析也需要較多心法支援
         
         # 注入後台「隱藏密令」
         insights = load_hidden_insights()
-        target_type = data.get("model", "chat")
         hidden_msg = insights.get(target_type, "")
         
         # 獲取天時資訊 (時辰、節氣)
@@ -1766,14 +1788,31 @@ def chat():
         # 獲取適合的廟宇推薦 (根據地點與所問之事)
         temple_insights = get_nearby_temples(location, user_prompt)
         
+        # 獲取緣主生肖 (從 user_info 若無則用黃曆資訊輔助)
+        zodiac_str = "未知"
+        try:
+            if daily_omens and isinstance(daily_omens, dict) and 'user' in daily_omens and daily_omens['user'] and 'zodiac' in daily_omens['user']:
+               zodiac_str = daily_omens['user']['zodiac']
+            elif "zodiac" in user_info:
+               zodiac_str = user_info["zodiac"]
+            else:
+               # 簡單粗暴年份推算生肖 (基準 1900 == 鼠)
+               zodiacs = ["猴", "雞", "狗", "豬", "鼠", "牛", "虎", "兔", "龍", "蛇", "馬", "羊"]
+               if user_info.get("birth_date") and '-' in user_info.get("birth_date"):
+                   byear = int(user_info.get("birth_date").split('-')[0])
+                   zodiac_str = zodiacs[byear % 12]
+        except:
+             pass
+
         # --- 核心邏輯：緣主個性與身份重構指令 ---
         personality_synthesis = (
-            f"【最高密令：靈識身份統合】\n"
-            f"1. **命盤人格**：深度分析「命、身宮」主星。若有煞星則代表性格孤傲或波折，若有吉星則代表溫潤或貴氣。\n"
-            f"2. **因果印證**：結合上述「宿世因果印記」所獲之資訊。若因果顯示其為科技業，而命盤官祿宮有機、月、同、梁，請點出這是『精算天機』的文職之命。請以『本座一眼看穿你凡間身分』的語氣進行論斷。\n"
-            f"3. **即時狀態察覺**：根據「緣主狀態（設備）」與「氣候感應」，揣摩其目前的心理壓力或放鬆程度並融入語氣。\n"
-            f"4. **生活的演繹 (生活化)**：**絕對禁止枯燥地背誦課本定義**。請將命理術語轉化為「現代生活場景」。例如：『命宮帶煞』不只說凶，要說『你這脾氣就像夏天的午後雷陣雨，來得快去得快，身邊的人得帶傘才行』。語氣要幽默、犀利且充滿故事感，讓緣主聽得進去、看得明白。\n"
-            f"**絕對禁忌**：禁止提及「後台線索」、「搜尋資料」、「查閱資料」、「數據」、「API」等科技詞彙。請使用『神識感應』、『撥開迷霧』、『因果顯現』等宗師語氣。"
+            f"【最高密令：靈識身份統合與開場白規範】\n"
+            f"1. **破冰與身分點題**：在解說的開篇，**必須主動用白話且親切的語氣，講出緣主目前的「年紀（{age} 歲）」，以及所屬的「生肖（屬{zodiac_str}）」**。接著，明確點出他們這個年紀「正走到哪一個人生階段（如：剛入職場的摸索期、成家立業的衝刺期、還是準備步入退休的守成期）」。\n"
+            f"2. **挑戰預告（貼近生活）**：結合其大限與流年，具體說出他們**「在這個時期可能面對的實際生活挑戰」**（例如：『你這個年紀壓力最大了，上面有老下面有小，房貸車貸追著跑...』或是『剛出社會，滿腔熱血卻常覺得主管在找碴...』）。語氣要能引起共鳴，像是一位懂他的長輩在泡茶聊天。\n"
+            f"3. **命盤人格**：深度分析「命、身宮」主星。若有煞星則代表性格孤傲或波折，若有吉星則代表溫潤或貴氣。\n"
+            f"4. **因果印證**：透過命盤官祿宮/財帛宮，隱晦點出這與其求職或財務狀態的關聯（例如：『難怪你最近會覺得錢總是不夠用，原來是...』）。\n"
+            f"5. **生活的演繹 (生活化)**：**絕對禁止枯燥地背誦課本定義或術語**。所有的論斷都要轉化為「現代生活場景」，幽默、犀利且充滿故事感。\n"
+            f"**絕對禁忌**：禁止提及「後台線索」、「搜尋資料」、「大數據」、「程式模組」等科技詞彙。"
         )
 
         # 獲取天機吉凶
@@ -1882,6 +1921,45 @@ def chat():
                 "【嚴格規定】：直接講出現代醫學器官與症狀名稱，並給予具體的就診科別建議或養生作為（如：建議做心血管檢查，少熬夜）。\n"
             )
             geo_msg += health_mapping
+
+        # 偵測是否有子女/六親相關提問
+        children_keywords = ["子女", "孩子", "兒子", "女兒", "小孩", "乖不乖", "未來發展", "育兒"]
+        has_children_query = any(k in user_prompt for k in children_keywords)
+        if has_children_query:
+            children_mapping = (
+                "\n\n【天機指路：子女宮與後代發展準則】\n"
+                "若緣主關心「孩子的未來發展、乖不乖、如何應對」，請嚴格依據其「子女宮」之星曜分析：\n"
+                "- 判斷乖巧與否：若子女宮會照化忌、煞星（羊陀火鈴），則孩子個性剛強叛逆，忌用權威壓迫，宜順水推舟、朋友式溝通；若會照吉星（左右昌曲吉化），則孩子乖巧聰明，可放手讓其發展。\n"
+                "- 未來發展潛力：根據子女宮主星（如天機主智慧工程、武曲主財經將軍），點出孩子未來的專長潛力領域。\n"
+                "- 父母互動之道：給予具體教養心法，化解兩代代溝，並可結合大限看孩子近期的狀況。\n"
+            )
+            geo_msg += children_mapping
+
+        # 偵測是否有夫妻/伴侶相關提問
+        spouse_keywords = ["夫妻", "另一半", "老婆", "老公", "婚姻", "伴侶", "互動", "感情"]
+        has_spouse_query = any(k in user_prompt for k in spouse_keywords)
+        if has_spouse_query:
+            spouse_mapping = (
+                "\n\n【天機指路：夫妻宮與伴侶互動準則】\n"
+                "若緣主問及「另一半的互動、感情狀態」，請依據「夫妻宮」與對宮「事業宮」解析：\n"
+                "- 互動模式定調：主星若為剛烈星（如武曲、七殺），兩人相處易火星撞地球，需適當退讓；若為柔和星（如天同、太陰），則互動如水，但需防平淡乏味。\n"
+                "- 摩擦與化解：精準點出雙方最易發生爭執的癥結點（如化忌在夫妻宮代表前世糾葛深，容易執著），並給予約法三章的相處之道（如：保持距離美感、各自理財）。\n"
+            )
+            geo_msg += spouse_mapping
+
+        # 偵測高端客戶(企業主/高管/富裕者)對運途高低、危機及投資破財的提問
+        boss_crisis_keywords = ["破財", "進財", "高低年", "運途", "危機", "企業", "高管", "擴張", "退守", "哪一年", "波折"]
+        has_boss_crisis_query = any(k in user_prompt for k in boss_crisis_keywords)
+        if has_boss_crisis_query:
+            boss_crisis_mapping = (
+                "\n\n【天機指路：企業主/高管之高低運途與危機研判準則】\n"
+                "對於重視投資與事業軌跡的對象，詢問何時進破財及危機點時，需展現頂級幕僚的精準度：\n"
+                "- 破財與進財大年：尋找命盤中「本命、大限、流年」之財帛/官祿宮。見『化祿/祿存』為進財高點，見『化忌/空劫』必為破財低谷或資金鏈危機。\n"
+                "- 運途高低年預測：直接點出近期或未來幾年內，哪一年是『巔峰期』（宜擴張、投資併購），哪一年是『危機期』（宜保守、保留現金流、防小人或暗箭）。\n"
+                "- 戰略建議：不可只講吉凶，必須給予對應的商業/職場決策建議（如：某年大環境不佳但你走強，可逆勢操作；某年大好但你遇空劫，則需見好就收）。\n"
+            )
+            geo_msg += boss_crisis_mapping
+
 
         # 偵測是否有財運/理財相關提問
         finance_keywords = ["財", "理財", "投資", "賺錢", "偏財", "正財", "買什麼", "致富", "發財", "缺錢"]
@@ -2011,7 +2089,13 @@ def chat():
         priority_tag = "\n【最高優先權指令：請嚴格執行上述格式與內容要求，務必極度具體、精準、直接】\n"
         
         if is_full:
-            final_system_prompt = f"你是【紫微天機道長】，命理宗師。\n{geo_msg}\n{output_module_spec}\n{hidden_msg}{priority_tag}{client_sys}\n\n【紫微心法秘卷】\n{MASTER_BOOK}\n\n【八字心法秘卷】\n{BAZI_MASTER_BOOK}"
+            # For Groq's tight TPM (12k-18k for free tier), we may need to truncate the secret books
+            current_provider = CONFIG.get('gemini', {}).get('provider', 'gemini').lower()
+            effective_master_book = MASTER_BOOK
+            if current_provider == 'groq' and len(MASTER_BOOK) > 8000:
+                effective_master_book = MASTER_BOOK[:8000] + "\n... (因天機限制，部分秘卷已壓縮) ..."
+            
+            final_system_prompt = f"你是【紫微天機道長】，命理宗師。\n{geo_msg}\n{output_module_spec}\n{hidden_msg}{priority_tag}{client_sys}\n\n【紫微心法秘卷】\n{effective_master_book}\n\n【八字心法秘卷】\n{BAZI_MASTER_BOOK}"
         else:
             final_system_prompt = f"你是【紫微天機道長】，語氣精煉犀利，一針見血。\n{geo_msg}\n{output_module_spec}\n{hidden_msg}{priority_tag}{client_sys}\n\n【八字心法秘卷】\n{BAZI_MASTER_BOOK}"
 
@@ -2077,6 +2161,16 @@ def chat():
                 AI_LIMIT_SEMAPHORE.release()
                 print(">>> [排隊系統] AI 運算結束，釋放許可證。")
 
+        # 估算總 Token 長度 (粗略估計：1 字符 = 0.5~1.2 token，中文較高)
+        # 如果總長度過大，強制截斷秘卷
+        approx_tokens = len(final_system_prompt) + len(user_prompt)
+        if approx_tokens > 20000: # 針對 Groq 或 Token 限制
+            # 優先截斷 MASTER_BOOK 和 BAZI_MASTER_BOOK
+            if len(MASTER_BOOK) > 4000:
+                final_system_prompt = final_system_prompt.replace(MASTER_BOOK, MASTER_BOOK[:4000] + "...(心法微言大義，已壓縮)...")
+            if len(BAZI_MASTER_BOOK) > 3000:
+                 final_system_prompt = final_system_prompt.replace(BAZI_MASTER_BOOK, BAZI_MASTER_BOOK[:3000] + "...(八字秘要，已壓縮)...")
+
         if is_full and not is_bazi_mode:
             # 如果規則引擎沒對到什麼，至少也給基本的
             actual_matched = matched if matched else []
@@ -2084,7 +2178,12 @@ def chat():
             titles = {"A": "【第一章：星曜坐守與神煞特徵】", "B": "【第二章：命宮宮干飛化】", "C": "【第三章：宮位間的交互飛化】"}
             
             all_chapter_summaries = "" 
-            chapter_sys = "你是【紫微天機道長】，命理宗師。請針對此命盤格局，像是在與老友喝茶聊天一般，給予緣主白話、生動且生活化的命解讀。運用譬喻與現代職場/感情場景，切發「本章節」、「規則」等生硬詞彙，直接點破吉凶。"
+            chapter_sys = (
+                f"你是【紫微天機道長】，命理宗師。\n"
+                f"【強制開場與身分點題】：在每一次的回答中（特別是解盤的開頭），必須主動用白話且親切的語氣，講出緣主目前的「年紀（{age} 歲）」、「生肖（屬{zodiac_str}）」。\n"
+                f"必須結合他們現在的歲數，點出他們剛好走到「哪一個人生階段（例如剛出社會、中年危機、或是準備退休）」，並預告他們在這個階段「可能面對的挑戰與壓力」。\n"
+                f"【風格要求】：請像是在與老友或晚輩喝茶聊天一般，給予緣主白話、生動且生活化的命理解讀。運用譬喻與現代職場/感情場景，避免通篇拋擲「本章節」、「規則」等生硬詞彙，直接點破吉凶。"
+            )
 
             for g_code, g_title in titles.items():
                 items = [r for r in matched if r.get("rule_group") == g_code]
