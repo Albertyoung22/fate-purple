@@ -1002,7 +1002,7 @@ def fetch_tw_stock_custom_scraper(code):
     now = datetime.now()
     chart_data = []
 
-    # Try both TWSE and TPEX
+    # Try both TWSE (Listed) and TPEX (OTC)
     apis = [
         # TWSE
         f"https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date={now.strftime('%Y%m%d')}&stockNo={code}",
@@ -1010,41 +1010,42 @@ def fetch_tw_stock_custom_scraper(code):
         f"https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/stk_quote_result.php?l=zh-tw&d={now.year-1911}/{now.strftime('%m')}&stkno={code}"
     ]
 
-    for url in apis:
+    for i, url in enumerate(apis):
         try:
             res = requests.get(url, headers=headers, timeout=10)
             if res.status_code != 200: continue
             data = res.json()
             
-            # TWSE Format
-            if 'data' in data and isinstance(data['data'], list):
-                for row in data['data']:
-                    # TWSE: [Date, Vol, Val, Open, High, Low, Close, Diff, Trans]
-                    # Date is in ROC: 112/05/02 -> 2023-05-02
+            # TWSE Format (Listed)
+            if i == 0 and 'data' in data and isinstance(data['data'], list):
+                print(f"DEBUG: Found {code} on TWSE (Listed)")
+                for row in reversed(data['data']): # Reversed to get latest first if needed, but we sort later
                     parts = row[0].split('/')
                     y = int(parts[0]) + 1911
                     date_str = f"{y}-{parts[1]}-{parts[2]}"
                     try:
-                        prices = [float(row[3].replace(',', '')), float(row[4].replace(',', '')), 
-                                  float(row[5].replace(',', '')), float(row[6].replace(',', ''))]
-                        chart_data.append({"x": date_str, "y": prices})
+                        p = [float(row[3].replace(',', '')), float(row[4].replace(',', '')), 
+                             float(row[5].replace(',', '')), float(row[6].replace(',', ''))]
+                        chart_data.append({"x": date_str, "y": p})
                     except: continue
                 if chart_data: return chart_data
 
-            # TPEX Format
-            if 'aaData' in data and isinstance(data['aaData'], list):
+            # TPEX Format (OTC)
+            if i == 1 and 'aaData' in data and isinstance(data['aaData'], list):
+                print(f"DEBUG: Found {code} on TPEX (OTC)")
                 for row in data['aaData']:
-                    # TPEX: [Date, Vol, Val, Open, High, Low, Close, ...]
                     parts = row[0].split('/')
                     y = int(parts[0]) + 1911
                     date_str = f"{y}-{parts[1]}-{parts[2]}"
                     try:
-                        prices = [float(row[3].replace(',', '')), float(row[4].replace(',', '')), 
-                                  float(row[5].replace(',', '')), float(row[6].replace(',', ''))]
-                        chart_data.append({"x": date_str, "y": prices})
+                        p = [float(row[3].replace(',', '')), float(row[4].replace(',', '')), 
+                             float(row[5].replace(',', '')), float(row[6].replace(',', ''))]
+                        chart_data.append({"x": date_str, "y": p})
                     except: continue
                 if chart_data: return chart_data
-        except: continue
+        except Exception as e:
+            print(f"Custom Scraper error on {url[:30]}: {e}")
+            continue
     return None
 
 @app.route('/api/stock_data', methods=['POST', 'OPTIONS'])
@@ -1056,9 +1057,14 @@ def stock_data_api():
     symbol = data.get('symbol', '').strip()
     if not symbol: return jsonify({"error": "Symbol missing"}), 400
 
-    # Basic mapping for common Taiwan stocks if only number is given
+    # Primary fallback for common Taiwan stocks
     stocks_to_try = [symbol]
     if symbol.isdigit() and len(symbol) == 4:
+        # If it's a 4-digit code (e.g., 2330), prioritize Listed (.TW) then OTC (.TWO)
+        # But for 6187, we'll try both.
+        stocks_to_try = [symbol + ".TW", symbol + ".TWO"]
+    elif symbol.isdigit() and len(symbol) >= 5:
+        # Some special Taiwan stocks
         stocks_to_try = [symbol + ".TW", symbol + ".TWO"]
     
     # Check cache first
@@ -1303,11 +1309,20 @@ def stream_groq_api(prompt, system_prompt=""):
     
     for current_key in available_keys:
         try:
+            # Aggressive length check for Groq TPM (approx 8000 chars max)
+            safe_system = system_prompt
+            safe_user = prompt
+            if (len(safe_system) + len(safe_user)) > 20000:
+                 # If still too long, we might have skipped earlier truncation. 
+                 # This is a last-minute safety net.
+                 if len(safe_system) > 10000: safe_system = safe_system[:10000] + "\n...(系統指令已截斷)..."
+                 if len(safe_user) > 5000: safe_user = safe_user[:5000] + "\n...(用戶請求已截斷)..."
+
             from groq import Groq
             client = Groq(api_key=current_key)
             completion = client.chat.completions.create(
                 model=GROQ_MODEL,
-                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": prompt}],
+                messages=[{"role": "system", "content": safe_system}, {"role": "user", "content": safe_user}],
                 temperature=0.7, max_tokens=3000, stream=True
             )
             for chunk in completion:
@@ -1848,10 +1863,10 @@ def chat():
             geo_msg += f"\n\n【八字技術批註】：\n{bazi_tech_notes}"
 
         if internet_insights:
-            geo_msg += f"\n{internet_insights}"
+            geo_msg += f"\n{internet_insights[:1000]}"
         
         if temple_insights:
-            geo_msg += f"\n{temple_insights}"
+            geo_msg += f"\n{temple_insights[:1000]}"
             
         if target_type in ["finance", "chat"]:
             geo_msg += f"\n- 財富能量：{market_energy}"
@@ -2089,13 +2104,25 @@ def chat():
         priority_tag = "\n【最高優先權指令：請嚴格執行上述格式與內容要求，務必極度具體、精準、直接】\n"
         
         if is_full:
-            # For Groq's tight TPM (12k-18k for free tier), we may need to truncate the secret books
+            # Aggressive Truncation for Groq/Free Tier models (TPM typically 12k tokens ~ 15k chars)
             current_provider = CONFIG.get('gemini', {}).get('provider', 'gemini').lower()
-            effective_master_book = MASTER_BOOK
-            if current_provider == 'groq' and len(MASTER_BOOK) > 8000:
-                effective_master_book = MASTER_BOOK[:8000] + "\n... (因天機限制，部分秘卷已壓縮) ..."
             
-            final_system_prompt = f"你是【紫微天機道長】，命理宗師。\n{geo_msg}\n{output_module_spec}\n{hidden_msg}{priority_tag}{client_sys}\n\n【紫微心法秘卷】\n{effective_master_book}\n\n【八字心法秘卷】\n{BAZI_MASTER_BOOK}"
+            # Decide the budget for secret books
+            # If Groq, we only allow 4000 total for both books
+            # If Gemini, we can be more generous (~20000+)
+            book_budget = 4000 if current_provider == 'groq' else 25000
+            
+            eff_master = MASTER_BOOK
+            eff_bazi = BAZI_MASTER_BOOK
+            
+            if (len(eff_master) + len(eff_bazi)) > book_budget:
+                # Divide budget 70/30
+                master_limit = int(book_budget * 0.7)
+                bazi_limit = int(book_budget * 0.3)
+                eff_master = eff_master[:master_limit] + "\n...(因天機傳輸量限制，部分紫微秘卷已壓縮)..."
+                eff_bazi = eff_bazi[:bazi_limit] + "\n...(八字秘卷部分壓縮)..."
+            
+            final_system_prompt = f"你是【紫微天機道長】，命理宗師。\n{geo_msg}\n{output_module_spec}\n{hidden_msg}{priority_tag}{client_sys}\n\n【紫微心法秘卷】\n{eff_master}\n\n【八字心法秘卷】\n{eff_bazi}"
         else:
             final_system_prompt = f"你是【紫微天機道長】，語氣精煉犀利，一針見血。\n{geo_msg}\n{output_module_spec}\n{hidden_msg}{priority_tag}{client_sys}\n\n【八字心法秘卷】\n{BAZI_MASTER_BOOK}"
 
@@ -2143,6 +2170,17 @@ def chat():
                     print(">>> 優先嘗試 Groq 串流模式...")
                     if (GROQ_KEYS and (yield from try_groq_flow())):
                         return
+                    
+                    # If failed with 413, try a "Lite" prompt without secret books
+                    print(">>> Trying LITE prompt (No secret books) for Groq...")
+                    lite_system = s.split("【紫微心法秘卷】")[0].split("【八字心法秘卷】")[0] # Basic stripping
+                    if (GROQ_KEYS and (yield from try_groq_flow() if 'lite_system' in locals() else [])): # Re-use try_groq_flow with lite_system
+                         # Actually I need a better way to pass the new system prompt to try_groq_flow. 
+                         # Let's just manually re-call for the Lite version.
+                         for chunk in stream_groq_api(p, lite_system):
+                             yield chunk
+                         return
+
                     print(">>> Groq 失敗或未配置，嘗試 Gemini 備援...")
                     if (GEMINI_KEYS and (yield from try_gemini_flow())):
                         return

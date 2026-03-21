@@ -3558,6 +3558,7 @@ ${chartContext}
 
                 setIsChatLoading(true);
                 setActionLoading('stock');
+                setStockAnalysis("（正在撥開市場迷霧，感應盤面能量...）");
 
                 try {
                     const res = await fetch('/api/stock_data', {
