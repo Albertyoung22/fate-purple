@@ -620,8 +620,11 @@
             writing-mode: vertical-rl;
             text-orientation: upright;
             white-space: pre-wrap;
-            line-height: 1.8;
-            letter-spacing: 0.15em;
+            line-height: 1.85;
+            letter-spacing: 0.12em;
+            word-break: break-all;
+            padding-right: 6px;
+            padding-left: 6px;
         }
 
         .ink-bg {
@@ -1837,6 +1840,21 @@
         const WisdomCardModal = ({ text, onClose }) => {
             const cardRef = useRef(null);
             const [isGenerating, setIsGenerating] = useState(false);
+            const [isVertical, setIsVertical] = useState(true);
+
+            // 動態判定卡片主題標題
+            const cardTitle = React.useMemo(() => {
+                if (/出門|吉位|避諱|出行/.test(text)) return "天機命譜 · 出行吉位";
+                if (/流年|歲君/.test(text)) return "天機命譜 · 流年運勢";
+                if (/流月|月令/.test(text)) return "天機命譜 · 當月運程";
+                if (/桃花|姻緣|夫妻/.test(text)) return "天機命譜 · 桃花情緣";
+                if (/財運|財帛|理財|投資/.test(text)) return "天機命譜 · 財運玄機";
+                if (/號碼|靈動|樂透|539/.test(text)) return "天機命譜 · 靈動吉數";
+                if (/事業|官祿|工作|前程/.test(text)) return "天機命譜 · 事業前程";
+                if (/養生|健康|疾厄/.test(text)) return "天機命譜 · 養生益壽";
+                if (/大限|十年/.test(text)) return "天機命譜 · 十年大運";
+                return "天機命譜 · 今日錦囊";
+            }, [text]);
 
             const downloadCard = async () => {
                 if (!cardRef.current) return;
@@ -1848,7 +1866,7 @@
                         useCORS: true
                     });
                     const link = document.createElement('a');
-                    link.download = `天機錦囊-${new Date().getTime()}.png`;
+                    link.download = `${cardTitle}-${new Date().getTime()}.png`;
                     link.href = canvas.toDataURL('image/png');
                     link.click();
                 } catch (e) {
@@ -1860,55 +1878,78 @@
 
             return (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in" onClick={onClose}>
-                    <div className="fixed top-6 right-6 flex gap-4">
-                        <button onClick={downloadCard} disabled={isGenerating} className="px-6 py-3 bg-indigo-600 text-white rounded-full font-black shadow-xl hover:bg-indigo-700 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50">
-                            {isGenerating ? <Icon name="loader" className="w-5 h-5 animate-spin" /> : <Icon name="download" className="w-5 h-5" />}
-                            {isGenerating ? "正在煉製..." : "下載開運卡"}
+                    <div className="fixed top-6 right-6 flex items-center gap-3 z-50">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsVertical(v => !v); }}
+                            className="px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full font-bold backdrop-blur-md transition-all text-xs flex items-center gap-1.5 shadow-lg active:scale-95"
+                            title="切換直書 / 橫書排版"
+                        >
+                            <Icon name="refresh-cw" className="w-3.5 h-3.5" />
+                            <span>{isVertical ? "📜 直書卷軸" : "📑 現代橫書"}</span>
                         </button>
-                        <button onClick={onClose} className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all">
-                            <Icon name="x" className="w-6 h-6" />
+                        <button onClick={downloadCard} disabled={isGenerating} className="px-6 py-2.5 bg-indigo-600 text-white rounded-full font-black shadow-xl hover:bg-indigo-700 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 text-sm">
+                            {isGenerating ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="download" className="w-4 h-4" />}
+                            <span>{isGenerating ? "正在煉製..." : "下載開運卡"}</span>
+                        </button>
+                        <button onClick={onClose} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-md transition-all">
+                            <Icon name="x" className="w-5 h-5" />
                         </button>
                     </div>
 
-                    <div className="relative animate-in zoom-in duration-300 max-w-full max-h-[85vh] overflow-auto no-scrollbar">
+                    <div className="relative animate-in zoom-in duration-300 max-w-full max-h-[88vh] overflow-auto no-scrollbar" onClick={(e) => e.stopPropagation()}>
                         {/* The Actual Card to Render */}
                         <div
                             ref={cardRef}
-                            className="w-[450px] min-h-[600px] ink-bg p-12 relative flex flex-col items-center justify-between border-[12px] border-double border-amber-900/20 shadow-2xl print-font"
+                            className="w-[480px] max-w-[95vw] min-h-[640px] ink-bg p-8 md:p-12 relative flex flex-col items-center justify-between border-[12px] border-double border-amber-900/20 shadow-2xl print-font rounded-sm"
                             style={{ backgroundColor: '#fcfaf2' }}
                         >
                             {/* Decorative Corners */}
-                            <div className="absolute top-4 left-4 border-t-4 border-l-4 border-amber-900/30 w-8 h-8"></div>
-                            <div className="absolute top-4 right-4 border-t-4 border-r-4 border-amber-900/30 w-8 h-8"></div>
-                            <div className="absolute bottom-4 left-4 border-b-4 border-l-4 border-amber-900/30 w-8 h-8"></div>
-                            <div className="absolute bottom-4 right-4 border-b-4 border-r-4 border-amber-900/30 w-8 h-8"></div>
+                            <div className="absolute top-4 left-4 border-t-4 border-l-4 border-amber-900/30 w-8 h-8 pointer-events-none"></div>
+                            <div className="absolute top-4 right-4 border-t-4 border-r-4 border-amber-900/30 w-8 h-8 pointer-events-none"></div>
+                            <div className="absolute bottom-4 left-4 border-b-4 border-l-4 border-amber-900/30 w-8 h-8 pointer-events-none"></div>
+                            <div className="absolute bottom-4 right-4 border-b-4 border-r-4 border-amber-900/30 w-8 h-8 pointer-events-none"></div>
 
                             {/* Header */}
-                            <div className="w-full text-center border-b border-amber-900/10 pb-6 mb-8">
-                                <h4 className="text-amber-900/40 text-xs font-black tracking-[0.5em] uppercase mb-2">Destiny Secrets</h4>
-                                <h1 className="text-3xl font-black text-amber-950 tracking-[0.2em] whitespace-nowrap">天機命譜 · 今日錦囊</h1>
+                            <div className="w-full text-center border-b border-amber-900/10 pb-5 mb-6 z-10">
+                                <h4 className="text-amber-900/40 text-xs font-black tracking-[0.5em] uppercase mb-1.5">Destiny Secrets</h4>
+                                <h1 className="text-2xl md:text-3xl font-black text-amber-950 tracking-[0.2em] whitespace-nowrap">{cardTitle}</h1>
                             </div>
 
                             {/* Content Middle Section */}
-                            <div className="flex-1 flex items-center justify-center w-full py-8 overflow-hidden">
-                                <div
-                                    className="wisdom-card-vertical font-bold text-amber-950 leading-[1.8] tracking-[0.15em] text-justify opacity-90 mx-auto px-4 transition-all duration-500"
-                                    style={{
-                                        maxHeight: '420px',
-                                        fontSize: text.length > 100 ? '0.9rem' : text.length > 60 ? '1.1rem' : '1.3rem'
-                                    }}
-                                >
-                                    {text}
-                                </div>
+                            <div className="flex-1 flex items-center justify-center w-full py-4 overflow-hidden z-10">
+                                {isVertical ? (
+                                    <div
+                                        className="wisdom-card-vertical font-bold text-amber-950 opacity-90 transition-all duration-300"
+                                        style={{
+                                            maxHeight: '440px',
+                                            maxWidth: '400px',
+                                            fontSize: text.length > 200 ? '0.86rem' : text.length > 120 ? '0.96rem' : text.length > 60 ? '1.1rem' : '1.25rem',
+                                            lineHeight: text.length > 150 ? '1.75' : '1.9',
+                                            letterSpacing: '0.12em'
+                                        }}
+                                    >
+                                        {text}
+                                    </div>
+                                ) : (
+                                    <div
+                                        className="text-left font-bold text-amber-950 leading-relaxed tracking-wide opacity-90 max-h-[440px] overflow-y-auto pr-2 no-scrollbar whitespace-pre-wrap transition-all duration-300"
+                                        style={{
+                                            fontSize: text.length > 200 ? '0.92rem' : '1.05rem',
+                                            lineHeight: '1.8'
+                                        }}
+                                    >
+                                        {text}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Footer & Seal */}
-                            <div className="w-full flex justify-between items-end mt-12 pt-6 border-t border-amber-900/10">
+                            <div className="w-full flex justify-between items-end mt-8 pt-5 border-t border-amber-900/10 z-10">
                                 <div className="text-left">
                                     <p className="text-[10px] text-amber-900/40 font-black uppercase tracking-widest">{new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                     <p className="text-xs text-amber-900/60 font-bold mt-1">紫微天機道長 · 手筆</p>
                                 </div>
-                                <div className="seal-red w-12 h-12 text-sm leading-tight p-1 rotate-[-12deg] shadow-sm">
+                                <div className="seal-red w-12 h-12 text-sm leading-tight p-1 rotate-[-12deg] shadow-sm flex items-center justify-center text-center">
                                     天機<br />道長
                                 </div>
                             </div>
@@ -3836,22 +3877,41 @@ ${indicatorStats}
                 }
             };
 
-            const formatLuckyCardText = (text) => {
-                if (!text) return "";
-                // 針對幸運號碼的特別優化：過濾掉多餘文字，只顯示純數字
-                if (/靈動|天機財數|幸運號碼|明牌|財數/.test(text)) {
-                    // 尋找包含數字串的行 (例如 [1, 2, 3] 或 1,2,3...)
-                    const lines = text.split('\n');
-                    const luckyLines = lines.filter(l => /\d{1,2}(,\s*\d{1,2}){2,}/.test(l) || /\[\d{1,2}(,\s*\d{1,2}){2,}\]/.test(l));
+            const formatLuckyCardText = (rawText) => {
+                if (!rawText) return "";
+                let clean = rawText;
+
+                // 1. 去除舊式加載雜訊與儀式咒語
+                clean = clean.replace(/【大師解析中[^】]*】/g, "");
+                clean = clean.replace(/【紫微天機道長 · 閉目凝神[^】]*】/g, "");
+                clean = clean.replace(/老道正依先天紫微斗數[^\n]*\n?/g, "");
+                clean = clean.replace(/天機顯現[，,]吉凶明朗[^\n]*\n?/g, "");
+                clean = clean.replace(/緣主且靜聽老道[^\n]*\n?/g, "");
+
+                // 2. 針對幸運號碼的特別優化
+                if (/靈動|天機財數|幸運號碼|明牌|財數/.test(clean)) {
+                    const lines = clean.split('\n');
+                    const luckyLines = lines.filter(l => /\d{1,2}(,\s*\d{1,2}){2,}/.test(l) || /\[\d{1,2}(,\s*\d{1,2}){2,}\]/.test(l) || /靈數|特出/.test(l));
                     if (luckyLines.length > 0) {
-                        return luckyLines.map(l => {
-                            // 移除標籤，只保留數字內容
-                            let clean = l.replace(/【[^】]+】：/g, "").trim();
-                            return clean;
-                        }).join('\n\n');
+                        return luckyLines.map(l => l.replace(/【[^】]+】：?/g, "").replace(/[*#]/g, "").trim()).filter(Boolean).join('\n\n');
                     }
                 }
-                return text.trim();
+
+                // 3. 去除最頂部重複的大標題（因為開運卡頭部已有專屬典雅標題）
+                clean = clean.replace(/^【紫微天機道長 · [^】]+】[：:]?\s*/m, "");
+
+                // 4. 清除所有 Markdown 語法（消除如 **、###、--- 等原始符號）
+                clean = clean.replace(/\*\*(.*?)\*\*/g, "$1"); // 移除 **粗體**
+                clean = clean.replace(/[*#_~`>]/g, "");         // 移除 *、#、> 等符號
+                clean = clean.replace(/[-=]{3,}/g, "");         // 移除分隔線
+
+                // 5. 優化條列標號（將 1. 2. 轉為 ✦ 莊重印章符號，直書排版更和諧）
+                clean = clean.replace(/^(\d+)\.\s*/gm, "✦ ");
+
+                // 6. 整理空行，避免過多空隙
+                clean = clean.split('\n').map(l => l.trim()).filter(Boolean).join('\n\n');
+
+                return clean.trim();
             };
 
             const handleChatSend = async () => {
