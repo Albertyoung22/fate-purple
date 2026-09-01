@@ -1840,7 +1840,8 @@
         const WisdomCardModal = ({ text, onClose }) => {
             const cardRef = useRef(null);
             const [isGenerating, setIsGenerating] = useState(false);
-            const [isVertical, setIsVertical] = useState(true);
+            const isLucky = React.useMemo(() => /靈動|大樂透|539|幸運號|威力彩|特出靈數/.test(text), [text]);
+            const [isVertical, setIsVertical] = useState(!isLucky);
 
             // 動態判定卡片主題標題
             const cardTitle = React.useMemo(() => {
@@ -3888,12 +3889,27 @@ ${indicatorStats}
                 clean = clean.replace(/天機顯現[，,]吉凶明朗[^\n]*\n?/g, "");
                 clean = clean.replace(/緣主且靜聽老道[^\n]*\n?/g, "");
 
-                // 2. 針對幸運號碼的特別優化
-                if (/靈動|天機財數|幸運號碼|明牌|財數/.test(clean)) {
+                // 2. 針對幸運號碼的特別優化（精準擷取所有樂透號碼與特出靈數）
+                if (/靈動|天機財數|幸運號碼|明牌|財數|大樂透|539|特出靈數/.test(clean)) {
                     const lines = clean.split('\n');
-                    const luckyLines = lines.filter(l => /\d{1,2}(,\s*\d{1,2}){2,}/.test(l) || /\[\d{1,2}(,\s*\d{1,2}){2,}\]/.test(l) || /靈數|特出/.test(l));
-                    if (luckyLines.length > 0) {
-                        return luckyLines.map(l => l.replace(/【[^】]+】：?/g, "").replace(/[*#]/g, "").trim()).filter(Boolean).join('\n\n');
+                    const cards = [];
+                    for (let l of lines) {
+                        const s = l.trim();
+                        if (!s) continue;
+                        if (s.includes('特出靈數') || s.includes('先天靈數')) {
+                            const nums = s.includes('】：') ? s.split('】：')[1].replace(/[*#]/g, '').trim() : s.replace(/[*#]/g, '').trim();
+                            cards.push(`✦ 今日特出靈數：${nums}`);
+                        } else if (s.includes('大樂透')) {
+                            const nums = s.includes('】：') ? s.split('】：')[1].replace(/[*#]/g, '').trim() : s.replace(/[*#]/g, '').trim();
+                            cards.push(`✦ 大樂透感應數：${nums}`);
+                        } else if (s.includes('539')) {
+                            const nums = s.includes('】：') ? s.split('】：')[1].replace(/[*#]/g, '').trim() : s.replace(/[*#]/g, '').trim();
+                            cards.push(`✦ 今彩539感應數：${nums}`);
+                        }
+                    }
+                    if (cards.length > 0) {
+                        cards.push('天機靈數順應天時，小賭怡情，積善厚德自能聚財！');
+                        return cards.join('\n\n');
                     }
                 }
 
