@@ -506,14 +506,12 @@
             animation: talismanGlow 3s infinite alternate;
         }
 
-        @keyframes talismanGlow {
-            from {
-                box-shadow: 0 0 20px rgba(254, 204, 0, 0.3);
-            }
-
-            to {
-                box-shadow: 0 0 50px rgba(255, 235, 59, 0.7);
-            }
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: spinSlow 12s linear infinite;
         }
 
         .star-sihua {
@@ -2365,7 +2363,101 @@
                     </div>
                 </div>
             );
-        };
+        // --- 道家仙境背景禪樂合成引擎 (Web Audio API: 432Hz 頌缽與五聲音階) ---
+        class ZenBgmEngine {
+            constructor() {
+                this.ctx = null;
+                this.masterGain = null;
+                this.isPlaying = false;
+                this.volume = 0.22;
+                this.duckFactor = 1.0;
+                this.track = 0; // 0: 太虛引(空靈頌缽), 1: 紫霄吟(五音仙琴), 2: 天機道(晨鐘深雨)
+                this.timer = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                    this.masterGain = this.ctx.createGain();
+                    this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+                    this.masterGain.connect(this.ctx.destination);
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+            setVolume(v) {
+                this.volume = Math.max(0, Math.min(1, v));
+                if (this.masterGain && this.ctx) {
+                    this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+                    this.masterGain.gain.linearRampToValueAtTime(this.volume * this.duckFactor, this.ctx.currentTime + 0.1);
+                }
+            }
+            duck(isDucking) {
+                this.duckFactor = isDucking ? 0.25 : 1.0;
+                if (this.masterGain && this.ctx) {
+                    this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+                    this.masterGain.gain.linearRampToValueAtTime(this.volume * this.duckFactor, this.ctx.currentTime + 0.5);
+                }
+            }
+            playZenNote() {
+                if (!this.isPlaying || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const scales = [
+                    [108, 144, 162, 216, 288, 324, 432, 576],
+                    [216, 243, 270, 324, 364.5, 432, 486, 540, 648],
+                    [144, 216, 288, 432, 576, 864]
+                ];
+                const currentScale = scales[this.track] || scales[0];
+                const freq = currentScale[Math.floor(Math.random() * currentScale.length)];
+
+                const osc = this.ctx.createOscillator();
+                const osc2 = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+
+                osc.type = this.track === 1 ? 'triangle' : 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(freq * (this.track === 0 ? 2.76 : 1.5), now);
+
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(this.track === 1 ? 1200 : 800, now);
+
+                const duration = this.track === 0 ? 6.5 : (this.track === 1 ? 4.2 : 5.0);
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.18, now + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+                osc.connect(filter);
+                osc2.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.masterGain);
+
+                osc.start(now);
+                osc2.start(now);
+                osc.stop(now + duration);
+                osc2.stop(now + duration);
+
+                const nextInterval = (this.track === 1 ? 2200 : 3400) + Math.random() * 2000;
+                this.timer = setTimeout(() => this.playZenNote(), nextInterval);
+            }
+            start() {
+                this.init();
+                if (this.isPlaying) return;
+                this.isPlaying = true;
+                this.playZenNote();
+            }
+            stop() {
+                this.isPlaying = false;
+                if (this.timer) clearTimeout(this.timer);
+                if (this.masterGain && this.ctx) {
+                    this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+                    this.masterGain.gain.linearRampToValueAtTime(0.0001, this.ctx.currentTime + 0.3);
+                }
+            }
+        }
 
 
         const App = () => {
@@ -2414,6 +2506,58 @@
             const isTTSActive = (id) => ttsState.id === id && (ttsState.status === 'loading' || ttsState.status === 'playing');
             const isTTSLoading = (id) => ttsState.id === id && ttsState.status === 'loading';
             const isTTSPlaying = (id) => ttsState.id === id && ttsState.status === 'playing';
+
+            // BGM Background Music State
+            const [bgmPlaying, setBgmPlaying] = useState(false);
+            const [bgmVolume, setBgmVolume] = useState(0.22);
+            const [bgmTrack, setBgmTrack] = useState(0); // 0: 太虛引, 1: 紫霄吟, 2: 天機道
+            const [showBgmSettings, setShowBgmSettings] = useState(false);
+            const bgmEngineRef = useRef(null);
+
+            useEffect(() => {
+                bgmEngineRef.current = new ZenBgmEngine();
+                return () => {
+                    if (bgmEngineRef.current) bgmEngineRef.current.stop();
+                };
+            }, []);
+
+            const toggleBgm = () => {
+                if (!bgmEngineRef.current) return;
+                if (bgmPlaying) {
+                    bgmEngineRef.current.stop();
+                    setBgmPlaying(false);
+                } else {
+                    bgmEngineRef.current.start();
+                    setBgmPlaying(true);
+                }
+            };
+
+            const stopBgmExplicitly = () => {
+                if (bgmEngineRef.current) {
+                    bgmEngineRef.current.stop();
+                }
+                setBgmPlaying(false);
+            };
+
+            const changeBgmTrack = (t) => {
+                setBgmTrack(t);
+                if (bgmEngineRef.current) {
+                    bgmEngineRef.current.track = t;
+                    if (bgmPlaying) {
+                        bgmEngineRef.current.stop();
+                        setTimeout(() => {
+                            if (bgmEngineRef.current) bgmEngineRef.current.start();
+                        }, 150);
+                    }
+                }
+            };
+
+            const changeBgmVolume = (v) => {
+                setBgmVolume(v);
+                if (bgmEngineRef.current) {
+                    bgmEngineRef.current.setVolume(v);
+                }
+            };
 
             // 監控使用者是否修改過生日 (若有舊資料則視為已修改過)
             const [isDateModified, setIsDateModified] = useState(() => !!localStorage.getItem('ziwei_birth_date'));
@@ -2898,6 +3042,10 @@
                 window._audioRegistry = [];
                 window.globalAudio = null;
                 setTtsState({ id: null, status: 'idle' });
+                if (bgmEngineRef.current) {
+                    bgmEngineRef.current.stop();
+                    setBgmPlaying(false);
+                }
             };
 
             const playTTS = async (text, id) => {
@@ -2939,6 +3087,7 @@
                     window._audioRegistry.push(audio); // Register to global list
                     window.globalAudio = audio;
 
+                    if (bgmEngineRef.current) bgmEngineRef.current.duck(true);
                     audio.play();
                     setTtsState({ id: id, status: 'playing' });
 
@@ -2947,6 +3096,7 @@
                         window.globalAudio = null;
                         URL.revokeObjectURL(url);
                         setTtsState({ id: null, status: 'idle' });
+                        if (bgmEngineRef.current) bgmEngineRef.current.duck(false);
                     };
 
                 } catch (e) {
@@ -3708,6 +3858,11 @@ ${indicatorStats}
 
                             <div className="absolute top-2 right-2 md:top-3 md:right-3 flex flex-col items-end gap-1.5 z-50">
                                 <div className="flex gap-1 md:gap-2">
+                                    <button onClick={toggleBgm} className={`text-[11px] md:text-xs font-black flex items-center gap-1.5 px-3 py-2 rounded-full backdrop-blur shadow-md hover:shadow-lg transition-all border ${bgmPlaying ? 'bg-amber-100/90 border-amber-300 text-amber-900 ring-2 ring-amber-300/50' : 'bg-white/80 border-indigo-100 text-slate-600 hover:text-indigo-600 hover:bg-white'}`} title={bgmPlaying ? "隨時點擊停止仙樂" : "開啟仙境背景音樂"}>
+                                        <span className={`w-2 h-2 rounded-full ${bgmPlaying ? 'bg-amber-500 animate-ping' : 'bg-slate-300'}`} />
+                                        <Icon name="music" className={`w-3.5 h-3.5 ${bgmPlaying ? 'animate-spin-slow text-amber-600' : 'text-slate-400'}`} />
+                                        <span>{bgmPlaying ? '仙樂播放中 (點擊停止)' : '開啟背景仙樂'}</span>
+                                    </button>
                                     <button onClick={() => setShowGuide(true)} className="text-[11px] md:text-xs font-black flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur shadow-md hover:bg-white hover:shadow-lg transition-all border border-indigo-100 text-indigo-600">
                                         <i data-lucide="help-circle" className="w-4 h-4" /> 使用說明
                                     </button>
@@ -4300,9 +4455,130 @@ ${indicatorStats}
                         </div>
                         <footer className="text-center py-24 text-slate-400 font-black text-[11px] uppercase tracking-[1em] no-print">專業紫微斗數 · 天機命譜正宗</footer>
 
+                        {/* Floating Daoist Zen BGM Controller */}
+                        <div className="fixed bottom-6 right-20 z-50 print:hidden flex items-center gap-2">
+                            <div className={`transition-all duration-300 flex items-center gap-2 bg-indigo-950/90 text-white backdrop-blur-xl px-3 py-1.5 rounded-full shadow-2xl border ${bgmPlaying ? 'border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.3)]' : 'border-white/20'}`}>
+                                
+                                {/* 隨時停止/播放大按鈕 */}
+                                <button 
+                                    onClick={toggleBgm} 
+                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                                        bgmPlaying 
+                                            ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 hover:scale-105 shadow-md' 
+                                            : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                                    }`} 
+                                    title={bgmPlaying ? "隨時點擊停止仙樂" : "開啟仙境背景音樂"}
+                                >
+                                    {bgmPlaying ? (
+                                        <Icon name="pause" className="w-4 h-4 fill-current animate-pulse" />
+                                    ) : (
+                                        <Icon name="play" className="w-4 h-4 fill-current ml-0.5" />
+                                    )}
+                                </button>
+
+                                {/* 狀態文字與曲目名稱 (點擊展開設定) */}
+                                <div className="flex flex-col cursor-pointer pr-1 select-none" onClick={() => setShowBgmSettings(prev => !prev)}>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[11px] font-black tracking-wider text-amber-200">
+                                            {bgmPlaying ? (bgmTrack === 0 ? '太虛引 · 432Hz' : bgmTrack === 1 ? '紫霄吟 · 五音琴' : '天機道 · 古剎鐘') : '背景仙樂'}
+                                        </span>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${bgmPlaying ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'}`}></span>
+                                    </div>
+                                    <span className="text-[9px] font-bold text-indigo-300/80 tracking-widest">
+                                        {bgmPlaying ? '隨時點此停止' : '已靜音 · 點擊啟動'}
+                                    </span>
+                                </div>
+
+                                {/* 調節開關 */}
+                                <button 
+                                    onClick={() => setShowBgmSettings(prev => !prev)} 
+                                    className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-indigo-200 flex items-center justify-center transition-all"
+                                    title="調節音量與切換曲風"
+                                >
+                                    <Icon name="sliders" className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+
+                            {/* 音量與曲目浮動面板 */}
+                            {showBgmSettings && (
+                                <div className="absolute bottom-14 right-0 bg-slate-950/95 border border-amber-400/40 rounded-2xl p-4 shadow-2xl backdrop-blur-2xl text-white w-64 flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                                        <span className="text-xs font-black tracking-widest text-amber-300 flex items-center gap-1.5">
+                                            <Icon name="music" className="w-3.5 h-3.5" /> 仙樂曲調設定
+                                        </span>
+                                        <button onClick={() => setShowBgmSettings(false)} className="text-white/60 hover:text-white text-xs">✕</button>
+                                    </div>
+
+                                    {/* 音量滑桿 */}
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex justify-between text-[10px] font-bold text-indigo-200">
+                                            <span>音量調節</span>
+                                            <span>{Math.round(bgmVolume * 100)}%</span>
+                                        </div>
+                                        <input 
+                                            type="range" 
+                                            min="0" 
+                                            max="0.8" 
+                                            step="0.05" 
+                                            value={bgmVolume} 
+                                            onChange={e => changeBgmVolume(parseFloat(e.target.value))}
+                                            className="w-full h-1.5 bg-indigo-900/60 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                                        />
+                                    </div>
+
+                                    {/* 仙樂曲目選擇 */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <span className="text-[10px] font-bold text-indigo-200">選擇仙境氛圍</span>
+                                        <div className="grid grid-cols-1 gap-1">
+                                            {[
+                                                { id: 0, name: "太虛引", desc: "432Hz 頌缽空靈，沉靜入定" },
+                                                { id: 1, name: "紫霄吟", desc: "宮商角徵羽，五音琴韻" },
+                                                { id: 2, name: "天機道", desc: "深山古剎鐘鳴，辟邪調神" }
+                                            ].map(t => (
+                                                <button
+                                                    key={t.id}
+                                                    onClick={() => changeBgmTrack(t.id)}
+                                                    className={`px-2.5 py-1.5 rounded-lg text-left transition-all flex flex-col ${
+                                                        bgmTrack === t.id 
+                                                            ? 'bg-amber-500/20 border border-amber-400 text-amber-200' 
+                                                            : 'bg-white/5 border border-transparent text-slate-300 hover:bg-white/10'
+                                                    }`}
+                                                >
+                                                    <span className="text-xs font-black">{t.name}</span>
+                                                    <span className="text-[9px] text-slate-400">{t.desc}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* 一鍵即時停止按鈕 */}
+                                    <button 
+                                        onClick={toggleBgm}
+                                        className={`w-full py-1.5 rounded-xl font-black text-xs transition-all shadow-md flex items-center justify-center gap-1.5 ${
+                                            bgmPlaying 
+                                                ? 'bg-rose-500/80 hover:bg-rose-600 text-white' 
+                                                : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                                        }`}
+                                    >
+                                        {bgmPlaying ? (
+                                            <>
+                                                <Icon name="square" className="w-3.5 h-3.5 fill-current" />
+                                                <span>隨時停止音樂</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Icon name="play" className="w-3.5 h-3.5 fill-current" />
+                                                <span>開始播放仙樂</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
                         {/* Global Floating Stop Button */}
                         <div className="fixed bottom-6 right-6 z-50 print:hidden">
-                            <button onClick={stopGlobalAudio} className="w-12 h-12 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 hover:scale-110 transition-all flex items-center justify-center ring-4 ring-white/50" title="強制停止所有語音">
+                            <button onClick={stopGlobalAudio} className="w-12 h-12 rounded-full bg-red-600 text-white shadow-xl hover:bg-red-700 hover:scale-110 transition-all flex items-center justify-center ring-4 ring-white/50" title="強制停止所有語音與仙樂">
                                 <Icon name="square" className="w-5 h-5 fill-current" />
                             </button>
                         </div>

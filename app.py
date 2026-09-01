@@ -1689,7 +1689,7 @@ def handle_hidden_insights():
 
 @app.route('/<path:filename>')
 def serve_static(filename):
-    if filename.lower().endswith(('.png', '.ico', '.jpg', '.jpeg', '.html', '.css', '.js', '.json')):
+    if filename.lower().endswith(('.png', '.ico', '.jpg', '.jpeg', '.html', '.css', '.js', '.json', '.mp3', '.wav', '.ogg')):
         if os.path.exists(filename): return send_file(filename)
     return "Not Found", 404
 
