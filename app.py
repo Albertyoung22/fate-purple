@@ -38,10 +38,14 @@ def allowed_gai_family():
 urllib3_cn.allowed_gai_family = allowed_gai_family
 # ------------------------------------------------
 
-from google import genai
+try:
+    from google import genai
+except ImportError:
+    genai = None
 from master_book import MASTER_BOOK
 from bazi_master import BAZI_MASTER_BOOK
 from rule_engine import create_chart_from_dict, evaluate_rules, PALACE_NAMES
+from fate_cpsat_solver import FateCPSATSolver, stream_cpsat_ai, solve_fate_cpsat
 
 # --- Configuration & Constants Loading ---
 def load_config():
@@ -52,10 +56,10 @@ def load_config():
         "mongo_uri": "",
         "server": {"host": "0.0.0.0", "port": 5000, "debug": False},
         "gemini": {
-            "provider": "gemini", 
+            "provider": "cpsat", 
             "api_key": "", 
             "groq_key": "",
-            "model": "gemini-2.0-flash", 
+            "model": "google-ortools-cpsat", 
             "temperature": 0.7, 
             "max_output_tokens": 3000
         },
@@ -1360,6 +1364,9 @@ def stream_gemini_api(prompt, system_prompt=""):
     
     for current_key in available_keys:
         try:
+            if not genai:
+                print("Google GenAI 模組未安裝或無法載入")
+                break
             client = genai.Client(api_key=current_key)
             # Use safer model fallback for simulation future
             test_model = GEMINI_MODEL
@@ -1396,6 +1403,15 @@ def call_gemini_api(prompt, system_prompt=""):
     for chunk in stream_gemini_api(prompt, system_prompt):
         full_response += chunk
     return full_response if full_response else None
+
+# --- Google OR-Tools (CP-SAT Constraint Programming Solver) API Caller ---
+def stream_cpsat_api(prompt, system_prompt="", chart_data=None, user_info=None):
+    """呼叫 Google OR-Tools CP-SAT 命理約束規劃求解器進行串流推演"""
+    yield from stream_cpsat_ai(prompt, system_prompt, chart_data=chart_data, user_info=user_info)
+
+def call_cpsat_api(prompt, system_prompt="", chart_data=None, user_info=None):
+    """呼叫 Google OR-Tools CP-SAT 命理約束規劃求解器獲取完整求解報告"""
+    return solve_fate_cpsat(chart_data, user_info, prompt)
 
 # --- UI Application Class ---
 # --- UI Application Class ---
@@ -1772,7 +1788,12 @@ def chat():
         
         is_full = any(kw in (user_prompt + client_sys) for kw in ["詳評", "命譜詳評", "格局報告", "八字詳解", "命盤解析", "詳細解析", "八字論命"])
         target_type = data.get("model", "chat")
-        if target_type == "stock": is_full = True # 股市分析也需要較多心法支援
+        
+        # 專項提問、專屬按鈕與具體領域問題（桃花、財運、工作、健康、大限、流年、股市、夢境、測字等）均不走全盤章節切片，直接由大師專項開示
+        specific_keywords = ["工作", "事業", "職業", "升遷", "桃花", "感情", "婚姻", "夫妻", "財運", "求財", "投資", "股票", "健康", "疾病", "夢境", "測字", "號碼", "樂透", "大限", "流年", "流月", "前世", "錦囊"]
+        if target_type in ["love", "finance", "daily", "pastLife", "glyph", "dream", "stock", "simple", "bazi"] or any(k in user_prompt for k in specific_keywords):
+            if not any(kw in user_prompt for kw in ["命譜詳評", "全盤詳解", "格局報告"]):
+                is_full = False
         
         # 注入後台「隱藏密令」
         insights = load_hidden_insights()
@@ -2137,17 +2158,24 @@ def chat():
                 return
 
             try:
-                print(f">>> AI 請求 (Prompt: {p[:15]}...)")
+                print(f">>> [Google OR-Tools CP-SAT 核心啟動] 請求 (Prompt: {p[:15]}...)")
                 
-                # Phase 1: Local Ollama
-                if not os.environ.get('RENDER'):
+                provider = CONFIG.get('gemini', {}).get('provider', 'cpsat').lower()
+
+                # Phase 1: Google OR-Tools (CP-SAT Constraint Programming Solver) - 預設首選核心引擎
+                if provider in ['cpsat', 'ortools', 'google_ortools', 'sat'] or not provider:
+                    print(">>> 執行 Google OR-Tools CP-SAT 最優化求解核心...")
+                    for chunk in stream_cpsat_ai(p, s, chart_data=chart_data, user_info=user_info, target_type=target_type):
+                        yield chunk
+                    return
+
+                # Phase 2: Local Ollama (若有特別指定且非 Render)
+                if provider == 'ollama' and not os.environ.get('RENDER'):
                     res = call_ollama_api(p, s)
                     if res and len(res.strip()) > 5: 
                         yield res
                         return
 
-                provider = CONFIG.get('gemini', {}).get('provider', 'gemini').lower()
-                
                 def try_groq_flow():
                     has_content = False
                     for chunk in stream_groq_api(p, s):
@@ -2162,37 +2190,27 @@ def chat():
                         yield chunk
                     return has_content
 
-                if not GROQ_KEYS and not GEMINI_KEYS:
-                    yield "【天機未啟】系統尚未配置 AI 金鑰。若是部署在雲端，請檢查環境變數 (Environment Variables) 設定。\n"
-                    return
-
                 if provider == 'groq':
                     print(">>> 優先嘗試 Groq 串流模式...")
                     if (GROQ_KEYS and (yield from try_groq_flow())):
                         return
-                    
-                    # If failed with 413, try a "Lite" prompt without secret books
-                    print(">>> Trying LITE prompt (No secret books) for Groq...")
-                    lite_system = s.split("【紫微心法秘卷】")[0].split("【八字心法秘卷】")[0] # Basic stripping
-                    if (GROQ_KEYS and (yield from try_groq_flow() if 'lite_system' in locals() else [])): # Re-use try_groq_flow with lite_system
-                         # Actually I need a better way to pass the new system prompt to try_groq_flow. 
-                         # Let's just manually re-call for the Lite version.
-                         for chunk in stream_groq_api(p, lite_system):
-                             yield chunk
-                         return
-
-                    print(">>> Groq 失敗或未配置，嘗試 Gemini 備援...")
-                    if (GEMINI_KEYS and (yield from try_gemini_flow())):
-                        return
-                    yield "【天機中斷】目前 API 服務暫時無法感應，請確認金鑰配額或網路連線。"
-                else:
+                    print(">>> Groq 失敗或未配置，切換至 Google OR-Tools CP-SAT 核心求解...")
+                    for chunk in stream_cpsat_ai(p, s, chart_data=chart_data, user_info=user_info, target_type=target_type):
+                        yield chunk
+                    return
+                elif provider == 'gemini':
                     print(">>> 優先嘗試 Gemini 串流模式...")
                     if (GEMINI_KEYS and (yield from try_gemini_flow())):
                         return
-                    print(">>> Gemini 失敗或未配置，嘗試 Groq 備援...")
-                    if (GROQ_KEYS and (yield from try_groq_flow())):
-                        return
-                    yield "【天機中斷】目前 API 服務暫時無法感應，請確認金鑰配額或網路連線。"
+                    print(">>> Gemini 失敗或未配置，切換至 Google OR-Tools CP-SAT 核心求解...")
+                    for chunk in stream_cpsat_ai(p, s, chart_data=chart_data, user_info=user_info, target_type=target_type):
+                        yield chunk
+                    return
+                else:
+                    # 全域 fallback 均由 Google OR-Tools CP-SAT 承接
+                    for chunk in stream_cpsat_ai(p, s, chart_data=chart_data, user_info=user_info, target_type=target_type):
+                        yield chunk
+                    return
             
             finally:
                 # 務必釋放許可證，否則會造成死鎖 (Deadlock)
@@ -2285,6 +2303,41 @@ def chat():
             log_chat(data.get("model", "Hybrid-Stream"), user_prompt, full_response, user_info)
 
     return Response(stream_with_context(generate()), content_type='text/plain; charset=utf-8')
+
+@app.route('/api/cpsat_solve', methods=['POST', 'OPTIONS'])
+def cpsat_solve_route():
+    """專屬 Google OR-Tools CP-SAT 最優化求解端點"""
+    if request.method == 'OPTIONS':
+        resp = make_response()
+        resp.headers.add("Access-Control-Allow-Origin", "*")
+        resp.headers.add("Access-Control-Allow-Headers", "*")
+        return resp
+    
+    data = request.json or {}
+    chart_data = data.get('chart_data', [])
+    user_info = {
+        "user_name": data.get("name", "緣主"),
+        "birth_date": data.get("birth_date", ""),
+        "birth_hour": data.get("birth_hour", ""),
+        "lunar_date": data.get("lunar_date", ""),
+        "gender": data.get("gender", "M"),
+        "zodiac": data.get("zodiac", "")
+    }
+    prompt = data.get('prompt', '')
+    
+    solver = FateCPSATSolver(chart_data=chart_data, user_info=user_info, prompt=prompt)
+    success = solver.solve()
+    
+    return jsonify({
+        "status": "success" if success else "infeasible",
+        "solve_stats": solver.solve_stats,
+        "palace_scores": solver.palace_scores,
+        "element_scores": solver.element_scores,
+        "best_direction": solver.best_direction,
+        "best_timing": solver.best_timing,
+        "objective": solver.objective_val,
+        "report": solver.generate_report()
+    })
 
 @app.route('/api/tts', methods=['POST', 'OPTIONS'])
 def tts_handler():

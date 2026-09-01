@@ -1,0 +1,41 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialGradient id="gold-gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(256)">
+<stop offset="0%" stop-color="#FFF7CC"/>
+<stop offset="20%" stop-color="#FFD700"/>
+<stop offset="60%" stop-color="#FDB931"/>
+<stop offset="100%" stop-color="#9E5F08"/>
+</radialGradient>
+<linearGradient id="body-gradient" x1="256" y1="180" x2="256" y2="400" gradientUnits="userSpaceOnUse">
+<stop offset="0%" stop-color="#FDB931"/>
+<stop offset="50%" stop-color="#DAA520"/>
+<stop offset="100%" stop-color="#8B4513"/>
+</linearGradient>
+<filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+<feGaussianBlur stdDeviation="15" result="coloredBlur"/>
+<feMerge>
+<feMergeNode in="coloredBlur"/>
+<feMergeNode in="SourceGraphic"/>
+</feMerge>
+</filter>
+</defs>
+
+<!-- Glow behind -->
+<ellipse cx="256" cy="300" rx="220" ry="120" fill="#FFD700" opacity="0.4" filter="url(#glow)"/>
+
+<!-- Sycee Body (Boat Shape) -->
+<path d="M60 260 C60 260 120 480 256 480 C392 480 452 260 452 260 L420 200 C420 200 350 320 256 320 C162 320 92 200 92 200 L60 260 Z" fill="url(#body-gradient)" stroke="#8B4513" stroke-width="4"/>
+
+<!-- Top Oval Face -->
+<ellipse cx="256" cy="200" rx="180" ry="80" fill="#FFD700" stroke="#DAA520" stroke-width="3"/>
+
+<!-- Central Raised Mound -->
+<path d="M196 200 C196 200 220 120 256 120 C292 120 316 200 316 200 C316 200 292 260 256 260 C220 260 196 200 196 200 Z" fill="url(#gold-gradient)" stroke="#DAA520" stroke-width="2"/>
+
+<!-- Highlighting/Shine -->
+<ellipse cx="230" cy="160" rx="40" ry="20" fill="white" opacity="0.6" transform="rotate(-10 230 160)"/>
+<path d="M100 260 Q150 280 180 270" stroke="white" stroke-width="5" opacity="0.4" stroke-linecap="round"/>
+<path d="M412 260 Q362 280 332 270" stroke="white" stroke-width="5" opacity="0.4" stroke-linecap="round"/>
+
+<!-- Text (Optional, removing per request for image only, but adding symbol if needed. Keep clean.) -->
+</svg>
