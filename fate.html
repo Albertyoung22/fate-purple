@@ -2370,10 +2370,13 @@
             constructor() {
                 this.ctx = null;
                 this.masterGain = null;
+                this.droneOsc1 = null;
+                this.droneOsc2 = null;
+                this.droneGain = null;
                 this.isPlaying = false;
-                this.volume = 0.22;
+                this.volume = 0.35;
                 this.duckFactor = 1.0;
-                this.track = 0; // 0: 太虛引(空靈頌缽), 1: 紫霄吟(五音仙琴), 2: 天機道(晨鐘深雨)
+                this.track = 0; // 0: 太虛引(432Hz頌缽), 1: 紫霄吟(五音仙琴), 2: 天機道(古剎鐘鳴)
                 this.timer = null;
             }
             init() {
@@ -2381,7 +2384,7 @@
                     const AudioCtx = window.AudioContext || window.webkitAudioContext;
                     this.ctx = new AudioCtx();
                     this.masterGain = this.ctx.createGain();
-                    this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+                    this.masterGain.gain.setValueAtTime(this.volume * this.duckFactor, this.ctx.currentTime);
                     this.masterGain.connect(this.ctx.destination);
                 }
                 if (this.ctx.state === 'suspended') {
@@ -2396,17 +2399,56 @@
                 }
             }
             duck(isDucking) {
-                this.duckFactor = isDucking ? 0.25 : 1.0;
+                this.duckFactor = isDucking ? 0.2 : 1.0;
                 if (this.masterGain && this.ctx) {
                     this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
-                    this.masterGain.gain.linearRampToValueAtTime(this.volume * this.duckFactor, this.ctx.currentTime + 0.5);
+                    this.masterGain.gain.linearRampToValueAtTime(this.volume * this.duckFactor, this.ctx.currentTime + 0.3);
                 }
+            }
+            startDrone() {
+                if (!this.ctx || this.droneOsc1) return;
+                const now = this.ctx.currentTime;
+                // Warm ambient root chord (108Hz + 216Hz in 432Hz tuning)
+                this.droneGain = this.ctx.createGain();
+                this.droneGain.gain.setValueAtTime(0.001, now);
+                this.droneGain.gain.linearRampToValueAtTime(0.12, now + 1.5);
+                this.droneGain.connect(this.masterGain);
+
+                this.droneOsc1 = this.ctx.createOscillator();
+                this.droneOsc1.type = 'sine';
+                this.droneOsc1.frequency.setValueAtTime(108, now);
+                this.droneOsc1.connect(this.droneGain);
+                this.droneOsc1.start(now);
+
+                this.droneOsc2 = this.ctx.createOscillator();
+                this.droneOsc2.type = 'triangle';
+                this.droneOsc2.frequency.setValueAtTime(216, now);
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(300, now);
+                this.droneOsc2.connect(filter);
+                filter.connect(this.droneGain);
+                this.droneOsc2.start(now);
+            }
+            stopDrone() {
+                if (this.droneGain && this.ctx) {
+                    const now = this.ctx.currentTime;
+                    this.droneGain.gain.cancelScheduledValues(now);
+                    this.droneGain.gain.linearRampToValueAtTime(0.0001, now + 0.5);
+                }
+                setTimeout(() => {
+                    try {
+                        if (this.droneOsc1) { this.droneOsc1.stop(); this.droneOsc1.disconnect(); this.droneOsc1 = null; }
+                        if (this.droneOsc2) { this.droneOsc2.stop(); this.droneOsc2.disconnect(); this.droneOsc2 = null; }
+                        if (this.droneGain) { this.droneGain.disconnect(); this.droneGain = null; }
+                    } catch (e) { }
+                }, 600);
             }
             playZenNote() {
                 if (!this.isPlaying || !this.ctx) return;
                 const now = this.ctx.currentTime;
                 const scales = [
-                    [108, 144, 162, 216, 288, 324, 432, 576],
+                    [108, 162, 216, 288, 324, 432, 576],
                     [216, 243, 270, 324, 364.5, 432, 486, 540, 648],
                     [144, 216, 288, 432, 576, 864]
                 ];
@@ -2425,11 +2467,11 @@
                 osc2.frequency.setValueAtTime(freq * (this.track === 0 ? 2.76 : 1.5), now);
 
                 filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(this.track === 1 ? 1200 : 800, now);
+                filter.frequency.setValueAtTime(this.track === 1 ? 1500 : 900, now);
 
                 const duration = this.track === 0 ? 6.5 : (this.track === 1 ? 4.2 : 5.0);
                 gain.gain.setValueAtTime(0.001, now);
-                gain.gain.linearRampToValueAtTime(0.18, now + 0.08);
+                gain.gain.linearRampToValueAtTime(0.45, now + 0.08);
                 gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
                 osc.connect(filter);
@@ -2442,18 +2484,24 @@
                 osc.stop(now + duration);
                 osc2.stop(now + duration);
 
-                const nextInterval = (this.track === 1 ? 2200 : 3400) + Math.random() * 2000;
+                const nextInterval = (this.track === 1 ? 2000 : 3000) + Math.random() * 1800;
                 this.timer = setTimeout(() => this.playZenNote(), nextInterval);
             }
             start() {
                 this.init();
                 if (this.isPlaying) return;
                 this.isPlaying = true;
+                if (this.masterGain && this.ctx) {
+                    this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+                    this.masterGain.gain.setValueAtTime(this.volume * this.duckFactor, this.ctx.currentTime);
+                }
+                this.startDrone();
                 this.playZenNote();
             }
             stop() {
                 this.isPlaying = false;
                 if (this.timer) clearTimeout(this.timer);
+                this.stopDrone();
                 if (this.masterGain && this.ctx) {
                     this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
                     this.masterGain.gain.linearRampToValueAtTime(0.0001, this.ctx.currentTime + 0.3);
@@ -2508,6 +2556,13 @@
             const isTTSActive = (id) => ttsState.id === id && (ttsState.status === 'loading' || ttsState.status === 'playing');
             const isTTSLoading = (id) => ttsState.id === id && ttsState.status === 'loading';
             const isTTSPlaying = (id) => ttsState.id === id && ttsState.status === 'playing';
+
+            // Auto TTS State
+            const [autoTTS, setAutoTTS] = useState(() => localStorage.getItem('ziwei_auto_tts') === 'true');
+            useEffect(() => { 
+                localStorage.setItem('ziwei_auto_tts', autoTTS); 
+                window._autoTTS = autoTTS;
+            }, [autoTTS]);
 
             // BGM Background Music State
             const [bgmPlaying, setBgmPlaying] = useState(false);
@@ -3108,11 +3163,10 @@
                 }
             };
 
-            // Expose to window for global access if needed
+            // Expose to window for global access
             window.stopTTS = stopGlobalAudio;
-
-            // Expose to window for global access if needed
-            window.stopTTS = stopGlobalAudio;
+            window._playTTS = playTTS;
+            window.playTTS = playTTS;
 
             const callAiApi = async (prompt, type = 'chat', onStream = null) => {
                 // Determine API endpoint
@@ -3285,7 +3339,13 @@
                             onStream(chunk);
                         }
                     }
-                    return stripMarkdown(fullText);
+                    const cleaned = stripMarkdown(fullText);
+                    if (window._autoTTS && cleaned && cleaned.trim()) {
+                        setTimeout(() => {
+                            if (window._playTTS) window._playTTS(cleaned, 'chat-auto');
+                        }, 500);
+                    }
+                    return cleaned;
 
                 } catch (e) {
                     console.error(e);
@@ -4316,8 +4376,21 @@ ${indicatorStats}
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-3 px-4 py-2 bg-black/30 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/40 transition-all shadow-lg">
-                                                <button onClick={stopGlobalAudio} className="w-8 h-8 rounded-full bg-red-500/80 text-white hover:bg-red-600 flex items-center justify-center transition-all shadow-md active:scale-95 group" title="停止語音">
+                                            <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 hover:bg-black/50 transition-all shadow-lg">
+                                                <button 
+                                                    onClick={() => setAutoTTS(prev => !prev)} 
+                                                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black transition-all border ${
+                                                        autoTTS 
+                                                            ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.6)]' 
+                                                            : 'bg-white/10 text-white/70 border-white/10 hover:bg-white/20 hover:text-white'
+                                                    }`}
+                                                    title={autoTTS ? "點擊關閉大師自動朗讀" : "開啟大師回答完畢自動語音朗讀"}
+                                                >
+                                                    <Icon name={autoTTS ? "volume-2" : "volume-x"} className="w-3.5 h-3.5" />
+                                                    <span>{autoTTS ? '自動朗讀: 開' : '自動朗讀: 關'}</span>
+                                                </button>
+                                                <div className="w-[1px] h-4 bg-white/20"></div>
+                                                <button onClick={stopGlobalAudio} className="w-7 h-7 rounded-full bg-red-500/80 text-white hover:bg-red-600 flex items-center justify-center transition-all shadow-md active:scale-95 group" title="停止語音">
                                                     <Icon name="square" className="w-3 h-3 fill-current group-active:scale-90 transition-transform" />
                                                 </button>
                                                 <div className="w-[1px] h-4 bg-white/20"></div>
@@ -4338,16 +4411,29 @@ ${indicatorStats}
                                                     } `}>
                                                     {m.text}
                                                     {m.role === 'assistant' && (
-                                                        <div className="mt-3 pt-2 border-t border-slate-100/50 flex justify-end gap-2">
+                                                        <div className="mt-3 pt-2 border-t border-slate-100/50 flex flex-wrap justify-end items-center gap-2">
                                                             {/隨喜|贊助|香火|結緣/.test(m.text) && (
-                                                                <button onClick={() => setShowDonate(true)} className="flex items-center gap-1 text-[10px] bg-amber-500 text-white px-3 py-1 rounded-full hover:bg-amber-600 transition-all font-black shadow-sm">
+                                                                <button onClick={() => setShowDonate(true)} className="flex items-center gap-1 text-[10px] bg-amber-500 text-white px-3 py-1.5 rounded-full hover:bg-amber-600 transition-all font-black shadow-sm">
                                                                     <Icon name="heart" className="w-3 h-3" /> 隨喜贊助
                                                                 </button>
                                                             )}
-                                                            <button onClick={() => isTTSActive(`chat-${i}`) ? stopGlobalAudio() : playTTS(m.text, `chat-${i}`)} className={`flex items-center gap-1 text-[10px] transition-colors bg-indigo-50 px-2 py-1 rounded-full hover:bg-indigo-100 ${isTTSActive(`chat-${i}`) ? 'bg-red-500 text-white hover:bg-red-600' : 'text-indigo-400 hover:text-indigo-600'} `} title="朗讀">
-                                                                {isTTSLoading(`chat-${i}`) ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name={isTTSActive(`chat-${i}`) ? "square" : "volume-2"} className={`w-3 h-3 ${isTTSPlaying(`chat-${i}`) ? 'animate-pulse' : ''} `} />} <span>{isTTSActive(`chat-${i}`) ? '停止' : '朗讀'}</span>
+                                                            <button 
+                                                                onClick={() => isTTSActive(`chat-${i}`) ? stopGlobalAudio() : playTTS(m.text, `chat-${i}`)} 
+                                                                className={`flex items-center gap-1.5 text-xs font-black transition-all px-3.5 py-1.5 rounded-full shadow-sm ${
+                                                                    isTTSActive(`chat-${i}`) 
+                                                                        ? 'bg-red-500 text-white hover:bg-red-600 ring-2 ring-red-300 animate-pulse' 
+                                                                        : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:brightness-110 shadow-amber-500/20 active:scale-95'
+                                                                }`} 
+                                                                title="聆聽大師親批語音"
+                                                            >
+                                                                {isTTSLoading(`chat-${i}`) ? (
+                                                                    <Icon name="loader" className="w-3.5 h-3.5 animate-spin" />
+                                                                ) : (
+                                                                    <Icon name={isTTSActive(`chat-${i}`) ? "square" : "volume-2"} className={`w-3.5 h-3.5 ${isTTSPlaying(`chat-${i}`) ? 'animate-pulse' : ''}`} />
+                                                                )} 
+                                                                <span>{isTTSActive(`chat-${i}`) ? '停止語音' : '🔊 聆聽大師語音'}</span>
                                                             </button>
-                                                            <button onClick={() => setWisdomText(formatLuckyCardText(m.text))} className="flex items-center gap-1 text-[10px] bg-amber-50 text-amber-600 px-2 py-1 rounded-full hover:bg-amber-500 hover:text-white transition-all font-bold">
+                                                            <button onClick={() => setWisdomText(formatLuckyCardText(m.text))} className="flex items-center gap-1 text-[10px] bg-amber-50 text-amber-600 px-2.5 py-1.5 rounded-full hover:bg-amber-500 hover:text-white transition-all font-bold border border-amber-100">
                                                                 <Icon name="image" className="w-3 h-3" /> 開運卡
                                                             </button>
                                                         </div>
