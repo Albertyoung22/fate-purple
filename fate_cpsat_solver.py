@@ -364,17 +364,23 @@ class FateCPSATSolver:
         age = self.user_info.get("age", 30)
         name = self.user_info.get("user_name", "緣主")
         
-        # 精準提取用戶真實提問，避免被背景命盤文字 (如包含財帛宮、官祿宮等) 誤導
+        # 精準提取用戶真實提問，徹底隔離背景命盤資訊 (避免背景命盤包含的八字、財帛宮等關鍵字干擾)
         clean_q = prompt
-        if "【緣主提問】" in prompt:
+        if "--------------------------------------------------" in prompt:
+            clean_q = prompt.split("--------------------------------------------------")[-1]
+        elif "【緣主提問】" in prompt:
             clean_q = prompt.split("【緣主提問】")[-1]
         elif "【緣主祈求】" in prompt:
             clean_q = prompt.split("【緣主祈求】")[-1]
+        elif "【大師指令】" in prompt:
+            clean_q = prompt.split("【大師指令】")[-1]
+        elif "【指令】" in prompt:
+            clean_q = prompt.split("【指令】")[-1]
         elif "請詳細分析" in prompt:
             clean_q = prompt.split("請詳細分析")[-1]
         elif "\n\n" in prompt:
             paras = [p for p in prompt.split("\n\n") if p.strip()]
-            clean_q = " ".join(paras[-2:])
+            clean_q = paras[-1]
 
         # 1. 桃花攻略與感情姻緣
         if target_type == "love" or any(kw in clean_q for kw in ["桃花", "感情", "婚姻", "夫妻", "另一半", "對象", "姻緣", "脫單", "復合", "伴侶", "情緣"]):
@@ -527,8 +533,30 @@ class FateCPSATSolver:
                 f"3. **出入天時禁忌**：每日開盤盤初波動劇烈之時切莫衝動追單，宜於每日 **{self.best_timing}** 冷靜分析復盤，面朝 **{self.best_direction}** 沉著定奪。"
             )
 
-        # 10. 子平八字命書
-        elif target_type == "bazi" or any(kw in clean_q for kw in ["八字", "子平", "四柱", "日主", "命書"]):
+        # 10. 今日出門吉位與歲時避諱精批
+        elif any(kw in clean_q for kw in ["出門吉位", "吉位", "避諱", "歲時禁忌", "歲時避諱", "歲時", "出行"]):
+            sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
+            weakest = sorted_elements[0][0]
+            lucky_color = ELEMENT_COLORS.get(weakest, "青翠綠、月牙白")
+            return (
+                f"【紫微天機道長 · 出門吉位與歲時避諱精批】：\n\n"
+                f"緣主 {name} 且聽老道為你觀今日天時氣象、演卦定吉凶方位：\n\n"
+                f"✦ 【一、今日出門第一大吉位】：★ 喜神大吉向【{self.best_direction}】★\n"
+                f"今日出門辦事、赴約商談或出差謀求，宜首選往【{self.best_direction}】啟程迎納祥瑞紫氣。\n"
+                f"- **開運穿戴**：出門宜穿戴 **{lucky_color}** 色系衣飾或隨身幸運小物，以五行相生調和自身磁場。\n"
+                f"- **出門心法**：出門前靜心三秒，朝吉方跨出第一步，心念祥和，貴人自會逢源相迎。\n\n"
+                f"✦ 【二、今日行事最佳吉時】：每日【{self.best_timing}】\n"
+                f"此時辰乃今日天時與你命盤最和合之良機。重大洽談、拜訪客戶、簽約定案或關鍵決策，選於此時進行最得天地奧援、事半功倍！\n\n"
+                f"✦ 【三、今日歲時禁忌與避諱】：\n"
+                f"1. **衝煞方位莫近**：出門辦事切忌急躁往對沖方向奔波；路上遇口角喧鬧之所切莫駐足圍觀，以防沾染雜亂穢氣。\n"
+                f"2. **言語處事之忌**：今日忌口出狂言、忌草率承諾。言多必失，多聽少爭，守住口德即是守住福祿財庫。\n"
+                f"3. **歸休起居避諱**：日落黃昏後不宜涉足陰暗荒涼之處，入夜宜早歸洗沐靜心，安神固本以蓄明日之元氣。\n\n"
+                f"✦ 【四、大師今日護身真言】：\n"
+                f"「心正則邪不侵，順時則萬事興。」順應天時方位而行，自可化險為夷、出入平安、吉慶滿堂！"
+            )
+
+        # 11. 子平八字命書
+        elif target_type == "bazi" or any(kw in clean_q for kw in ["八字詳批", "子平八字", "四柱八字", "子平", "命書", "日主強弱"]):
             sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
             weakest = sorted_elements[0][0]
             strongest = sorted_elements[-1][0]
@@ -546,7 +574,7 @@ class FateCPSATSolver:
                 f"配偶宮坐守喜神，伴侶多具實幹才能。彼此相敬相助，同甘共苦，乃相守一生之福緣。"
             )
 
-        # 11. 先天性格與人生發展
+        # 12. 先天性格與人生發展
         elif target_type == "simple" or any(kw in clean_q for kw in ["性格", "人生發展", "特質"]):
             life_score = self.palace_scores.get("命宮", 76)
             top_p = sorted(self.palace_scores.items(), key=lambda x: x[1], reverse=True)[0]
@@ -558,8 +586,8 @@ class FateCPSATSolver:
                 f"3. **此生修練功課**：切忌過度要求完美而讓自己精神內耗。學會接納不完美，凡事盡人事、聽天命，豁達從容，人生必將如行雲流水般順暢！"
             )
 
-        # 12. 今日錦囊妙計
-        elif target_type == "daily" or any(kw in clean_q for kw in ["今日", "每日", "錦囊", "出門吉位", "歲時禁忌"]):
+        # 13. 今日錦囊妙計
+        elif target_type == "daily" or any(kw in clean_q for kw in ["今日", "每日", "錦囊"]):
             return (
                 f"【天機大師點撥 · 今日錦囊妙計】：\n\n"
                 f"老道為緣主 {name} 觀測今日天時流轉，特賜三條當日開運錦囊：\n\n"
