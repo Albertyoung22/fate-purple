@@ -431,11 +431,15 @@ class FateCPSATSolver:
         elif any(kw in clean_q for kw in ["財", "錢", "投資", "理財", "發財", "財帛", "求財", "賺錢", "資產", "買房"]):
             return self._handle_finance(name)
 
-        # 5. 事業與工作 (優先於流年/流月)
+        # 5. 防小人與是非口舌化解 (依奴僕宮、兄弟宮與五行正氣合參，高特異性優先)
+        elif any(kw in clean_q for kw in ["小人", "防小人", "避小人", "犯小人", "招小人", "是非", "口舌", "背刺", "陷害", "交友", "奴僕宮"]):
+            return self._handle_villain(name)
+
+        # 6. 事業與工作 (優先於流年/流月)
         elif any(kw in clean_q for kw in ["工作", "事業", "職業", "升遷", "跳槽", "創業", "官祿", "求職", "職場"]):
             return self._handle_career(name)
 
-        # 6. 健康與疾厄
+        # 7. 健康與疾厄
         elif any(kw in clean_q for kw in ["健康", "疾厄", "身體", "作息", "疾病", "調養", "睡眠", "體魄"]):
             return self._handle_health(name)
 
@@ -713,6 +717,29 @@ class FateCPSATSolver:
             f"1. **臟腑調理關鍵**：五行中【{ELEMENT_NAMES[weakest]}】易受日常勞碌耗損，日常生活中需注意生活作息節律，切莫仗著年輕而長期熬夜。\n"
             f"2. **起居時令箴言**：夜間子丑之時（晚間11點至凌晨3點）正是氣血回流歸元之時，務必安睡休養，給身心充電。\n"
             f"3. **調氣固本指南**：晨間或傍晚宜多步入戶外自然之中，面向 **{self.best_direction}** 進行輕柔伸展或散步，導引天地清和之氣入體。"
+        )
+
+    def _handle_villain(self, name):
+        friends_score = self.palace_scores.get("奴僕宮", 45)
+        sibling_score = self.palace_scores.get("兄弟宮", 48)
+        life_score = self.palace_scores.get("命宮", 70)
+        sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
+        weakest = sorted_elements[0][0]
+        lucky_color = ELEMENT_COLORS.get(weakest, "玄黑、湛藍、深黛色")
+
+        return (
+            f"【紫微天機道長 · 防小人與化解是非口舌精批】：\n\n"
+            f"緣主 {name} 且聽老道為你觀人際氣數、破除暗處是非！\n\n"
+            f"老道推演命盤氣息，緣主先天命宮正氣凜然（底氣 {life_score} 分），而主掌泛泛之交、外在人際與同事部屬之「奴僕宮」氣數為 **{friends_score} 分**，「兄弟宮」為 **{sibling_score} 分**。\n"
+            f"此象顯示緣主為人仗義耿直、做事認真，然容易「交淺言深、以赤誠待人卻易遭無端嫉妒或背後閒話」。老道特傳你四大辟邪防小人化解秘法：\n\n"
+            f"✦ 【第一策：劃定人際邊界 · 杜絕暗箭之隙】\n"
+            f"小人最喜借題發揮。職場與社交場合謹記「事上見真章，言上留三分」。不涉足茶水間小圈子是非議論，不向非至交之人透露私人財務與家庭隱私。保持公事公辦、禮貌疏離，小人無柄可執，自然不攻自破。\n\n"
+            f"✦ 【第二策：五行磁場護體 · 增強清正正氣】\n"
+            f"小人屬陰晦之濁氣，最懼清正之磁場。日常可多穿著或佩戴緣主喜用神 **{lucky_color}** 系列衣飾，五行相生聚氣，能自然形成一層無形護體正氣，使暗處小人望而卻步。\n\n"
+            f"✦ 【第三策：風水時空布局 · 青龍壓制白虎】\n"
+            f"辦公桌或常用書桌宜遵守「左青龍、右白虎」原則，左手邊物品擺放宜略高於右手邊；桌面可擺放黑曜石、黑碧璽或一株常青闊葉植物以阻擋濁氣。遇重要交涉或溝通時，宜面朝你的大吉生旺方位【{self.best_direction}】，心神定則邪不侵。\n\n"
+            f"✦ 【第四策：老道贈言 · 破局最高心法】\n"
+            f"『君子坦蕩蕩，小人長戚戚。』小人之所以能耗損你，往往是利用了你的情緒。凡事「不隨之起舞、不入其局、冷靜取證」，專注於自身實力精進，你站得越高，小人就越無能為力！"
         )
 
 

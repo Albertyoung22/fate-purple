@@ -1788,8 +1788,7 @@ def chat():
         is_full = any(kw in (user_prompt + client_sys) for kw in ["詳評", "命譜詳評", "格局報告", "八字詳解", "命盤解析", "詳細解析", "八字論命"])
         target_type = data.get("model", "chat")
         
-        # 專項提問、專屬按鈕與具體領域問題（桃花、財運、工作、健康、大限、流年、股市、夢境、測字等）均不走全盤章節切片，直接由大師專項開示
-        specific_keywords = ["工作", "事業", "職業", "升遷", "桃花", "感情", "婚姻", "夫妻", "財運", "求財", "投資", "股票", "健康", "疾病", "夢境", "測字", "號碼", "樂透", "大限", "流年", "流月", "前世", "錦囊", "出門", "吉位", "避諱", "禁忌"]
+        specific_keywords = ["工作", "事業", "職業", "升遷", "桃花", "感情", "婚姻", "夫妻", "財運", "求財", "投資", "股票", "健康", "疾病", "夢境", "測字", "號碼", "樂透", "大限", "流年", "流月", "前世", "錦囊", "出門", "吉位", "避諱", "禁忌", "小人", "防小人", "避小人", "犯小人", "是非", "口舌", "奴僕"]
         if target_type in ["love", "finance", "daily", "pastLife", "glyph", "dream", "stock", "simple", "bazi"] or any(k in user_prompt for k in specific_keywords):
             if not any(kw in user_prompt for kw in ["命譜詳評", "全盤詳解", "格局報告"]):
                 is_full = False
