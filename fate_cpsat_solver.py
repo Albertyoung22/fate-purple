@@ -729,18 +729,10 @@ def stream_cpsat_ai(prompt, system_prompt="", chart_data=None, user_info=None, t
     """
     solver = FateCPSATSolver(chart_data=chart_data, user_info=user_info, prompt=prompt)
     
-    yield "【紫微天機道長 · 閉目凝神，推演乾坤...】\n"
-    yield "老道正依先天紫微斗數，排布十二宮度神煞，調和五行生剋之氣數...\n"
-    time.sleep(0.04)
-    
     success = solver.solve()
     if not success:
-        yield "天機稍起微瀾，老道稍作調息，再次聚氣定盤...\n"
         solver.build_model()
         success = solver.solve(time_limit_seconds=1.5)
-    
-    yield "天機顯現，吉凶明朗，緣主且靜聽老道為你細細道來：\n\n"
-    time.sleep(0.04)
     
     # 判斷是否為章節解讀提問
     if "章節：" in prompt and "包含規則：" in prompt:

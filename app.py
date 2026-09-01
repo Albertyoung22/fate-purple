@@ -1771,8 +1771,7 @@ def chat():
     def generate():
         print(f">>> [命譜詳評啟動] 緣主: {user_info.get('user_name', '未知')}")
         
-        # 1. 解析命盤規則 (保持非阻塞，但訊息簡約化)
-        yield "【大師解析中，請稍候...】\n\n"
+        # 1. 解析命盤規則 (保持非阻塞)
         
         matched = []
         if chart_data:
