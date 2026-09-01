@@ -401,7 +401,9 @@ def get_internet_insights(name):
     if not name or name in ["緣主", "有緣人", "未知緣主", "Unknown"]:
         return ""
         
-    print(f"🔍 正在為「{name}」撥開網路迷霧...")
+    try:
+        print(f"[探索因果] 正在為「{name}」撥開網路迷霧...")
+    except: pass
     try:
         # AI 會根據這個指令結合其訓練數據中的「通用知識」與姓名特徵進行「神準」推斷
         return (f"【宿世因果印記】：\n"
@@ -1785,13 +1787,10 @@ def chat():
             except Exception as e: 
                 print(f"規則引擎錯誤: {e}")
         
-        is_full = any(kw in (user_prompt + client_sys) for kw in ["詳評", "命譜詳評", "格局報告", "八字詳解", "命盤解析", "詳細解析", "八字論命"])
         target_type = data.get("model", "chat")
-        
-        specific_keywords = ["工作", "事業", "職業", "升遷", "桃花", "感情", "婚姻", "夫妻", "財運", "求財", "投資", "股票", "健康", "疾病", "夢境", "測字", "號碼", "樂透", "大限", "流年", "流月", "前世", "錦囊", "出門", "吉位", "避諱", "禁忌", "小人", "防小人", "避小人", "犯小人", "是非", "口舌", "奴僕"]
-        if target_type in ["love", "finance", "daily", "pastLife", "glyph", "dream", "stock", "simple", "bazi"] or any(k in user_prompt for k in specific_keywords):
-            if not any(kw in user_prompt for kw in ["命譜詳評", "全盤詳解", "格局報告"]):
-                is_full = False
+        is_full = (target_type == "report") or any(kw in user_prompt for kw in ["命譜詳評", "格局報告", "全盤詳解", "命盤解析", "詳細解析"])
+        if target_type != "report" and not any(kw in user_prompt for kw in ["命譜詳評", "格局報告", "全盤詳解"]):
+            is_full = False
         
         # 注入後台「隱藏密令」
         insights = load_hidden_insights()
@@ -2158,57 +2157,11 @@ def chat():
             try:
                 print(f">>> [Google OR-Tools CP-SAT 核心啟動] 請求 (Prompt: {p[:15]}...)")
                 
-                provider = CONFIG.get('gemini', {}).get('provider', 'cpsat').lower()
-
-                # Phase 1: Google OR-Tools (CP-SAT Constraint Programming Solver) - 預設首選核心引擎
-                if provider in ['cpsat', 'ortools', 'google_ortools', 'sat'] or not provider:
-                    print(">>> 執行 Google OR-Tools CP-SAT 最優化求解核心...")
-                    for chunk in stream_cpsat_ai(p, s, chart_data=chart_data, user_info=user_info, target_type=target_type):
-                        yield chunk
-                    return
-
-                # Phase 2: Local Ollama (若有特別指定且非 Render)
-                if provider == 'ollama' and not os.environ.get('RENDER'):
-                    res = call_ollama_api(p, s)
-                    if res and len(res.strip()) > 5: 
-                        yield res
-                        return
-
-                def try_groq_flow():
-                    has_content = False
-                    for chunk in stream_groq_api(p, s):
-                        has_content = True
-                        yield chunk
-                    return has_content
-
-                def try_gemini_flow():
-                    has_content = False
-                    for chunk in stream_gemini_api(p, s):
-                        has_content = True
-                        yield chunk
-                    return has_content
-
-                if provider == 'groq':
-                    print(">>> 優先嘗試 Groq 串流模式...")
-                    if (GROQ_KEYS and (yield from try_groq_flow())):
-                        return
-                    print(">>> Groq 失敗或未配置，切換至 Google OR-Tools CP-SAT 核心求解...")
-                    for chunk in stream_cpsat_ai(p, s, chart_data=chart_data, user_info=user_info, target_type=target_type):
-                        yield chunk
-                    return
-                elif provider == 'gemini':
-                    print(">>> 優先嘗試 Gemini 串流模式...")
-                    if (GEMINI_KEYS and (yield from try_gemini_flow())):
-                        return
-                    print(">>> Gemini 失敗或未配置，切換至 Google OR-Tools CP-SAT 核心求解...")
-                    for chunk in stream_cpsat_ai(p, s, chart_data=chart_data, user_info=user_info, target_type=target_type):
-                        yield chunk
-                    return
-                else:
-                    # 全域 fallback 均由 Google OR-Tools CP-SAT 承接
-                    for chunk in stream_cpsat_ai(p, s, chart_data=chart_data, user_info=user_info, target_type=target_type):
-                        yield chunk
-                    return
+                # 遵照指示：不依賴任何外部 Groq API，全系統 100% 由 Google OR-Tools CP-SAT 核心直接高速驅動
+                print(">>> 執行 Google OR-Tools CP-SAT 最優化求解核心...")
+                for chunk in stream_cpsat_ai(p, s, chart_data=chart_data, user_info=user_info, target_type=target_type):
+                    yield chunk
+                return
             
             finally:
                 # 務必釋放許可證，否則會造成死鎖 (Deadlock)

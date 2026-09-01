@@ -413,79 +413,115 @@ class FateCPSATSolver:
                 return self._handle_finance(name)
 
         # =========================================================================
-        # 第二優先級：緣主自訂提問 (Chat) 依語義精準匹配專題
+        # 第二優先級：緣主自訂提問 (Chat) 依語義精準匹配專題 (全面覆蓋所有人生命題)
         # =========================================================================
         # 1. 幸運號碼與偏財
-        if any(kw in clean_q for kw in ["號碼", "樂透", "威力彩", "539", "幸運號", "彩券", "偏財"]):
+        if any(kw in clean_q for kw in ["號碼", "樂透", "威力彩", "539", "幸運號", "彩券", "偏財", "明牌", "靈動數"]):
             return self._handle_lucky_numbers(name)
 
         # 2. 出門吉位與避諱
-        elif any(kw in clean_q for kw in ["出門吉位", "吉位", "避諱", "歲時禁忌", "歲時避諱", "歲時", "出行", "出門"]):
+        elif any(kw in clean_q for kw in ["出門吉位", "吉位", "避諱", "歲時禁忌", "歲時避諱", "歲時", "出行", "出門", "禁忌"]):
             return self._handle_omens(name)
 
-        # 3. 桃花感情
-        elif any(kw in clean_q for kw in ["桃花", "感情", "婚姻", "夫妻", "另一半", "對象", "姻緣", "脫單", "復合", "伴侶", "情緣"]):
-            return self._handle_love(name)
-
-        # 4. 財運與投資 (優先於流年/流月)
-        elif any(kw in clean_q for kw in ["財", "錢", "投資", "理財", "發財", "財帛", "求財", "賺錢", "資產", "買房"]):
-            return self._handle_finance(name)
-
-        # 5. 防小人與是非口舌化解 (依奴僕宮、兄弟宮與五行正氣合參，高特異性優先)
+        # 3. 防小人與化解是非口舌 (依奴僕宮、兄弟宮與五行正氣合參，高特異性優先)
         elif any(kw in clean_q for kw in ["小人", "防小人", "避小人", "犯小人", "招小人", "是非", "口舌", "背刺", "陷害", "交友", "奴僕宮"]):
             return self._handle_villain(name)
 
-        # 6. 事業與工作 (優先於流年/流月)
-        elif any(kw in clean_q for kw in ["工作", "事業", "職業", "升遷", "跳槽", "創業", "官祿", "求職", "職場"]):
+        # 4. 招貴人與人脈通達
+        elif any(kw in clean_q for kw in ["貴人", "招貴人", "貴人運", "提攜", "賞識", "相助", "人脈", "伯樂", "結緣"]):
+            return self._handle_benefactor(name)
+
+        # 5. 田宅置產與房產風水
+        elif any(kw in clean_q for kw in ["買房", "買屋", "置產", "田宅", "房產", "不動產", "賣房", "搬家", "入厝", "裝潢", "宅基"]):
+            return self._handle_property(name)
+
+        # 6. 考運功名與學業升遷
+        elif any(kw in clean_q for kw in ["考試", "考運", "學業", "讀書", "升學", "國考", "公職", "證照", "文昌", "考績"]):
+            return self._handle_exam(name)
+
+        # 7. 出國遠行與異鄉發展
+        elif any(kw in clean_q for kw in ["出國", "遠行", "留學", "移民", "出差", "赴外", "離鄉", "外派", "遷移宮"]):
+            return self._handle_travel(name)
+
+        # 8. 子女緣分與求子育嗣
+        elif any(kw in clean_q for kw in ["求子", "生子", "懷孕", "備孕", "子女", "孩子", "小孩", "生男生女", "子息", "育兒", "子女宮"]):
+            return self._handle_children(name)
+
+        # 9. 婚姻和諧與白頭偕老
+        elif any(kw in clean_q for kw in ["婚姻", "結婚", "成家", "配偶", "老婆", "老公", "外遇", "出軌", "第三者", "婆媳", "離婚"]):
+            return self._handle_marriage(name)
+
+        # 10. 桃花感情與戀愛正緣
+        elif any(kw in clean_q for kw in ["桃花", "感情", "戀愛", "另一半", "對象", "姻緣", "脫單", "復合", "伴侶", "情緣", "正緣"]):
+            return self._handle_love(name)
+
+        # 11. 財運與求財投資
+        elif any(kw in clean_q for kw in ["財", "錢", "投資", "理財", "發財", "財帛", "求財", "賺錢", "資產", "漏財", "破財", "財庫"]):
+            return self._handle_finance(name)
+
+        # 12. 開運轉運與化解厄運
+        elif any(kw in clean_q for kw in ["改運", "轉運", "化太歲", "犯太歲", "安太歲", "祈福", "消災", "消業", "厄運", "開運"]):
+            return self._handle_luck_transformation(name)
+
+        # 13. 父母長輩與孝親福報
+        elif any(kw in clean_q for kw in ["父母", "長輩", "父親", "母親", "爸爸", "媽媽", "孝親", "祖蔭", "父母宮"]):
+            return self._handle_parents(name)
+
+        # 14. 事業與工作 (優先於流年/流月)
+        elif any(kw in clean_q for kw in ["工作", "事業", "職業", "升遷", "跳槽", "創業", "官祿", "求職", "職場", "合夥"]):
             return self._handle_career(name)
 
-        # 7. 健康與疾厄
-        elif any(kw in clean_q for kw in ["健康", "疾厄", "身體", "作息", "疾病", "調養", "睡眠", "體魄"]):
+        # 15. 健康與疾厄
+        elif any(kw in clean_q for kw in ["健康", "疾厄", "身體", "作息", "疾病", "調養", "睡眠", "體魄", "養生"]):
             return self._handle_health(name)
 
-        # 7. 十年大限
+        # 16. 十年大限
         elif any(kw in clean_q for kw in ["十年大限", "大限運勢", "十年大運", "十年運程", "大限", "十年"]):
             return self._handle_decade(name, age)
 
-        # 8. 流年運勢
+        # 17. 流年運勢
         elif any(kw in clean_q for kw in ["流年運勢", "今年運勢", "流年", "今年", "歲運", "年運"]):
             return self._handle_yearly(name)
 
-        # 9. 流月運勢
+        # 18. 流月運勢
         elif any(kw in clean_q for kw in ["流月運勢", "本月運勢", "流月", "本月", "月令", "月運"]):
             return self._handle_monthly(name)
 
-        # 10. 股市股票
+        # 19. 股市股票
         elif any(kw in clean_q for kw in ["股票", "股價", "股市", "大盤", "個股", "代號"]):
             return self._handle_stock(name)
 
-        # 11. 八字命書
+        # 20. 八字命書
         elif any(kw in clean_q for kw in ["八字詳批", "子平八字", "四柱八字", "子平", "命書", "日主強弱"]):
             return self._handle_bazi(name)
 
-        # 12. 測字占卜
+        # 21. 測字占卜
         elif any(kw in clean_q for kw in ["測字", "漢字", "文字占卜", "卜字"]):
             return self._handle_glyph(name, clean_q)
 
-        # 13. 夢境解析
+        # 22. 夢境解析
         elif any(kw in clean_q for kw in ["夢境", "做夢", "夢見", "解夢"]):
             return self._handle_dream(name)
 
-        # 14. 前世因果
+        # 23. 前世因果
         elif any(kw in clean_q for kw in ["前世", "因果", "宿命", "輪迴"]):
             return self._handle_past_life(name)
 
-        # 15. 先天性格與人生發展
+        # 24. 先天性格與特質
         elif any(kw in clean_q for kw in ["性格", "人生發展", "特質", "個性"]):
             return self._handle_simple(name)
 
-        # 16. 今日錦囊
+        # 25. 今日錦囊
         elif any(kw in clean_q for kw in ["今日", "每日", "錦囊"]):
             return self._handle_daily(name)
 
-        # 17. 預設：完整命譜乾坤詳評
-        else:
+        # 26. 明確指名要求全盤命譜詳評
+        elif any(kw in clean_q for kw in ["詳評", "命譜詳評", "格局報告", "全盤詳解", "命盤解析"]):
             return self.generate_report()
+
+        # 27. 全方位人生問事解惑 (兜底保障：任何自然提問絕不輸出枯燥表格，給予專屬大師開示)
+        else:
+            return self._handle_life_guidance(name, clean_q)
 
     # =========================================================================
     # 各專案大師開示模組 (Modular Master Handlers)
@@ -740,6 +776,129 @@ class FateCPSATSolver:
             f"辦公桌或常用書桌宜遵守「左青龍、右白虎」原則，左手邊物品擺放宜略高於右手邊；桌面可擺放黑曜石、黑碧璽或一株常青闊葉植物以阻擋濁氣。遇重要交涉或溝通時，宜面朝你的大吉生旺方位【{self.best_direction}】，心神定則邪不侵。\n\n"
             f"✦ 【第四策：老道贈言 · 破局最高心法】\n"
             f"『君子坦蕩蕩，小人長戚戚。』小人之所以能耗損你，往往是利用了你的情緒。凡事「不隨之起舞、不入其局、冷靜取證」，專注於自身實力精進，你站得越高，小人就越無能為力！"
+        )
+
+    def _handle_benefactor(self, name):
+        life_score = self.palace_scores.get("命宮", 70)
+        travel_score = self.palace_scores.get("遷移宮", 65)
+        career_score = self.palace_scores.get("官祿宮", 65)
+        sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
+        weakest = sorted_elements[0][0]
+        lucky_color = ELEMENT_COLORS.get(weakest, "玄黑、湛藍、深黛色")
+
+        return (
+            f"【紫微天機道長 · 招引貴人與人脈通達精批】：\n\n"
+            f"緣主 {name} 且聽老道為你推演命中貴人星宿與得道多助之方！\n\n"
+            f"老道觀你命盤格局，命宮底氣為 **{life_score} 分**，主外在出路與社交機緣之「遷移宮」為 **{travel_score} 分**，事功之「官祿宮」為 **{career_score} 分**。\n"
+            f"此象顯示緣主自帶才能，然平時多靠自身硬拼。若欲引動貴人主動提攜，老道賜你三大招貴人心法：\n\n"
+            f"✦ 【第一要訣：貴人特徵與出沒之所】\n"
+            f"你命中真正的貴人，多為性格沉穩內斂、具備專業權威或年歲稍長於你之長者。其不喜諂媚浮誇，最重人品操守。凡事謙遜請教、言而有信，最易贏得其青睞。\n\n"
+            f"✦ 【第二要訣：生旺貴人天時方位】\n"
+            f"你的第一貴人吉位位於【{self.best_direction}】。重要商務拜訪、關鍵面試或人脈拓展，宜多往此方位走動。每日最佳貴人感應時辰為 **{self.best_timing}**，借天時相生，極易遇見關鍵引路人。\n\n"
+            f"✦ 【第三要訣：氣場穿戴 · 同頻相吸】\n"
+            f"出門社交聚會宜多著 **{lucky_color}** 系列衣飾，溫潤自身五行磁場，能消弭外在戾氣，增添親和與信任感。\n\n"
+            f"✦ 【老道箴言】：『善結人緣，厚德載福。』常懷感恩利他之心，貴人自然不求自至、常伴左右！"
+        )
+
+    def _handle_property(self, name):
+        prop_score = self.palace_scores.get("田宅宮", 60)
+        wealth_score = self.palace_scores.get("財帛宮", 65)
+        return (
+            f"【紫微天機道長 · 田宅置產與房產風水精批】：\n\n"
+            f"老道為緣主 {name} 推算先天「田宅宮」庫存氣場（評分 **{prop_score} 分**），與「財帛宮」生財動能（評分 **{wealth_score} 分**）：\n\n"
+            f"✦ 【一、先天置產格局】：你的田宅氣息穩中求勝，名下宜有實質磚瓦資產作為資產護城河。此生置產宜秉持「量力而行、長期持有、抗通膨為上」，切忌高槓桿炒短線。\n\n"
+            f"✦ 【二、購屋置產時機】：田宅宮逢生旺之運，下半年或大運吉星坐守之年最利定奪契約。簽約看屋宜選於每日 **{self.best_timing}**，能保持頭腦清明，避開隱藏瑕疵。\n\n"
+            f"✦ 【三、家宅風水吉祥向】：緣主最利向陽納氣之方位為【{self.best_direction}】。大門、客廳窗景或主臥床頭朝此方位，最能引動家肥屋潤、藏風聚氣之福澤！"
+        )
+
+    def _handle_exam(self, name):
+        career_score = self.palace_scores.get("官祿宮", 65)
+        life_score = self.palace_scores.get("命宮", 70)
+        return (
+            f"【紫微天機道長 · 考運功名與學業升遷精批】：\n\n"
+            f"老道觀緣主「官祿宮（學堂位）」文星閃爍（動能 **{career_score} 分**），「命宮」悟性為 **{life_score} 分**：\n\n"
+            f"✦ 【一、先天考運特質】：你思維敏捷、擅長理解融會貫通。然逢大考之際偶有臨場焦慮、思慮過繁之弊。考試關鍵在於「求穩莫求快、先易而後難」。\n\n"
+            f"✦ 【二、讀書文昌吉方】：溫書自習時，書桌座位宜面朝【{self.best_direction}】。桌面上保持整潔，可置文竹或四支富貴竹以引動文昌清氣。\n\n"
+            f"✦ 【三、臨場定心秘法】：應試當日晨起飲一杯溫水，面朝吉方深呼吸三次定神。每日 **{self.best_timing}** 為你腦力最清明之良辰，重大複習以此時段效率最高！"
+        )
+
+    def _handle_travel(self, name):
+        travel_score = self.palace_scores.get("遷移宮", 75)
+        life_score = self.palace_scores.get("命宮", 70)
+        return (
+            f"【紫微天機道長 · 出國遠行與異鄉發展精批】：\n\n"
+            f"老道推演緣主「遷移宮」外行氣象（評分 **{travel_score} 分**），命宮坐守動能為 **{life_score} 分**：\n\n"
+            f"✦ 【一、動靜取向】：遷移宮氣象開闊，顯示你命中宜動不宜過靜。出外求學、遠行出差、甚至跨國跨城拓展事業，往往比固守原地更易打開眼界與收穫機緣。\n\n"
+            f"✦ 【二、遠行大吉方位】：出外求索或差旅首選方位為【{self.best_direction}】，天時相合，平安利達、順遂如意。\n\n"
+            f"✦ 【三、異鄉避險提醒】：出門在外切忌涉足偏僻晦暗之地，財不露白。出發前心念「出入平安」，順應天時方位，定能滿載而歸！"
+        )
+
+    def _handle_children(self, name):
+        child_score = self.palace_scores.get("子女宮", 60)
+        karma_score = self.palace_scores.get("福德宮", 65)
+        return (
+            f"【紫微天機道長 · 子女緣分與求子育嗣精批】：\n\n"
+            f"老道觀緣主「子女宮」氣息（評分 **{child_score} 分**）與「福德宮」祖蔭厚度（**{karma_score} 分**）：\n\n"
+            f"✦ 【一、子息緣分特質】：子女宮氣度祥和，顯示緣主與後嗣緣分深厚。子女多聰敏獨立，具備自身主見與造化，成年後多能自立門戶。\n\n"
+            f"✦ 【二、教養相處之道】：與子女相處宜重於「言傳身教、多引導少苛責」。多傾聽其心聲，給予探索空間，福澤自會綿延後代。\n\n"
+            f"✦ 【三、備孕求嗣福方】：求嗣講究陰陽和順。調養身體切莫急躁，心平氣和、積德行善，每日宜朝【{self.best_direction}】納氣靜坐，瓜熟自會蒂落！"
+        )
+
+    def _handle_marriage(self, name):
+        spouse_score = self.palace_scores.get("夫妻宮", 60)
+        karma_score = self.palace_scores.get("福德宮", 65)
+        return (
+            f"【紫微天機道長 · 婚姻和諧與白頭偕老精批】：\n\n"
+            f"老道觀緣主「夫妻宮」共振氣數（**{spouse_score} 分**）與「福德宮」情志（**{karma_score} 分**）：\n\n"
+            f"✦ 【一、婚姻本質】：天下夫妻皆是前世修來的緣分。盤中顯示伴侶性格多有其堅持與自尊，兩人相處最忌「爭口舌高低、翻陳年舊帳」。\n\n"
+            f"✦ 【二、化解摩擦妙法】：逢分歧時，切記「先處理情緒，再處理事情」。遇爭執先退半步，少一句氣話，多一句體諒，家宅自然祥和。\n\n"
+            f"✦ 【三、防範外緣侵擾】：臥室床頭宜端正靠實牆，可朝向【{self.best_direction}】安神納吉。彼此坦誠信任，任何外在波折皆難以動搖真情基石！"
+        )
+
+    def _handle_luck_transformation(self, name):
+        sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
+        weakest = sorted_elements[0][0]
+        lucky_color = ELEMENT_COLORS.get(weakest, "玄黑、湛藍、深黛色")
+        return (
+            f"【紫微天機道長 · 開運轉運與化解厄運秘法】：\n\n"
+            f"老道為緣主 {name} 推演周天五行盛衰，特傳道家辟邪轉運三部曲：\n\n"
+            f"✦ 【第一步：除舊布新 · 淨化濁氣】\n"
+            f"凡運勢低迷或犯太歲時，晨起以溫鹽水洗沐面部與雙手，洗淨身心塵垢。將居所玄關與床鋪周遭打掃一空，除舊方能迎新。\n\n"
+            f"✦ 【第二步：五行相生 · 聚引祥和】\n"
+            f"你命中五行最喜【{ELEMENT_NAMES[weakest]}】，日常多穿著 **{lucky_color}** 系衣物，佩帶溫潤開運物，借天地之氣滋養自身命局。\n\n"
+            f"✦ 【第三步：朝向吉方 · 借力天地】\n"
+            f"每日清晨可於 **{self.best_timing}**，向著生旺大吉方【{self.best_direction}】深深呼吸三回，心念「天道酬善，否極泰來」，厄運自會散去，福祿自來！"
+        )
+
+    def _handle_parents(self, name):
+        parent_score = self.palace_scores.get("父母宮", 70)
+        return (
+            f"【紫微天機道長 · 父母長輩與孝親福報精批】：\n\n"
+            f"老道為緣主推演「父母宮」（孝親福德位，氣數 **{parent_score} 分**）：\n\n"
+            f"✦ 【一、父母緣分】：父母宮得吉曜庇蔭，長輩對你多懷關愛與期許。唯長輩觀念偶有傳統固執之處，相處宜以順承溫和為重。\n\n"
+            f"✦ 【二、孝親得大福報】：百善孝為先。凡對長輩敬順體貼之人，自身運勢往往受祖蔭暗中相助，常能逢凶化吉。\n\n"
+            f"✦ 【三、長輩健康祈福】：日常宜多關心長輩睡眠作息與關節筋骨，逢年過節可面朝【{self.best_direction}】為雙親祈願安康，自聚滿門吉慶！"
+        )
+
+    def _handle_life_guidance(self, name, clean_q=""):
+        top_p = sorted(self.palace_scores.items(), key=lambda x: x[1], reverse=True)[0]
+        weak_p = sorted(self.palace_scores.items(), key=lambda x: x[1])[0]
+        sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
+        weakest = sorted_elements[0][0]
+        lucky_color = ELEMENT_COLORS.get(weakest, "玄黑、湛藍、深黛色")
+
+        return (
+            f"【紫微天機道長 · 乾坤問津人生解惑】：\n\n"
+            f"緣主 {name} 且平心靜氣，聽老道為你觀照當前心境、指點迷津！\n\n"
+            f"世事如棋局局新，凡人逢困頓或抉擇時，心亂則神移。老道觀你整張命譜：\n\n"
+            f"✦ 【一、觀照根基 · 命中有大福澤】\n"
+            f"你命盤中最強的福澤樞紐在於【{top_p[0]}】（底氣 **{top_p[1]} 分**），這代表你先天具備極強的生機與翻盤潛質！眼前之波折迷惘，不過是行至【{weak_p[0]}】時的暫時磨礪，絕非終局。\n\n"
+            f"✦ 【二、大師指路 · 破除當前執念】\n"
+            f"凡事「急則生亂，緩則圓通」。眼前若有猶豫不決之事，莫要逼迫自己在混亂中做重大決定。給自己三至七日靜沉心緒，多聽少動，待局勢明朗後再行定奪。\n\n"
+            f"✦ 【三、借天時時空轉運】\n"
+            f"每日可於 **{self.best_timing}**，面朝你的生旺吉方【{self.best_direction}】散步或深思；身著 **{lucky_color}** 系衣飾調和磁場，自能生出澄澈智慧。\n\n"
+            f"✦ 【老道定心真言】\n"
+            f"『山重水複疑無路，柳暗花明又一村。』天生我材必有用，順應天時而行，眼前迷霧轉瞬即散，前程定是一片開闊！"
         )
 
 
