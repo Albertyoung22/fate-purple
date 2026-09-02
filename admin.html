@@ -4,223 +4,528 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>紫微天機 · 後端中控台</title>
+    <title>紫微天機 · 後端中控台 (Master Console)</title>
+    <link rel="icon" type="image/png" href="icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Inter:wght@400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
+            background-color: #090d16;
             color: #e2e8f0;
         }
 
         .serif {
             font-family: 'Noto Serif TC', serif;
         }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
     </style>
 </head>
 
-<body x-data="dashboard()" x-init="init()" class="min-h-screen p-4 md:p-8">
+<body x-data="dashboard()" x-init="init()" class="min-h-screen p-3 md:p-8 selection:bg-indigo-500 selection:text-white">
+
+    <!-- Toast Notification -->
+    <div x-show="toast.show" x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 translate-y-2"
+        class="fixed top-5 right-5 z-[9999] px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border text-sm font-bold"
+        :class="toast.type === 'success' ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-200' : 'bg-rose-950/90 border-rose-500/50 text-rose-200'"
+        style="display: none;">
+        <i :class="toast.type === 'success' ? 'fa-solid fa-circle-check text-emerald-400' : 'fa-solid fa-circle-exclamation text-rose-400'"></i>
+        <span x-text="toast.message"></span>
+    </div>
 
     <!-- Auth Overlay -->
-    <div x-show="!authenticated" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md text-center">
-            <h2 class="text-2xl font-bold mb-4 text-indigo-400">管理員驗證</h2>
-            <input type="password" x-model="password" @keyup.enter="login()" placeholder="請輸入管理密碼..."
-                class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white mb-4 focus:border-indigo-500 outline-none">
-            <button @click="login()"
-                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition-colors">登入系統</button>
-            <p x-show="error" class="text-red-400 text-sm mt-2">密碼錯誤 (預設: admin)</p>
+    <div x-show="!authenticated" class="fixed inset-0 bg-[#070a13]/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+        <div class="glass-panel p-8 md:p-10 rounded-3xl shadow-2xl border border-indigo-500/20 w-full max-w-md text-center relative overflow-hidden">
+            <div class="absolute -top-20 -left-20 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-20 -right-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"></div>
+
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid fa-compass text-2xl text-white"></i>
+            </div>
+            
+            <h2 class="text-2xl font-black mb-1 text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-amber-200 serif">
+                紫微天機 · 管理驗證
+            </h2>
+            <p class="text-slate-400 text-xs mb-6">請輸入道長後台管理密鑰</p>
+
+            <form @submit.prevent="login()">
+                <div class="relative mb-4">
+                    <input type="password" x-model="password" placeholder="請輸入管理密碼 (admin / master888)"
+                        class="w-full bg-slate-900/80 border border-slate-700/80 rounded-xl px-4 py-3 text-white text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pr-10">
+                    <i class="fa-solid fa-key absolute right-3.5 top-3.5 text-slate-500 text-sm"></i>
+                </div>
+                <button type="submit"
+                    class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    <span>登入系統</span>
+                </button>
+            </form>
+            <p x-show="error" class="text-rose-400 text-xs mt-3 flex items-center justify-center gap-1">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>密碼錯誤，請輸入正確之管理金鑰</span>
+            </p>
         </div>
     </div>
 
     <!-- Main Dashboard -->
-    <div x-show="authenticated" style="display: none;">
-        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <div>
-                <h1
-                    class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 serif tracking-wide">
-                    紫微天機 · 中控台</h1>
-                <p class="text-slate-500 text-sm mt-1 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 系統狀態: <span
-                        x-text="data.status || '連線中...'"></span>
-                </p>
+    <div x-show="authenticated" style="display: none;" class="max-w-[1600px] mx-auto">
+        <!-- Top Navbar -->
+        <header class="glass-panel p-5 rounded-3xl mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
+                    <i class="fa-solid fa-yin-yang text-xl text-white"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <h1 class="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-amber-200 serif tracking-wide">
+                            紫微天機 · 宗師中控台
+                        </h1>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/50">V3.0 Master</span>
+                    </div>
+                    <p class="text-slate-400 text-xs mt-1 flex items-center gap-2">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        系統監控：<span class="text-emerald-400 font-bold" x-text="data.uptime || '運行中 · 健康'"></span>
+                        <span class="text-slate-600">|</span>
+                        最後更新：<span class="mono text-slate-300 text-[11px]" x-text="lastUpdatedTime"></span>
+                    </p>
+                </div>
             </div>
-            <div class="flex gap-4">
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 w-40 text-center">
-                    <p class="text-slate-400 text-xs uppercase tracking-widest">總算命人數</p>
-                    <p class="text-3xl font-black text-white mt-1" x-text="data.records_count || 0">0</p>
-                </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 w-40 text-center">
-                    <p class="text-slate-400 text-xs uppercase tracking-widest">AI 對話總數</p>
-                    <p class="text-3xl font-black text-white mt-1" x-text="data.chats_count || 0">0</p>
-                </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 w-40 text-center">
-                    <p class="text-slate-400 text-xs uppercase tracking-widest">系統狀態</p>
-                    <p class="text-sm font-black mt-2 inline-block px-2 py-1 rounded-full"
-                        :class="(data.db_status && (data.db_status.includes('MongoDB') || data.db_status.includes('Google'))) ? 'bg-emerald-900 text-emerald-400 border border-emerald-500/30' : 'bg-amber-900 text-amber-400 border border-amber-500/30'"
-                        x-text="data.db_status || 'Local JSON'"></p>
-                </div>
+
+            <!-- Top Control Actions -->
+            <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+                <button @click="togglePolling()" 
+                    class="px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border"
+                    :class="isPolling ? 'bg-indigo-950/60 text-indigo-300 border-indigo-700/50' : 'bg-slate-800 text-slate-400 border-slate-700'">
+                    <i class="fa-solid" :class="isPolling ? 'fa-circle-play text-emerald-400 animate-pulse' : 'fa-circle-pause text-amber-400'"></i>
+                    <span x-text="isPolling ? '自動輪詢中 (5s)' : '輪詢已暫停'"></span>
+                </button>
+                <button @click="fetchData(true)" 
+                    class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-arrows-rotate" :class="isFetching ? 'animate-spin text-indigo-400' : ''"></i>
+                    <span>立即刷新</span>
+                </button>
+                <button @click="clearCache()" 
+                    class="px-3 py-2 rounded-xl text-xs font-bold bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border border-amber-700/40 transition-all flex items-center gap-1.5 active:scale-95"
+                    title="清空黃曆、時事新聞與語音快取">
+                    <i class="fa-solid fa-broom"></i>
+                    <span>清空快取</span>
+                </button>
+                <button @click="logout()" 
+                    class="px-3 py-2 rounded-xl text-xs font-bold bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-700/40 transition-all flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>登出</span>
+                </button>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Left: User Records -->
-            <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
-                <div class="p-6 border-b border-slate-700 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        最新用戶紀錄
-                    </h2>
-                    <span class="text-xs bg-indigo-900 text-indigo-200 px-2 py-1 rounded">即時更新</span>
+        <!-- 4 Metric Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <!-- Card 1: Users -->
+            <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group hover:border-indigo-500/40 transition-all">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">總算命緣主人數</p>
+                        <h3 class="text-3xl font-black text-white mt-1 mono" x-text="data.records_count || 0">0</h3>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                        <i class="fa-solid fa-users text-lg"></i>
+                    </div>
                 </div>
-                <div class="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
-                    <table class="w-full text-left text-sm">
-                        <thead
-                            class="bg-slate-900/50 text-slate-400 uppercase text-xs font-bold sticky top-0 backdrop-blur-md">
+                <div class="mt-3 flex items-center gap-2 text-xs">
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 font-bold"
+                        x-text="'+' + (data.today_records_count || 0) + ' 今日新增'"></span>
+                    <span class="text-slate-400">累計建檔</span>
+                </div>
+            </div>
+
+            <!-- Card 2: AI Dialogues -->
+            <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group hover:border-purple-500/40 transition-all">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">AI 批命對話總數</p>
+                        <h3 class="text-3xl font-black text-white mt-1 mono" x-text="data.chats_count || 0">0</h3>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                        <i class="fa-solid fa-comments text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center gap-2 text-xs">
+                    <span class="px-2 py-0.5 rounded-md bg-purple-950/60 text-purple-300 border border-purple-500/30 font-bold"
+                        x-text="'+' + (data.today_chats_count || 0) + ' 今日對話'"></span>
+                    <span class="text-slate-400">大師解答</span>
+                </div>
+            </div>
+
+            <!-- Card 3: Cache & Solver Engine -->
+            <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group hover:border-amber-500/40 transition-all">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">演算法核心與快取</p>
+                        <h3 class="text-2xl font-black text-amber-300 mt-1 mono">1,063 <span class="text-xs text-slate-400 font-normal">條常駐</span></h3>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                        <i class="fa-solid fa-bolt-lightning text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center gap-2 text-[11px] text-slate-300 flex-wrap">
+                    <span class="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700">CP-SAT 求解器</span>
+                    <span class="bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700">語音快取: <b class="text-amber-400" x-text="data.cache_info?.tts_cached || 0"></b></span>
+                </div>
+            </div>
+
+            <!-- Card 4: Database Persistence -->
+            <div class="glass-panel p-5 rounded-3xl relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">持久化存儲媒介</p>
+                        <h3 class="text-lg font-black text-emerald-400 mt-1 truncate" x-text="data.db_status || '本地 JSON 備份'"></h3>
+                    </div>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <i class="fa-solid fa-database text-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center gap-2 text-xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span class="text-slate-300 font-bold">雙重備份安全守護</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Workspace: Records & Chats Grid -->
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 mb-8">
+            <!-- Left 6 Cols: User Records -->
+            <div class="xl:col-span-6 glass-panel rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+                <div class="p-5 border-b border-slate-800 flex flex-wrap justify-between items-center gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                            <i class="fa-solid fa-id-card"></i>
+                        </div>
+                        <h2 class="text-lg font-black text-white">緣主造命名冊</h2>
+                        <span class="text-xs bg-indigo-950 text-indigo-300 border border-indigo-700/50 px-2 py-0.5 rounded-full font-bold"
+                            x-text="filteredRecords.length + ' 筆符合'"></span>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <a href="/api/admin/export/records" download 
+                            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950/50 hover:bg-emerald-900/70 text-emerald-300 border border-emerald-600/40 transition-all flex items-center gap-1.5 shadow-sm active:scale-95">
+                            <i class="fa-solid fa-file-excel text-emerald-400"></i>
+                            <span>匯出 CSV</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Record Filters -->
+                <div class="p-4 bg-slate-900/40 border-b border-slate-800/80 flex flex-wrap items-center gap-3 text-xs">
+                    <div class="relative flex-1 min-w-[180px]">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500"></i>
+                        <input type="text" x-model="recordSearch" placeholder="搜尋姓名 / 國曆生辰 / 城市..."
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 outline-none">
+                    </div>
+                    <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                        <button @click="recordGenderFilter = 'ALL'" 
+                            class="px-2.5 py-1 rounded-lg font-bold transition-all"
+                            :class="recordGenderFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'">全部</button>
+                        <button @click="recordGenderFilter = 'M'" 
+                            class="px-2.5 py-1 rounded-lg font-bold transition-all"
+                            :class="recordGenderFilter === 'M' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'">乾造 (男)</button>
+                        <button @click="recordGenderFilter = 'F'" 
+                            class="px-2.5 py-1 rounded-lg font-bold transition-all"
+                            :class="recordGenderFilter === 'F' ? 'bg-pink-600 text-white' : 'text-slate-400 hover:text-white'">坤造 (女)</button>
+                    </div>
+                    <select x-model="displayLimit" @change="fetchData(true)"
+                        class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white outline-none cursor-pointer">
+                        <option value="50">顯示 50 筆</option>
+                        <option value="100">顯示 100 筆</option>
+                        <option value="200">顯示 200 筆</option>
+                    </select>
+                </div>
+
+                <!-- Table Content -->
+                <div class="overflow-x-auto max-h-[620px] overflow-y-auto custom-scrollbar flex-1">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-950/80 text-slate-400 uppercase font-bold sticky top-0 backdrop-blur-md border-b border-slate-800">
                             <tr>
-                                <th class="p-4">時間</th>
-                                <th class="p-4">姓名</th>
-                                <th class="p-4">性別</th>
-                                <th class="p-4">生辰</th>
+                                <th class="p-3.5 pl-5">排盤時間</th>
+                                <th class="p-3.5">緣主姓名</th>
+                                <th class="p-3.5">性別</th>
+                                <th class="p-3.5">生辰時辰</th>
+                                <th class="p-3.5 pr-5 text-right">操作</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-700/50">
-                            <template x-for="r in data.records" :key="r.timestamp">
-                                <tr class="hover:bg-slate-700/30 transition-colors">
-                                    <td class="p-4 text-slate-400 font-mono text-xs" x-text="formatDate(r.timestamp)">
+                        <tbody class="divide-y divide-slate-800/50">
+                            <template x-for="(r, idx) in filteredRecords" :key="idx">
+                                <tr class="hover:bg-slate-800/40 transition-colors group">
+                                    <td class="p-3.5 pl-5 text-slate-400 mono" x-text="formatDate(r.timestamp)"></td>
+                                    <td class="p-3.5 font-bold text-white flex items-center gap-1.5">
+                                        <span x-text="r.name"></span>
+                                        <span x-show="r.location" class="text-[10px] text-slate-500 font-normal" x-text="'(' + r.location + ')'"></span>
                                     </td>
-                                    <td class="p-4 font-bold text-white" x-text="r.name"></td>
-                                    <td class="p-4">
-                                        <span class="px-2 py-0.5 rounded text-xs font-bold"
-                                            :class="r.gender === 'M' ? 'bg-blue-900 text-blue-200' : 'bg-pink-900 text-pink-200'"
+                                    <td class="p-3.5">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-black"
+                                            :class="r.gender === 'M' ? 'bg-blue-950 text-blue-300 border border-blue-800/50' : 'bg-pink-950 text-pink-300 border border-pink-800/50'"
                                             x-text="r.gender === 'M' ? '乾造' : '坤造'"></span>
                                     </td>
-                                    <td class="p-4 text-slate-300" x-text="r.lunar_date || r.birth_date"></td>
+                                    <td class="p-3.5 text-slate-300">
+                                        <div class="font-bold" x-text="r.birth_date + ' ' + (r.birth_hour ? r.birth_hour + '時' : '')"></div>
+                                        <div class="text-[10px] text-slate-500" x-text="r.lunar_date || ''"></div>
+                                    </td>
+                                    <td class="p-3.5 pr-5 text-right">
+                                        <button @click="inspectUser(r)" 
+                                            class="px-2.5 py-1 rounded-lg bg-indigo-950/60 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-700/40 transition-all text-[11px] font-bold">
+                                            查看詳情
+                                        </button>
+                                    </td>
                                 </tr>
                             </template>
+                            <tr x-show="filteredRecords.length === 0">
+                                <td colspan="5" class="p-8 text-center text-slate-500">
+                                    <i class="fa-solid fa-inbox text-3xl mb-2 opacity-50 block"></i>
+                                    無符合條件之緣主紀錄
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Right: Chat Logs -->
-            <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
-                <div class="p-6 border-b border-slate-700 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-400" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                        </svg>
-                        AI 對話監控
-                    </h2>
-                    <span class="text-xs bg-emerald-900 text-emerald-200 px-2 py-1 rounded">Live</span>
+            <!-- Right 6 Cols: Chat Logs -->
+            <div class="xl:col-span-6 glass-panel rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+                <div class="p-5 border-b border-slate-800 flex flex-wrap justify-between items-center gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                        <h2 class="text-lg font-black text-white">AI 批命對話監控</h2>
+                        <span class="text-xs bg-emerald-950 text-emerald-300 border border-emerald-700/50 px-2 py-0.5 rounded-full font-bold"
+                            x-text="filteredChats.length + ' 則對話'"></span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <a href="/api/admin/export/chats" download 
+                            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950/50 hover:bg-emerald-900/70 text-emerald-300 border border-emerald-600/40 transition-all flex items-center gap-1.5 shadow-sm active:scale-95">
+                            <i class="fa-solid fa-file-excel text-emerald-400"></i>
+                            <span>匯出 CSV</span>
+                        </a>
+                    </div>
                 </div>
-                <div class="overflow-y-auto max-h-[600px] p-4 space-y-3 custom-scrollbar">
-                    <template x-for="c in data.chats" :key="c.timestamp">
-                        <div
-                            class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 hover:border-slate-600 transition-all">
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest" x-text="(() => {
-                                        const m = c.model || '';
-                                        if(m.includes('simple')) return '【功能】白話精解';
-                                        if(m.includes('bazi')) return '【功能】八字論命';
-                                        if(m.includes('daily')) return '【功能】今日錦囊';
-                                        if(m.includes('love')) return '【功能】感情專題';
-                                        if(m.includes('dream')) return '【功能】夢境解碼';
-                                        if(m.includes('name')) return '【功能】姓名分析';
-                                        if(m.includes('career')) return '【功能】事業運勢';
-                                        if(m.includes('wealth')) return '【功能】財運分析';
-                                        if(m.includes('baby')) return '【功能】新生兒命名';
-                                        if(m.includes('pastLife')) return '【功能】前世因果';
-                                        if(m.includes('ritual')) return '【功能】轉運儀式';
-                                        if(m.includes('finance')) return '【功能】財運預測';
-                                        
-                                        // Fallback for reports
-                                        if(m.includes('Report')) return '【功能】命譜詳評';
-                                        if(m.includes('Fallback')) return '【功能】混合模型';
-                                        
-                                        return '【功能】' + m;
-                                    })()">MODEL</span>
-                                <span class="text-[10px] font-mono text-slate-500"
-                                    x-text="formatDate(c.timestamp)">TIME</span>
+
+                <!-- Chat Filters -->
+                <div class="p-4 bg-slate-900/40 border-b border-slate-800/80 space-y-3 text-xs">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500"></i>
+                        <input type="text" x-model="chatSearch" placeholder="搜尋緣主姓名 / 提問關鍵字 / 回覆內容..."
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-white placeholder-slate-500 focus:border-indigo-500 outline-none">
+                    </div>
+
+                    <!-- Category Pills -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+                        <template x-for="tag in chatTags" :key="tag.key">
+                            <button @click="chatTagFilter = tag.key"
+                                class="px-2.5 py-1 rounded-lg font-bold shrink-0 transition-all border text-[11px]"
+                                :class="chatTagFilter === tag.key ? 'bg-indigo-600 border-indigo-400 text-white shadow-sm' : 'bg-slate-950/80 border-slate-800 text-slate-400 hover:text-white'">
+                                <span x-text="tag.label"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Chat Stream Cards -->
+                <div class="overflow-y-auto max-h-[620px] p-4 space-y-3.5 custom-scrollbar flex-1">
+                    <template x-for="(c, idx) in filteredChats" :key="idx">
+                        <div class="glass-card p-4 rounded-2xl border border-slate-700/60 hover:border-slate-600 transition-all shadow-sm">
+                            <div class="flex justify-between items-start mb-2.5 gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider"
+                                    :class="getModeBadgeClass(c.model)"
+                                    x-text="formatModeTitle(c.model, c.prompt)"></span>
+                                <span class="text-[10px] mono text-slate-500" x-text="formatDate(c.timestamp)"></span>
                             </div>
-                            <div
-                                class="flex items-center gap-2 mb-2 text-xs text-indigo-300 font-bold bg-indigo-900/30 p-2 rounded">
-                                <span x-text="c.user_name || '未知緣主'"></span>
-                                <span class="text-slate-500 mx-1">|</span>
+
+                            <!-- User Info Badge -->
+                            <div class="flex flex-wrap items-center gap-2 mb-2.5 text-xs text-indigo-300 font-bold bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+                                <span class="text-white flex items-center gap-1">
+                                    <i class="fa-solid fa-user text-[10px] text-slate-400"></i>
+                                    <span x-text="c.user_name || '未知緣主'"></span>
+                                </span>
+                                <span class="text-slate-600">|</span>
                                 <span x-text="(c.gender === 'M' ? '乾造' : (c.gender === 'F' ? '坤造' : ''))"></span>
-                                <span class="text-slate-500 mx-1" x-show="c.gender">|</span>
-                                <span x-text="(c.birth_date || '') + ' ' + (c.birth_hour || '')"></span>
-                                <span class="text-slate-500 mx-1" x-show="c.lunar_date">|</span>
-                                <span x-text="c.lunar_date" x-show="c.lunar_date" class="text-slate-400"></span>
-                                <span class="text-slate-500 mx-1" x-show="c.location">|</span>
-                                <span x-text="c.location" x-show="c.location"
-                                    class="text-emerald-400/80 bg-emerald-900/20 px-1 rounded"></span>
-                                <span x-text="'(' + c.ip + ')'" x-show="c.ip" class="text-[10px] text-slate-600"></span>
+                                <span class="text-slate-600">|</span>
+                                <span class="text-slate-300" x-text="c.birth_date"></span>
+                                <span x-show="c.location" class="text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-1.5 py-0.2 rounded text-[10px]" x-text="c.location"></span>
+                                <span x-show="c.ip" class="mono text-[10px] text-slate-600 ml-auto" x-text="c.ip"></span>
                             </div>
-                            <p class="text-sm text-indigo-200 font-bold mb-1">Q: <span
-                                    x-text="formatPrompt(c.prompt)"></span></p>
-                            <div class="mt-2 text-xs text-slate-400 border-l-2 border-slate-700 pl-2 line-clamp-3 hover:line-clamp-none transition-all cursor-pointer"
-                                title="點擊展開">
-                                A: <span x-text="c.response"></span>
+
+                            <!-- Prompt Question -->
+                            <div class="text-xs text-amber-200/90 font-bold mb-1.5 flex items-start gap-1.5">
+                                <span class="px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-800/50 text-[10px] shrink-0 mt-0.5">問</span>
+                                <span class="leading-relaxed" x-text="c.prompt"></span>
                             </div>
+
+                            <!-- AI Answer -->
+                            <div class="mt-2 text-xs text-slate-300 border-l-2 border-indigo-500/50 pl-3 py-1 leading-relaxed bg-slate-950/40 rounded-r-xl"
+                                :class="expandedChats.includes(idx) ? '' : 'line-clamp-3'">
+                                <span x-text="c.response"></span>
+                            </div>
+
+                            <!-- Card Footer Actions -->
+                            <div class="mt-2.5 flex justify-end items-center gap-2 text-[11px]">
+                                <button @click="copyText(c.response)" 
+                                    class="text-slate-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>複製回覆</span>
+                                </button>
+                                <span class="text-slate-700">·</span>
+                                <button @click="toggleExpandChat(idx)" 
+                                    class="text-indigo-400 hover:text-indigo-300 font-bold transition-colors">
+                                    <span x-text="expandedChats.includes(idx) ? '收起完整回覆' : '展開完整回覆'"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                    <div x-show="filteredChats.length === 0" class="p-8 text-center text-slate-500">
+                        <i class="fa-solid fa-comment-slash text-3xl mb-2 opacity-50 block"></i>
+                        無符合條件之對話日誌
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Insights: Master Direct Injection Section -->
+        <div class="glass-panel rounded-3xl overflow-hidden shadow-2xl mb-12 border border-indigo-500/20">
+            <div class="p-6 border-b border-slate-800 flex flex-wrap justify-between items-center gap-4 bg-gradient-to-r from-indigo-950/40 to-purple-950/40">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+                        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-black text-white flex items-center gap-2">
+                            <span>大師隨心密令 (全功能隱藏訊息注入)</span>
+                            <span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-2 py-0.5 rounded-full font-mono">13 模組全面覆蓋</span>
+                        </h2>
+                        <p class="text-slate-400 text-xs mt-0.5">此處設定之指示將「不露痕跡」直接融入道長 AI 的推斷思維中，支援各專題置入開運指示或特定指導。</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button @click="fetchInsights()"
+                        class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-2 rounded-xl font-bold transition-all border border-slate-700 active:scale-95 flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>重新讀取</span>
+                    </button>
+                    <button @click="saveInsights()"
+                        class="text-xs bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-5 py-2 rounded-xl font-bold shadow-lg shadow-indigo-600/30 transition-all active:scale-95 flex items-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>儲存所有密令</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <template x-for="item in insightConfigs" :key="item.key">
+                        <div class="glass-card p-4 rounded-2xl border border-slate-800 hover:border-indigo-500/40 transition-all flex flex-col">
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs font-black text-indigo-300 flex items-center gap-1.5" x-text="item.label"></label>
+                                <span class="text-[9px] mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800" x-text="item.key"></span>
+                            </div>
+                            <textarea x-model="insights[item.key]"
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs text-white h-28 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30 outline-none custom-scrollbar resize-none leading-relaxed"
+                                :placeholder="item.placeholder"></textarea>
                         </div>
                     </template>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Hidden Insights Management -->
-        <div class="mt-8 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl mb-12">
-            <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-indigo-900/20">
-                <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                    </svg>
-                    大師隨心密令 (隱藏訊息注入)
-                </h2>
-                <div class="flex gap-2">
-                    <button @click="fetchInsights()"
-                        class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition-colors">重新整理</button>
-                    <button @click="saveInsights()"
-                        class="text-xs bg-indigo-600 hover:bg-indigo-500 px-4 py-1.5 rounded font-bold transition-all active:scale-95">儲存所有設定</button>
+    <!-- User Detail Inspection Modal -->
+    <div x-show="inspectedUser" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
+        style="display: none;">
+        <div class="glass-panel w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-indigo-500/30 relative">
+            <button @click="inspectedUser = null" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-all">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white text-xl font-black"
+                    x-text="inspectedUser?.name?.substring(0, 1)"></div>
+                <div>
+                    <h3 class="text-xl font-black text-white" x-text="inspectedUser?.name"></h3>
+                    <p class="text-xs text-slate-400">緣主詳細排盤資訊存檔</p>
                 </div>
             </div>
-            <div class="p-6">
-                <p class="text-sm text-slate-400 mb-6">在這裡輸入的內容會「不露痕跡」地加入到 AI 的思考邏輯中。你可以用來置入廣告、特定品牌訊息，或是要求 AI
-                    在特定功能中表現出特別的個性。</p>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <template x-for="(label, key) in {
-                        'report': '命譜詳評 (全盤詳解)',
-                        'daily': '今日錦囊 (流日運勢)',
-                        'pastLife': '前世因果/故事',
-                        'ritual': '轉運儀式',
-                        'love': '桃花攻略/姻緣',
-                        'finance': '財運分析/投資',
-                        'bazi': '子平八字模式',
-                        'simple': '白話精解',
-                        'chat': '一般對話聊天'
-                    }" :key="key">
-                        <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
-                            <label class="block text-xs font-bold text-indigo-400 mb-2 tracking-widest uppercase"
-                                x-text="label"></label>
-                            <textarea x-model="insights[key]"
-                                class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs text-white h-24 focus:border-indigo-500 outline-none custom-scrollbar resize-none"
-                                placeholder="例如：請在結尾提到『關注天機公眾號』..."></textarea>
-                        </div>
-                    </template>
+            <div class="space-y-3 text-xs">
+                <div class="flex justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span class="text-slate-400">乾坤性別</span>
+                    <span class="font-bold" :class="inspectedUser?.gender === 'M' ? 'text-blue-400' : 'text-pink-400'"
+                        x-text="inspectedUser?.gender === 'M' ? '乾造 (男命)' : '坤造 (女命)'"></span>
                 </div>
+                <div class="flex justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span class="text-slate-400">國曆生辰與時辰</span>
+                    <span class="font-bold text-white mono" x-text="(inspectedUser?.birth_date || '') + ' ' + (inspectedUser?.birth_hour ? inspectedUser.birth_hour + '時' : '')"></span>
+                </div>
+                <div class="flex justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span class="text-slate-400">農曆生辰對照</span>
+                    <span class="font-bold text-amber-300" x-text="inspectedUser?.lunar_date || '系統即時換算'"></span>
+                </div>
+                <div class="flex justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span class="text-slate-400">排盤地理位置</span>
+                    <span class="font-bold text-emerald-300" x-text="inspectedUser?.location || '本地用戶'"></span>
+                </div>
+                <div class="flex justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span class="text-slate-400">IP 位址</span>
+                    <span class="font-bold mono text-slate-400" x-text="inspectedUser?.ip || '127.0.0.1'"></span>
+                </div>
+                <div class="flex justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <span class="text-slate-400">首次入道建檔時間</span>
+                    <span class="font-bold text-slate-300 mono" x-text="formatDate(inspectedUser?.timestamp)"></span>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button @click="inspectedUser = null" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all">
+                    關閉視窗
+                </button>
             </div>
         </div>
     </div>
@@ -231,60 +536,206 @@
                 authenticated: false,
                 password: '',
                 error: false,
-                data: { records: [], chats: [] },
+                isPolling: true,
+                isFetching: false,
+                pollingInterval: null,
+                lastUpdatedTime: '-',
+                displayLimit: '100',
+                
+                // Filters
+                recordSearch: '',
+                recordGenderFilter: 'ALL',
+                chatSearch: '',
+                chatTagFilter: 'ALL',
+                
+                // Modal
+                inspectedUser: null,
+                expandedChats: [],
+                
+                // Toast
+                toast: { show: false, message: '', type: 'success' },
+                
+                // Data
+                data: { records: [], chats: [], records_count: 0, chats_count: 0 },
+                
+                // 13 Full Insight Modules
                 insights: {
-                    report: "", daily: "", pastLife: "", ritual: "",
-                    love: "", finance: "", bazi: "", simple: "", chat: ""
+                    report: "", iching: "", stock: "", compatibility: "", flowYear: "",
+                    daily: "", love: "", finance: "", bazi: "", ritual: "",
+                    pastLife: "", dream: "", chat: ""
                 },
 
+                chatTags: [
+                    { key: 'ALL', label: '全部對話' },
+                    { key: 'report', label: '命譜詳評' },
+                    { key: 'iching', label: '易經神卦' },
+                    { key: 'stock', label: '股市預測' },
+                    { key: 'compatibility', label: '合盤合婚' },
+                    { key: 'flowYear', label: '流年雷達' },
+                    { key: 'daily', label: '今日錦囊' },
+                    { key: 'love', label: '桃花攻略' },
+                    { key: 'finance', label: '財運預測' },
+                    { key: 'bazi', label: '八字論命' },
+                    { key: 'ritual', label: '轉運靈符' },
+                    { key: 'pastLife', label: '前世因果' },
+                    { key: 'dream', label: '夢境解碼' }
+                ],
+
+                insightConfigs: [
+                    { key: 'report', label: '📜 命譜詳評 (全盤詳解)', placeholder: '例如：請在性格分析結尾特別強調「中年運勢將如蛟龍得水」...' },
+                    { key: 'iching', label: '🎴 易經神卦 (起卦占卜)', placeholder: '例如：提醒緣主無論得何卦，本月宜持戒守正，勿輕舉妄動...' },
+                    { key: 'stock', label: '📈 股市預測 (時事盤面)', placeholder: '例如：提醒投資人嚴格執行止損，特別留意半導體與高股息板塊...' },
+                    { key: 'compatibility', label: '🔮 合盤合婚 (雙人緣分)', placeholder: '例如：在相處建議中加入「多讚美少挑剔，五行方能相生生財」...' },
+                    { key: 'flowYear', label: '🗓️ 2026 流年運勢雷達', placeholder: '例如：強調丙午赤馬年文昌化科，利於升遷與進修考照...' },
+                    { key: 'daily', label: '✨ 今日錦囊妙計', placeholder: '例如：在錦囊末尾置入每日禪意法語...' },
+                    { key: 'love', label: '💖 桃花攻略與夫妻宮', placeholder: '例如：建議穿戴淡粉或白水晶以活絡異性緣...' },
+                    { key: 'finance', label: '💰 財運投資與田宅宮', placeholder: '例如：建議緣主可多佈置東北方財位，放三腳蟾蜍...' },
+                    { key: 'bazi', label: '🧭 子平八字純演算法', placeholder: '例如：強調日主喜用神之方位與宜從事之五行產業...' },
+                    { key: 'ritual', label: '🏮 求取靈符與轉運', placeholder: '例如：說明靈符需存於手機相簿或貼於淨處三個月...' },
+                    { key: 'pastLife', label: '♾️ 前世因果修為', placeholder: '例如：引導多行善積德，廣結善緣化解夙世因果...' },
+                    { key: 'dream', label: '🌙 夢境深度解碼', placeholder: '例如：從潛意識與五行浮沉剖析吉凶預警...' },
+                    { key: 'chat', label: '💬 大師日常論道聊天', placeholder: '例如：請隨時展現溫厚慈悲、仙風道骨之宗師風範...' }
+                ],
+
                 init() {
-                    // Check session storage for login Persistence
                     if (sessionStorage.getItem('admin_auth') === 'true') {
                         this.authenticated = true;
-                        this.startPolling();
+                        this.fetchData();
                         this.fetchInsights();
+                        this.startPolling();
                     }
                 },
 
+                showToast(msg, type = 'success') {
+                    this.toast = { show: true, message: msg, type };
+                    setTimeout(() => { this.toast.show = false; }, 3000);
+                },
+
                 login() {
-                    // 密碼：master888 或 admin
                     if (this.password === 'master888' || this.password === 'admin') {
                         this.authenticated = true;
                         sessionStorage.setItem('admin_auth', 'true');
-                        this.startPolling();
+                        this.showToast("登入成功，歡迎道長歸位！");
+                        this.fetchData();
                         this.fetchInsights();
+                        this.startPolling();
                     } else {
                         this.error = true;
                         this.password = '';
                     }
                 },
 
+                logout() {
+                    sessionStorage.removeItem('admin_auth');
+                    this.authenticated = false;
+                    clearInterval(this.pollingInterval);
+                },
+
                 formatDate(iso) {
                     if (!iso) return '-';
-                    return iso.replace('T', ' ').substring(0, 16);
+                    return iso.replace('T', ' ').substring(0, 19);
                 },
 
-                formatPrompt(p) {
-                    if (!p) return '-';
-                    if (p.includes("命譜詳評") || p.includes("格局批註")) return "【功能】全盤詳解 (命譜詳評)";
-                    if (p.includes("流日") && p.includes("錦囊妙計")) return "【功能】今日錦囊";
-                    if (p.includes("前世因果")) return "【功能】前世今生";
-                    if (p.includes("轉運儀式")) return "【功能】轉運儀式";
-                    if (p.includes("桃花攻略")) return "【功能】姻緣桃花";
-                    if (p.includes("投資理財")) return "【功能】財運分析";
-                    if (p.includes("測字")) return "【功能】測字占卜";
-                    if (p.includes("夢境")) return "【功能】夢境解析";
-                    if (p.includes("八字")) return "【功能】八字論命";
-                    return p; // Default: User chat
+                formatModeTitle(model, prompt) {
+                    const m = model || '';
+                    const p = prompt || '';
+                    if (m.includes('iching') || p.includes('卦') || p.includes('易經')) return '易經神卦';
+                    if (m.includes('stock') || p.includes('股市') || p.includes('大盤')) return '天機股市';
+                    if (m.includes('compatibility') || p.includes('合盤') || p.includes('合婚')) return '雙人合盤';
+                    if (m.includes('flowYear') || p.includes('流年雷達')) return '流年雷達';
+                    if (m.includes('simple') || p.includes('白話精解')) return '白話精解';
+                    if (m.includes('report') || p.includes('命譜詳評') || p.includes('全盤詳解')) return '命譜詳評';
+                    if (m.includes('daily') || p.includes('錦囊妙計')) return '今日錦囊';
+                    if (m.includes('love') || p.includes('桃花')) return '桃花攻略';
+                    if (m.includes('finance') || p.includes('財運')) return '財運預測';
+                    if (m.includes('bazi') || p.includes('八字論命')) return '八字論命';
+                    if (m.includes('ritual') || p.includes('靈符')) return '轉運儀式';
+                    if (m.includes('pastLife') || p.includes('前世')) return '前世因果';
+                    if (m.includes('dream') || p.includes('夢境')) return '夢境解碼';
+                    return m ? '功能·' + m : '問津聊天';
                 },
 
-                async fetchData() {
+                getModeBadgeClass(model) {
+                    const m = (model || '').toLowerCase();
+                    if (m.includes('iching')) return 'bg-amber-950 text-amber-300 border border-amber-800/60';
+                    if (m.includes('stock')) return 'bg-blue-950 text-blue-300 border border-blue-800/60';
+                    if (m.includes('compatibility')) return 'bg-pink-950 text-pink-300 border border-pink-800/60';
+                    if (m.includes('flowyear')) return 'bg-rose-950 text-rose-300 border border-rose-800/60';
+                    if (m.includes('report')) return 'bg-indigo-950 text-indigo-300 border border-indigo-800/60';
+                    return 'bg-emerald-950 text-emerald-300 border border-emerald-800/60';
+                },
+
+                get filteredRecords() {
+                    let list = this.data.records || [];
+                    if (this.recordGenderFilter !== 'ALL') {
+                        list = list.filter(r => r.gender === this.recordGenderFilter);
+                    }
+                    if (this.recordSearch.trim()) {
+                        const kw = this.recordSearch.trim().toLowerCase();
+                        list = list.filter(r => 
+                            (r.name && r.name.toLowerCase().includes(kw)) ||
+                            (r.birth_date && r.birth_date.includes(kw)) ||
+                            (r.lunar_date && r.lunar_date.includes(kw)) ||
+                            (r.location && r.location.toLowerCase().includes(kw))
+                        );
+                    }
+                    return list;
+                },
+
+                get filteredChats() {
+                    let list = this.data.chats || [];
+                    if (this.chatTagFilter !== 'ALL') {
+                        const tag = this.chatTagFilter;
+                        list = list.filter(c => {
+                            const m = (c.model || '').toLowerCase();
+                            const p = (c.prompt || '').toLowerCase();
+                            return m.includes(tag.toLowerCase()) || p.includes(tag.toLowerCase());
+                        });
+                    }
+                    if (this.chatSearch.trim()) {
+                        const kw = this.chatSearch.trim().toLowerCase();
+                        list = list.filter(c => 
+                            (c.user_name && c.user_name.toLowerCase().includes(kw)) ||
+                            (c.prompt && c.prompt.toLowerCase().includes(kw)) ||
+                            (c.response && c.response.toLowerCase().includes(kw))
+                        );
+                    }
+                    return list;
+                },
+
+                inspectUser(user) {
+                    this.inspectedUser = user;
+                },
+
+                toggleExpandChat(idx) {
+                    if (this.expandedChats.includes(idx)) {
+                        this.expandedChats = this.expandedChats.filter(i => i !== idx);
+                    } else {
+                        this.expandedChats.push(idx);
+                    }
+                },
+
+                async copyText(text) {
                     try {
-                        const res = await fetch('/api/admin/data');
+                        await navigator.clipboard.writeText(text);
+                        this.showToast("已成功複製回覆內容至剪貼簿！");
+                    } catch {
+                        this.showToast("複製失敗，請手動選取", "error");
+                    }
+                },
+
+                async fetchData(showManualToast = false) {
+                    this.isFetching = true;
+                    try {
+                        const res = await fetch(`/api/admin/data?limit=${this.displayLimit}`);
                         const json = await res.json();
                         this.data = json;
+                        this.lastUpdatedTime = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+                        if (showManualToast) this.showToast("數據已成功同步最新狀態！");
                     } catch (e) {
                         console.error("Fetch error", e);
+                    } finally {
+                        this.isFetching = false;
                     }
                 },
 
@@ -292,7 +743,7 @@
                     try {
                         const res = await fetch('/api/admin/hidden_insights');
                         const json = await res.json();
-                        this.insights = json;
+                        this.insights = { ...this.insights, ...json };
                     } catch (e) {
                         console.error("Fetch insights error", e);
                     }
@@ -306,39 +757,45 @@
                             body: JSON.stringify(this.insights)
                         });
                         if (res.ok) {
-                            alert("密令已成功儲存！大師已接收。");
+                            this.showToast("✨ 13 模組大師密令已全數存入道藏！");
                         }
                     } catch (e) {
-                        alert("儲存失敗：" + e.message);
+                        this.showToast("儲存失敗：" + e.message, "error");
+                    }
+                },
+
+                async clearCache() {
+                    if (!confirm("確定要清空每日黃曆、股市新聞與語音快取嗎？")) return;
+                    try {
+                        const res = await fetch('/api/admin/clear_cache', { method: 'POST' });
+                        const json = await res.json();
+                        this.showToast(json.message || "快取已清空！");
+                        this.fetchData();
+                    } catch (e) {
+                        this.showToast("清空快取失敗: " + e.message, "error");
+                    }
+                },
+
+                togglePolling() {
+                    this.isPolling = !this.isPolling;
+                    if (this.isPolling) {
+                        this.startPolling();
+                        this.showToast("已恢復每 5 秒即時輪詢！");
+                    } else {
+                        clearInterval(this.pollingInterval);
+                        this.showToast("即時輪詢已暫停。");
                     }
                 },
 
                 startPolling() {
-                    this.fetchData();
-                    setInterval(() => this.fetchData(), 5000); // Poll every 5 seconds
+                    clearInterval(this.pollingInterval);
+                    this.pollingInterval = setInterval(() => {
+                        if (this.isPolling) this.fetchData();
+                    }, 5000);
                 }
             }
         }
     </script>
-    <style>
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #1e293b;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #475569;
-            border-radius: 3px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-        }
-    </style>
 </body>
 
 </html>

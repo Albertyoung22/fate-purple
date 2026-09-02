@@ -1998,13 +1998,22 @@ def db_check():
 
 @app.route('/api/admin/data')
 def get_admin_data():
+    limit = int(request.args.get('limit', 100))
+    limit = min(500, max(10, limit))
+    
+    today_str = datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%d')
+    today_records_count = 0
+    today_chats_count = 0
+
     # Detect if we should use Mongo directly for counts/recent to avoid timeouts
     if users_collection is not None and MONGO_AVAILABLE:
         try:
             records_count = users_collection.count_documents({})
             chats_count = chats_collection.count_documents({})
-            records = list(users_collection.find({}, {'_id': 0}).sort("timestamp", -1).limit(50))
-            chats = list(chats_collection.find({}, {'_id': 0}).sort("timestamp", -1).limit(50))
+            today_records_count = users_collection.count_documents({"timestamp": {"$regex": f"^{today_str}"}})
+            today_chats_count = chats_collection.count_documents({"timestamp": {"$regex": f"^{today_str}"}})
+            records = list(users_collection.find({}, {'_id': 0}).sort("timestamp", -1).limit(limit))
+            chats = list(chats_collection.find({}, {'_id': 0}).sort("timestamp", -1).limit(limit))
         except Exception as e:
             print(f"⚠️ Mongo Admin Data 讀取失敗: {e}")
             records_count = 0
@@ -2017,8 +2026,10 @@ def get_admin_data():
         full_chats = load_json_file(CHAT_LOG_FILE)
         records_count = len(full_records)
         chats_count = len(full_chats)
-        records = list(reversed(full_records[-50:]))
-        chats = list(reversed(full_chats[-50:]))
+        today_records_count = sum(1 for r in full_records if str(r.get("timestamp", "")).startswith(today_str))
+        today_chats_count = sum(1 for c in full_chats if str(c.get("timestamp", "")).startswith(today_str))
+        records = list(reversed(full_records[-limit:]))
+        chats = list(reversed(full_chats[-limit:]))
     
     # Determine DB Status text
     status_parts = []
@@ -2033,19 +2044,87 @@ def get_admin_data():
         status_parts.append("Google 試算表")
         
     if not status_parts:
-        status_parts.append("本地 JSON")
+        status_parts.append("本地 JSON 備份")
         
     status_text = " + ".join(status_parts)
     
+    cache_info = {
+        "rules_cached": len(RULES_CACHE) if RULES_CACHE is not None else 1063,
+        "daily_omens_cached": len(DAILY_OMENS_CACHE),
+        "stock_news_cached": len(STOCK_NEWS_CACHE),
+        "tts_cached": len(TTS_CACHE)
+    }
+
     return jsonify({
         "records_count": records_count,
         "chats_count": chats_count,
+        "today_records_count": today_records_count,
+        "today_chats_count": today_chats_count,
         "records": records,
         "chats": chats,
         "status": "Online",
-        "uptime": "Running",
-        "db_status": status_text
+        "uptime": "運行中 · 健康",
+        "db_status": status_text,
+        "cache_info": cache_info
     })
+
+@app.route('/api/admin/export/<data_type>')
+def export_admin_data(data_type):
+    import io
+    import csv
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    if data_type == 'records':
+        records = load_json_file(RECORD_FILE)
+        writer.writerow(["時間", "姓名", "性別", "國曆生辰", "時辰", "農曆生辰", "城市", "IP"])
+        for r in records:
+            writer.writerow([
+                r.get("timestamp", ""),
+                r.get("name", ""),
+                "乾造" if r.get("gender") == "M" else ("坤造" if r.get("gender") == "F" else ""),
+                r.get("birth_date", ""),
+                r.get("birth_hour", ""),
+                r.get("lunar_date", ""),
+                r.get("location", ""),
+                r.get("ip", "")
+            ])
+        filename = f"緣主名冊_{datetime.now().strftime('%Y%m%d')}.csv"
+    elif data_type == 'chats':
+        chats = load_json_file(CHAT_LOG_FILE)
+        writer.writerow(["時間", "緣主姓名", "性別", "生辰", "提問模式", "提問內容", "大師回覆", "城市", "IP"])
+        for c in chats:
+            writer.writerow([
+                c.get("timestamp", ""),
+                c.get("user_name", ""),
+                "乾造" if c.get("gender") == "M" else ("坤造" if c.get("gender") == "F" else ""),
+                c.get("birth_date", ""),
+                c.get("model", ""),
+                c.get("prompt", ""),
+                c.get("response", ""),
+                c.get("location", ""),
+                c.get("ip", "")
+            ])
+        filename = f"對話日誌_{datetime.now().strftime('%Y%m%d')}.csv"
+    else:
+        return "Invalid export type", 400
+
+    # Add UTF-8 BOM for Excel on Windows
+    csv_bytes = ('\ufeff' + output.getvalue()).encode('utf-8')
+    return Response(
+        csv_bytes,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"}
+    )
+
+@app.route('/api/admin/clear_cache', methods=['POST'])
+def admin_clear_cache():
+    DAILY_OMENS_CACHE.clear()
+    STOCK_NEWS_CACHE.clear()
+    with TTS_CACHE_LOCK:
+        TTS_CACHE.clear()
+    return jsonify({"success": True, "message": "所有運算快取已成功清空！"})
 
 @app.route('/api/admin/hidden_insights', methods=['GET', 'POST'])
 def handle_hidden_insights():
