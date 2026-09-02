@@ -247,8 +247,8 @@
                 },
 
                 login() {
-                    // 密碼：master888
-                    if (this.password === 'master888') {
+                    // 密碼：master888 或 admin
+                    if (this.password === 'master888' || this.password === 'admin') {
                         this.authenticated = true;
                         sessionStorage.setItem('admin_auth', 'true');
                         this.startPolling();
