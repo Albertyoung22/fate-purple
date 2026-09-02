@@ -4334,9 +4334,20 @@ ${chartContext}
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ symbol: stockName })
                     });
-                    const data = await res.json();
+                    const rawText = await res.text();
+                    // 防禦性過濾：替換任何未引號的 NaN 或 Infinity 為 null，徹底根絕 JSON.parse 語法異常
+                    const safeText = rawText.replace(/:\s*NaN\b/g, ': null').replace(/\[\s*NaN\b/g, '[null').replace(/,\s*NaN\b/g, ', null');
+                    let data;
+                    try {
+                        data = JSON.parse(safeText);
+                    } catch (parseErr) {
+                        throw new Error("股市行情格式解析異常，請稍候重試");
+                    }
 
                     if (data.error) throw new Error(data.error);
+                    if (data.data && Array.isArray(data.data)) {
+                        data.data = data.data.filter(item => item && item.y && item.y.every(v => typeof v === 'number' && !isNaN(v) && v > 0));
+                    }
 
                     setStockChartData(data);
                     setStockAnalysis("（大師正在入定，感應乾坤走勢...）");
