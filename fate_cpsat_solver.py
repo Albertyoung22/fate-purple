@@ -126,6 +126,13 @@ class FateCPSATSolver:
 
     def build_model(self):
         """構建 CP-SAT 數學模型與約束條件"""
+        self.model = cp_model.CpModel()
+        self.solver = cp_model.CpSolver()
+        self.palace_vars = {}
+        self.element_vars = {}
+        self.direction_vars = {}
+        self.timing_vars = {}
+        
         # 1. 宮位能量整數變數 (Palace Energy: 0~100)
         for i in range(12):
             self.palace_vars[i] = self.model.NewIntVar(0, 100, f'palace_{i}_energy')
@@ -394,7 +401,7 @@ class FateCPSATSolver:
         elif target_type == "dream":
             return self._handle_dream(name)
         elif target_type == "stock":
-            return self._handle_stock(name)
+            return self._handle_stock(name, clean_q)
         elif target_type == "bazi":
             return self._handle_bazi(name)
         elif target_type == "simple":
@@ -489,7 +496,7 @@ class FateCPSATSolver:
 
         # 19. 股市股票
         elif any(kw in clean_q for kw in ["股票", "股價", "股市", "大盤", "個股", "代號"]):
-            return self._handle_stock(name)
+            return self._handle_stock(name, clean_q)
 
         # 20. 八字命書
         elif any(kw in clean_q for kw in ["八字詳批", "子平八字", "四柱八字", "子平", "命書", "日主強弱"]):
@@ -651,15 +658,44 @@ class FateCPSATSolver:
             f"月尾氣息收斂，宜總結本月所得，避免衝動開銷，多陪伴家人、修養身心，為下一月度積蓄元氣。"
         )
 
-    def _handle_stock(self, name):
+    def _handle_stock(self, name, clean_q=""):
         wealth_score = self.palace_scores.get("財帛宮", 65)
         career_score = self.palace_scores.get("官祿宮", 65)
+        
+        # 萃取時事輿情多空訊號與技術指標
+        bull_weight = 50 + (wealth_score - 50) // 3
+        if any(w in clean_q for w in ["利多", "創高", "大漲", "站上線", "偏多", "買超", "獲利", "增", "飆"]):
+            bull_weight += 16
+        if any(w in clean_q for w in ["利空", "跌破", "重挫", "跌破線", "偏空", "賣超", "衰退", "下修", "弱勢"]):
+            bull_weight -= 16
+        bull_weight = max(15, min(88, bull_weight))
+        
+        if bull_weight >= 56:
+            trend_tag = "↗ 多方轉強 · 偏多看好"
+            pred_range = f"+{round((bull_weight-50)*0.16 + 1.2, 1)}% ~ +{round((bull_weight-50)*0.26 + 3.8, 1)}%"
+            tactic = "盤面時事題材熱絡且均線有守，逢回測不破支撐可小量分批佈局，沿短期均線抱牢，嚴守移動停利停損。"
+        elif bull_weight <= 44:
+            trend_tag = "↘ 空方壓制 · 偏空防守"
+            pred_range = f"-{round((50-bull_weight)*0.16 + 1.0, 1)}% ~ -{round((50-bull_weight)*0.25 + 3.2, 1)}%"
+            tactic = "時事利空或均線下彎，切勿盲目抄底接飛刀，宜多看少做或逢反彈降低持股水位，現金為王。"
+        else:
+            trend_tag = "→ 陰陽膠著 · 區間震盪"
+            pred_range = "± 1.8% 內狹幅區間整理"
+            tactic = "時事消息多空互見，量能尚未明確表態，建議在箱型區間上緣減碼、下緣觀望，靜待方向明朗。"
+
         return (
-            f"【紫微天機道長 · 股市天機氣數合參】：\n\n"
-            f"老道以紫微【財帛宮】（氣數 {wealth_score} 分）與【官祿宮】（氣數 {career_score} 分），合參當前市場情緒與標的氣象：\n\n"
-            f"1. **盤勢磁場與個人財氣**：你目前正財磁場厚實，偏財則重在波段把握。若欲操作股票標的，切忌盲目聽信市場小道消息或追高殺低。\n"
-            f"2. **操作節奏定心符**：宜採『分批布局、逢低分批吸納、嚴設停損』之紀律。以時間換取空間，挑選具備長期護城河與基本面支撐之標的為上策。\n"
-            f"3. **出入天時禁忌**：每日開盤盤初波動劇烈之時切莫衝動追單，宜於每日 **{self.best_timing}** 冷靜分析復盤，面朝 **{self.best_direction}** 沉著定奪。"
+            f"【紫微天機道長 · 股市時事與天機氣數三維詳批】：\n\n"
+            f"老道以【財經時事輿情】、【盤面技術量能】合參緣主紫微【財帛宮】（氣數 {wealth_score} 分）與【官祿宮】（氣數 {career_score} 分）三維推演：\n\n"
+            f"✦ 【一、時事多空與走勢機率預測】：\n"
+            f"- **預測趨勢**：★ **{trend_tag}** ★（多頭勝率約 {bull_weight}%）\n"
+            f"- **預估波段變動區間**：**{pred_range}**\n"
+            f"- **時事風向評析**：市場消息紛擾，真真假假皆為人心之映照。若近期有利多加持，須注意是否有利多出盡之疑；若逢時事利空衝擊，宜檢驗下方強支撐位之承接力道。\n\n"
+            f"✦ 【二、技術量能與個人財氣合參】：\n"
+            f"- **個人財運磁場**：你目前正財氣象厚實，官祿宮助力穩固。但偏財短線操作重在順應天時與消息脈絡，切忌盲目聽信市場小道消息或追高殺低。\n"
+            f"- **關鍵操盤防守**：{tactic}\n\n"
+            f"✦ 【三、宗師操盤定心符與出入天時】：\n"
+            f"1. **操作紀律**：以時間換取空間，挑選具備長期護城河與時事產業紅利之標的，切莫孤注一擲。\n"
+            f"2. **下單吉時吉方**：每日開盤盤初波動劇烈時切莫衝動追單，宜於每日 **{self.best_timing}** 冷靜復盤，面朝 **{self.best_direction}** 沉著定奪。"
         )
 
     def _handle_omens(self, name):

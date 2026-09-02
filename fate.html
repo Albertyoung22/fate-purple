@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <script>
         window.onerror = function (message, source, lineno, colno, error) {
-            alert("系統發生錯誤：\n" + message + "\nLine: " + lineno + "\nCol: " + colno);
+            console.error("【系統診斷】前端異常捕獲:", message, "Line:", lineno, "Col:", colno, error);
             return false;
         };
     </script>
@@ -3842,9 +3842,16 @@ ${chartContext}
 - 成交量能狀態：${indicators.vol_status} (量比：${indicators.vol_ratio})
 ` : "";
 
+                    const newsItems = data.news || [];
+                    let newsStats = "";
+                    if (newsItems.length > 0) {
+                        const newsLines = newsItems.map((n, i) => `${i + 1}. [${n.sentiment_zh}] ${n.title} (${n.publisher})`).join('\n');
+                        newsStats = `\n【即時財經時事與輿情解碼】：\n${newsLines}\n`;
+                    }
+
                     const lastData = data.data[data.data.length - 1];
                     const lastPrice = lastData.y[3];
-                    const msg = `請分析股票【${data.name} (${data.symbol})】。目前成交價約為 ${lastPrice} ${data.currency}。${indicatorStats}請根據這些指標，結合大數據趨勢與我的命盤財運，給予具體的操作建議（例如：持股觀望、破線止損、或小量分批介入）。`;
+                    const msg = `請分析股票【${data.name} (${data.symbol})】。目前成交價約為 ${lastPrice} ${data.currency}。${indicatorStats}${newsStats}請結合即時時事重大消息、量價技術指標與我的命盤財運，研判多空走勢與下週漲跌預測，給予具體的操作建議。`;
 
                     setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
                     setStockAnalysis("");
@@ -3854,16 +3861,24 @@ ${getFullChartContext()}
 
 【近期數據(最後5天)】：${JSON.stringify(data.data.slice(-5))} 
 ${indicatorStats}
+${newsStats}
 
 【操作策略準則】：
-1. 股價守住 MA10 之上且 MA10 趨勢往上，屬多頭觀望持股。若跌破 MA10 且下彎，建議出清。
-2. 觀察 BBI 是否由低往上（趨勢向上）。
-3. 成交量應遞增而不可暴增（量能溫和放量）。
-4. EMA30 往上則可視為正常買點。
+1. 結合即時財經時事利多/利空訊息，研判消息面對股價與市場情緒之催化或壓制作用。
+2. 股價守住 MA10 之上且 MA10 趨勢往上，屬多頭觀望持股。若跌破 MA10 且下彎，建議出清。
+3. 觀察 BBI 是否由低往上（趨勢向上）。
+4. 成交量應遞增而不可暴增（量能溫和放量）。
+5. EMA30 往上則可視為正常買點。
 
 【緣主祈求】：${msg} 
 
-【大師指令】：請運用上述「技術指標準則」、「技術型態辨識 (如 M頭、支撐壓力位)」與「紫微財帛宮能量」進行合參。最終預測下週可能的漲跌百分比(%)，並給予極具針對性的操作指令（如：先行獲利、觀望、或等待介入點）。`;
+【大師指令】：請運用上述「即時時事重大消息」、「技術指標準則 (MA10/BBI/EMA30/量比)」、「技術型態辨識 (如支撐壓力位)」與「紫微財帛宮/官祿宮氣數」進行三維合參。
+請務必包含：
+1. 【時事多空風向解碼】：剖析當前重大時事新聞對標的的多空影響
+2. 【技術量能與支撐壓力】：結合 MA10、BBI、量比診斷盤面強弱
+3. 【紫微財運天機合參】：結合緣主命盤氣場定性個人財運
+4. 【下週走勢與漲跌預測】：明確預測趨勢 (偏多 / 偏空 / 震盪)、多頭勝率(%)與預估變動百分比區間 (%)
+5. 【具體操盤錦囊與停損防守位】：給予極具針對性的進退指令（如：持股續抱、觀望、或減碼防守位）。`;
 
                     await callAiApi(aiPrompt, 'stock', (c) => {
                         setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; });
@@ -4800,6 +4815,52 @@ ${indicatorStats}
                                                 </p>
                                             </div>
                                         </div>
+
+                                        {/* Real-time Current Events & Sentiment Card */}
+                                        {stockChartData.news && stockChartData.news.length > 0 && (
+                                            <div className="mt-4 p-5 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-3xl border border-amber-200/60 shadow-sm">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <h4 className="text-sm font-black text-amber-900 flex items-center gap-2">
+                                                        <Icon name="newspaper" className="w-4 h-4 text-amber-600" />
+                                                        即時財經時事情報 · 多空輿情解碼
+                                                    </h4>
+                                                    <span className="text-[10px] font-bold px-2.5 py-0.5 bg-amber-100/80 text-amber-800 rounded-full border border-amber-200/50">
+                                                        即時快訊
+                                                    </span>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                                    {stockChartData.news.map((item, idx) => (
+                                                        <a 
+                                                            key={idx} 
+                                                            href={item.link || "#"} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-start justify-between gap-2.5 p-3 rounded-2xl bg-white/80 hover:bg-white transition-all border border-amber-100/60 hover:border-amber-300 shadow-sm hover:shadow group"
+                                                        >
+                                                            <div className="flex items-start gap-2 min-w-0">
+                                                                <span className="text-xs shrink-0 mt-0.5 font-bold">
+                                                                    {item.sentiment === 'bullish' ? '🟢' : (item.sentiment === 'bearish' ? '🔴' : '⚪')}
+                                                                </span>
+                                                                <div className="min-w-0">
+                                                                    <p className="text-xs font-bold text-slate-800 group-hover:text-indigo-600 truncate transition-colors">
+                                                                        {item.title}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                                                        {item.publisher} · {item.date}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <span className={`text-[10px] font-black shrink-0 px-2 py-0.5 rounded-full ${
+                                                                item.sentiment === 'bullish' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                                                (item.sentiment === 'bearish' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-600 border border-slate-200')
+                                                            }`}>
+                                                                {item.sentiment_zh}
+                                                            </span>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {/* Master's Analysis Section inside Modal */}
                                         <div className="mt-6 p-6 bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-900 rounded-[2rem] border border-white/20 shadow-2xl relative overflow-hidden group">

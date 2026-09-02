@@ -14,6 +14,8 @@ if os.name == 'nt':
 import pandas as pd
 from werkzeug.exceptions import HTTPException
 import yfinance as yf
+import xml.etree.ElementTree as ET
+from urllib.parse import quote
 
 # --- GUI Support Check ---
 try:
@@ -123,11 +125,51 @@ CONFIG = load_config()
 CONSTANTS = load_constants()
 STEMS = CONSTANTS['STEMS']
 BRANCHES = CONSTANTS['BRANCHES']
-SI_HUA_TABLE = CONSTANTS['SI_HUA_TABLE']
-
-# --- Global Data Paths ---
+# --- Global Data Paths & Concurrency Locks ---
 CHAT_LOG_FILE = 'chat_history.json'
 RECORD_FILE = 'user_records.json'
+HIDDEN_INSIGHTS_FILE = 'hidden_insights.json'
+
+FILE_LOCK_RECORD = threading.Lock()
+FILE_LOCK_CHAT = threading.Lock()
+INSIGHTS_LOCK = threading.Lock()
+RULES_LOCK = threading.Lock()
+IP_CACHE_LOCK = threading.Lock()
+TTS_CACHE_LOCK = threading.Lock()
+STOCK_CACHE_LOCK = threading.Lock()
+
+# --- In-Memory Fast Caches ---
+RULES_CACHE = None
+INSIGHTS_CACHE = None
+IP_LOCATION_CACHE = {}
+DAILY_OMENS_CACHE = {}
+TTS_CACHE = {} # text_hash -> bytes audio cache
+TTS_CACHE_MAX = 128
+
+_CACHED_RECORDS = None
+_CACHED_CHATS = None
+
+def get_ziwei_rules():
+    """獲取紫微斗數規則庫 (全域記憶體快取，避免重複讀取 660KB 磁碟檔案)"""
+    global RULES_CACHE
+    if RULES_CACHE is not None:
+        return RULES_CACHE
+    with RULES_LOCK:
+        if RULES_CACHE is not None:
+            return RULES_CACHE
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        rule_path = os.path.join(base_dir, 'ziwei_rules.json')
+        if os.path.exists(rule_path):
+            try:
+                with open(rule_path, 'r', encoding='utf-8') as f:
+                    RULES_CACHE = json.load(f)
+                    print(f"✅ 紫微規則庫載入成功: 共 {len(RULES_CACHE)} 條規則 (常駐記憶體)")
+            except Exception as e:
+                print(f"⚠️ 載入紫微規則庫失敗: {e}")
+                RULES_CACHE = []
+        else:
+            RULES_CACHE = []
+        return RULES_CACHE
 
 # --- Persistence Layer (JSON vs MongoDB) ---
 MONGO_URI = os.environ.get("MONGO_URI") or CONFIG.get("mongo_uri")
@@ -220,7 +262,6 @@ def append_to_sheet(sheet_name, row_data):
             else:
                 print("提示：請檢查 config.json 中的 spreadsheet_id 是否正確且為有效的試算表（非資料夾）。")
         else:
-            err_msg = str(e)
             if "invalid_grant" in err_msg.lower():
                 print(f"❌ Google Sheets 授權失敗 (Invalid Grant)。請檢查 credentials.json 的私鑰或憑證信箱是否正確。")
             elif "quota" in err_msg.lower():
@@ -228,26 +269,51 @@ def append_to_sheet(sheet_name, row_data):
             else:
                 print(f"⚠️ 試算表寫入錯誤 ({sheet_name}): {e}")
 
+# --- Fast In-Memory Storage & Thread-Safe Persistence ---
+def _init_caches():
+    global _CACHED_RECORDS, _CACHED_CHATS
+    if _CACHED_RECORDS is None:
+        _CACHED_RECORDS = _read_records_from_storage()
+    if _CACHED_CHATS is None:
+        _CACHED_CHATS = _read_chats_from_storage()
 
-def load_json_file(filename):
-    global MONGO_AVAILABLE
-    # MongoDB Mode (with fallback)
+def _read_records_from_storage():
     if users_collection is not None and MONGO_AVAILABLE:
         try:
-            if filename == RECORD_FILE:
-                return list(users_collection.find({}, {'_id': 0}))
-            elif filename == CHAT_LOG_FILE:
-                return list(chats_collection.find({}, {'_id': 0}).sort("timestamp", 1))
+            return list(users_collection.find({}, {'_id': 0}))
         except Exception as e:
-            print(f"⚠️ Mongo 讀取錯誤 ({e})，切換至本地 JSON...")
-            # If we hit a timeout, maybe disable Mongo for a while? 
-            # For now, let's keep trying but logging is annoying if it happens every time.
-            # Let's simple disable it for this session if it fails once to ensure speed.
-            # MONGO_AVAILABLE = False # Uncomment to permanent disable after split failure
-            pass
+            print(f"⚠️ Mongo 讀取使用者紀錄失敗: {e}")
+    if os.path.exists(RECORD_FILE):
+        try:
+            with open(RECORD_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"載入 {RECORD_FILE} 錯誤: {e}")
+    return []
 
-    # Local File Mode
-    if os.path.exists(filename):
+def _read_chats_from_storage():
+    if chats_collection is not None and MONGO_AVAILABLE:
+        try:
+            return list(chats_collection.find({}, {'_id': 0}).sort("timestamp", 1))
+        except Exception as e:
+            print(f"⚠️ Mongo 讀取對話歷史失敗: {e}")
+    if os.path.exists(CHAT_LOG_FILE):
+        try:
+            with open(CHAT_LOG_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"載入 {CHAT_LOG_FILE} 錯誤: {e}")
+    return []
+
+def load_json_file(filename):
+    _init_caches()
+    if filename == RECORD_FILE:
+        with FILE_LOCK_RECORD:
+            return list(_CACHED_RECORDS or [])
+    elif filename == CHAT_LOG_FILE:
+        with FILE_LOCK_CHAT:
+            return list(_CACHED_CHATS or [])
+    elif os.path.exists(filename):
         try:
             with open(filename, 'r', encoding='utf-8') as f:
                 return json.load(f)
@@ -256,43 +322,102 @@ def load_json_file(filename):
     return []
 
 def save_json_file(filename, data):
-    global MONGO_AVAILABLE
-    # MongoDB Mode (with fallback)
-    if users_collection is not None and MONGO_AVAILABLE:
+    if filename == RECORD_FILE:
+        with FILE_LOCK_RECORD:
+            global _CACHED_RECORDS
+            _CACHED_RECORDS = list(data)
+            try:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                print(f"儲存 {filename} 錯誤: {e}")
+    elif filename == CHAT_LOG_FILE:
+        with FILE_LOCK_CHAT:
+            global _CACHED_CHATS
+            _CACHED_CHATS = list(data)
+            try:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                print(f"儲存 {filename} 錯誤: {e}")
+    else:
         try:
-            if filename == RECORD_FILE and data:
-                # Naive implementation: assume the last item is the new one
-                users_collection.insert_one(data[-1])
-                # Also save to local file for backup? Yes.
-            elif filename == CHAT_LOG_FILE and data:
-                 chats_collection.insert_one(data[-1])
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
         except Exception as e:
-            print(f"⚠️ Mongo 寫入錯誤 ({e})，切換至本地 JSON...")
-            # MONGO_AVAILABLE = False # Uncomment to disable after failure
-    
-    # Local File Mode (Always save or fallback)
-    try:
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        print(f"儲存 {filename} 錯誤: {e}")
+            print(f"儲存 {filename} 錯誤: {e}")
 
-HIDDEN_INSIGHTS_FILE = 'hidden_insights.json'
 def load_hidden_insights():
-    if os.path.exists(HIDDEN_INSIGHTS_FILE):
-        try:
-            with open(HIDDEN_INSIGHTS_FILE, 'r', encoding='utf-8') as f: return json.load(f)
-        except: return {}
-    return {
-        "report": "", "daily": "", "pastLife": "", "ritual": "", 
-        "love": "", "finance": "", "bazi": "", "simple": "", "chat": ""
-    }
+    global INSIGHTS_CACHE
+    if INSIGHTS_CACHE is not None:
+        return INSIGHTS_CACHE.copy()
+    with INSIGHTS_LOCK:
+        if INSIGHTS_CACHE is not None:
+            return INSIGHTS_CACHE.copy()
+        if os.path.exists(HIDDEN_INSIGHTS_FILE):
+            try:
+                with open(HIDDEN_INSIGHTS_FILE, 'r', encoding='utf-8') as f:
+                    INSIGHTS_CACHE = json.load(f)
+            except Exception:
+                INSIGHTS_CACHE = {}
+        else:
+            INSIGHTS_CACHE = {}
+        defaults = {
+            "report": "", "daily": "", "pastLife": "", "ritual": "", 
+            "love": "", "finance": "", "bazi": "", "simple": "", "chat": ""
+        }
+        defaults.update(INSIGHTS_CACHE)
+        INSIGHTS_CACHE = defaults
+        return INSIGHTS_CACHE.copy()
 
 def save_hidden_insights(data):
-    with open(HIDDEN_INSIGHTS_FILE, 'w', encoding='utf-8') as f: json.dump(data, f, ensure_ascii=False, indent=2)
+    global INSIGHTS_CACHE
+    with INSIGHTS_LOCK:
+        INSIGHTS_CACHE = data.copy()
+        try:
+            with open(HIDDEN_INSIGHTS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"儲存 {HIDDEN_INSIGHTS_FILE} 錯誤: {e}")
+
+def _async_persist_chat(entry):
+    if db is not None and chats_collection is not None:
+        try:
+            chats_collection.insert_one(entry.copy())
+        except Exception as e:
+            print(f"⚠️ MongoDB 寫入對話紀錄失敗: {e}")
+    
+    with FILE_LOCK_CHAT:
+        try:
+            global _CACHED_CHATS
+            if _CACHED_CHATS is not None:
+                logs = _CACHED_CHATS
+            else:
+                logs = _read_chats_from_storage()
+                _CACHED_CHATS = logs
+            with open(CHAT_LOG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(logs[-1000:], f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"⚠️ 對話紀錄寫入失敗: {e}")
+            
+    try:
+        row = [
+            entry.get("timestamp"),
+            entry.get("user_name", ""),
+            entry.get("gender", ""),
+            entry.get("birth_date", ""),
+            entry.get("birth_hour", ""),
+            entry.get("lunar_date", ""),
+            entry.get("model", ""),
+            entry.get("prompt", ""),
+            entry.get("response", "")
+        ]
+        append_to_sheet("Chats", row)
+    except:
+        pass
 
 def log_chat(model, prompt, response, user_info=None):
-    # In MongoDB mode, we don't need to load all logs just to append one.
+    _init_caches()
     entry = {
         "timestamp": datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%dT%H:%M:%S'),
         "model": model,
@@ -302,46 +427,42 @@ def log_chat(model, prompt, response, user_info=None):
     if user_info:
         entry.update(user_info)
     
-    if db is not None and chats_collection is not None:
-        try:
-            chats_collection.insert_one(entry)
-        except Exception as e:
-            print(f"⚠️ MongoDB 寫入對話紀錄失敗: {e}，切換至本地儲存。")
-            logs = load_json_file(CHAT_LOG_FILE)
-            logs.append(entry)
-            save_json_file(CHAT_LOG_FILE, logs[-1000:])
-    else:
-        logs = load_json_file(CHAT_LOG_FILE)
-        logs.append(entry)
-        save_json_file(CHAT_LOG_FILE, logs[-1000:]) # Keep last 1000
-
-    # --- Google Sheets Export ---
-    try:
-        row = [
-            entry.get("timestamp"),
-            entry.get("user_name", ""),
-            entry.get("gender", ""),
-            entry.get("birth_date", ""),
-            entry.get("birth_hour", ""),
-            entry.get("lunar_date", ""),
-            model,
-            prompt,
-            response
-        ]
-        threading.Thread(target=append_to_sheet, args=("Chats", row), daemon=True).start()
-    except: pass
+    with FILE_LOCK_CHAT:
+        if _CACHED_CHATS is not None:
+            _CACHED_CHATS.append(entry)
+            if len(_CACHED_CHATS) > 1000:
+                _CACHED_CHATS.pop(0)
+    
+    # 非同步於背景守護執行緒持久化，絕不阻塞前端使用者串流回應
+    threading.Thread(target=_async_persist_chat, args=(entry,), daemon=True).start()
 
 def get_location_from_ip(ip):
-    """Resolve IP address to City/Region using ip-api.com"""
-    if not ip or ip in ['127.0.0.1', 'localhost']:
+    """將 IP 位址解析為地區，內建本地/私有 IP 即時繞過與記憶體高速快取"""
+    if not ip or ip in ['127.0.0.1', 'localhost', '::1']:
         return "台灣 (本地測試)"
+    
+    clean_ip = ip.split(',')[0].strip()
+    if (clean_ip.startswith(('10.', '192.168.', '127.')) or 
+        (clean_ip.startswith('172.') and 16 <= int(clean_ip.split('.')[1] if len(clean_ip.split('.')) > 1 and clean_ip.split('.')[1].isdigit() else 0) <= 31)):
+        return "台灣 (本地局域網)"
+        
+    with IP_CACHE_LOCK:
+        if clean_ip in IP_LOCATION_CACHE:
+            return IP_LOCATION_CACHE[clean_ip]
+            
     try:
-        # ip-api.com (Free for non-commercial, 45 req/min)
-        res = requests.get(f"http://ip-api.com/json/{ip}?fields=status,message,country,regionName,city", timeout=2).json()
+        # ip-api.com (超時設為 1.5 秒，避免阻塞)
+        res = requests.get(f"http://ip-api.com/json/{clean_ip}?fields=status,message,country,regionName,city", timeout=1.5).json()
         if res.get('status') == 'success':
-            return f"{res.get('country')} {res.get('regionName')} {res.get('city')}"
-    except:
+            loc = f"{res.get('country')} {res.get('regionName')} {res.get('city')}".strip()
+            with IP_CACHE_LOCK:
+                if len(IP_LOCATION_CACHE) > 1000:
+                    IP_LOCATION_CACHE.clear()
+                IP_LOCATION_CACHE[clean_ip] = loc
+            return loc
+    except Exception:
         pass
+        
     return "未知地點"
 
 def get_metaphorical_location(location):
@@ -464,30 +585,99 @@ def get_name_sensing(name):
     return ""
 
 def get_market_energy():
-    """模擬當日財富能量 (可結合股市)"""
-    # 這裡可以接入簡單的 API 獲取大盤，暫以隨機但固定的日種子模擬
+    """模擬當日財富能量 (獨立 PRNG，不干擾全域隨機狀態)"""
     seed = int(datetime.now().strftime("%Y%m%d"))
-    random.seed(seed)
-    energy_val = random.randint(1, 100)
-    random.seed()
+    rng = random.Random(seed)
+    energy_val = rng.randint(1, 100)
     
     if energy_val > 70: return "今日天下財源滾動，五行金氣極旺，氣流上揚 (適合進取)。"
     if energy_val < 30: return "今日財帛之氣收斂，如退潮之水，宜守不宜沖 (防守為上)。"
     return "今日天下財氣中平，穩健中求進展。"
 
+# --- Stock News & Current Events Cache ---
+STOCK_NEWS_CACHE = {}
+STOCK_NEWS_CACHE_TTL = 1800 # 30 mins
+
+def fetch_stock_news(query, max_items=4):
+    """獲取特定股票或市場之即時時事新聞與多空情緒分析 (非同步安全快取)"""
+    if not query:
+        return []
+        
+    clean_q = str(query).strip()
+    now = time.time()
+    with STOCK_CACHE_LOCK:
+        if clean_q in STOCK_NEWS_CACHE:
+            entry = STOCK_NEWS_CACHE[clean_q]
+            if now - entry["timestamp"] < STOCK_NEWS_CACHE_TTL:
+                return entry["news"]
+
+    try:
+        search_term = f"{clean_q} 股市 OR 財經 OR 營收"
+        url = f"https://news.google.com/rss/search?q={quote(search_term)}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        resp = requests.get(url, headers=headers, timeout=3.5)
+        if resp.status_code != 200:
+            return []
+            
+        root = ET.fromstring(resp.content)
+        items = root.findall('.//item')
+        news_list = []
+        
+        bullish_keywords = ["創高", "大漲", "買超", "增", "飆", "爆發", "獲利", "突破", "看多", "擴產", "訂單", "樂觀", "上修", "強勢", "亮眼", "利多", "續抱", "大單"]
+        bearish_keywords = ["下跌", "跌破", "賣超", "衰退", "重挫", "虧損", "下修", "示警", "暴跌", "裁員", "危機", "調節", "空頭", "疲軟", "破線", "砍單", "利空", "停損"]
+
+        for item in items[:max_items]:
+            title = item.find('title').text if item.find('title') is not None else ''
+            source = item.find('source').text if item.find('source') is not None else ''
+            pubDate = item.find('pubDate').text if item.find('pubDate') is not None else ''
+            link = item.find('link').text if item.find('link') is not None else ''
+            clean_title = title.rsplit(' - ', 1)[0] if ' - ' in title else title
+            publisher = title.rsplit(' - ', 1)[1] if ' - ' in title else source
+
+            bull_score = sum(1 for kw in bullish_keywords if kw in clean_title)
+            bear_score = sum(1 for kw in bearish_keywords if kw in clean_title)
+            
+            if bull_score > bear_score:
+                sentiment = "bullish"
+                sentiment_zh = "偏多利好 🟢"
+            elif bear_score > bull_score:
+                sentiment = "bearish"
+                sentiment_zh = "偏空警戒 🔴"
+            else:
+                sentiment = "neutral"
+                sentiment_zh = "中性觀望 ⚪"
+
+            news_list.append({
+                'title': clean_title,
+                'publisher': publisher,
+                'date': pubDate[:16],
+                'link': link,
+                'sentiment': sentiment,
+                'sentiment_zh': sentiment_zh
+            })
+
+        with STOCK_CACHE_LOCK:
+            if len(STOCK_NEWS_CACHE) > 200:
+                STOCK_NEWS_CACHE.clear()
+            STOCK_NEWS_CACHE[clean_q] = {"news": news_list, "timestamp": now}
+
+        return news_list
+    except Exception as e:
+        print(f"fetch_stock_news error for {clean_q}: {e}")
+        return []
+
 def get_stock_prediction(query, user_seed_str):
-    """針對特定股票進行神識感應分析"""
+    """針對特定股票結合即時時事新聞、多空情緒與神識感應進行漲跌預測 (獨立 PRNG)"""
     if not query: return ""
     
-    # 建立固定的隨機種子 (User + Stock + Date)
     try:
         daily_str = datetime.now().strftime("%Y%m%d")
         seed_val = sum(ord(c) for c in f"{query}{user_seed_str}{daily_str}")
-        random.seed(seed_val)
+        rng = random.Random(seed_val)
     except:
-        random.seed()
+        rng = random.Random()
 
-    # 五行分類與預測語句
+    # 五行分類與基本預測語句
     elements_map = {
         "2330": ("金火", "台積電：護國神山，金火之氣極盛，今日感應："),
         "2317": ("金", "鴻海：金氣肅穆，佈局宏大，今日感應："),
@@ -496,7 +686,6 @@ def get_stock_prediction(query, user_seed_str):
         "2881": ("金土", "富邦金：厚德載物，金氣內蘊，今日感應："),
     }
     
-    # 隨機生成趨勢感應
     vibrations = [
         "氣勢盤整，如龍困淺灘，宜待雷鳴而起 (建議觀望)。",
         "財雲湧動，有金星入閣之象，氣流上揚 (正向看好)。",
@@ -511,14 +700,51 @@ def get_stock_prediction(query, user_seed_str):
             element_info = f"【五行屬{info[0]}】{info[1]}"
             break
             
-    prediction = random.choice(vibrations)
-    random.seed() # 恢復隨機
-    
-    return f"\n【股票神識感應－針對「{query}」】：\n- {element_info}{prediction}\n- 指令：請大師結合此股票的『五行屬性』與緣主命盤中的『財帛宮/福德宮』，以宗師點撥的方式，神祕地預測此股與緣主的因果連結與今日佈局建議。"
+    prediction = rng.choice(vibrations)
+
+    # 獲取即時財經時事新聞情報
+    news_items = fetch_stock_news(query, max_items=4)
+    news_text = ""
+    bull_count = 0
+    bear_count = 0
+    if news_items:
+        news_lines = []
+        for i, n in enumerate(news_items, 1):
+            news_lines.append(f"  {i}. [{n['sentiment_zh']}] {n['title']} ({n['publisher']})")
+            if n['sentiment'] == 'bullish': bull_count += 1
+            elif n['sentiment'] == 'bearish': bear_count += 1
+        
+        total_rated = bull_count + bear_count
+        if total_rated > 0:
+            bull_pct = int((bull_count / total_rated) * 100)
+            bear_pct = 100 - bull_pct
+            sentiment_summary = f"時事多空風向：利多消息佔比 {bull_pct}% | 利空消息佔比 {bear_pct}%"
+        else:
+            sentiment_summary = "時事多空風向：目前消息面平穩，多空勢力均衡"
+            
+        news_text = (
+            f"\n【即時財經時事與輿情情報－針對「{query}」】：\n"
+            + "\n".join(news_lines) + "\n"
+            + f"★ {sentiment_summary}\n"
+        )
+
+    return (
+        f"\n【股票神識與時事合參預測－針對「{query}」】：\n"
+        f"- {element_info}{prediction}\n"
+        f"{news_text}"
+        f"- 指令：請大師將上述『即時財經時事情報』與『五行財氣』，結合緣主命盤中的『財帛宮/官祿宮』進行三維一體合參。"
+        f"明確指出：1. 時事多空對股價的催化或壓制作用；2. 預測下週可能的漲跌方向與機率百分比(%)；3. 具體防守點位與操盤進退建議。"
+    )
 
 def get_raw_omens(user_info=None, target_date=None):
-    """獲取精準農民曆黃曆原始數據 (使用 lunar_python)"""
+    """獲取精準農民曆黃曆原始數據 (使用 lunar_python，內建節氣快取與計算加速)"""
     try:
+        b_date = (user_info.get("birth_date") or "").strip() if user_info else ""
+        today_str = str(target_date or datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%d'))
+        cache_key = (today_str, b_date)
+        if cache_key in DAILY_OMENS_CACHE:
+            return DAILY_OMENS_CACHE[cache_key]
+
         if target_date:
             try:
                 t_parts = [p.strip() for p in str(target_date).split('-')]
@@ -531,33 +757,30 @@ def get_raw_omens(user_info=None, target_date=None):
         ln = Lunar.fromDate(now)
         solar = ln.getSolar()
         
-        # 1. 節氣資訊與區間
+        # 1. 節氣資訊與區間 (使用內建高效 Prev/Next JieQi，避免 while 迴圈反覆跨日)
         cur_jq = ln.getJieQi()
-        if not cur_jq:
-            prev_ln = ln
-            while not prev_ln.getJieQi():
-                prev_ln = prev_ln.next(-1)
-            cur_jq = prev_ln.getJieQi()
-            jq_start = prev_ln.getSolar()
+        if cur_jq:
+            jq_name = cur_jq
+            jq_start = solar.toYmd()
+            nj = ln.getNextJieQi()
+            jq_end = nj.getSolar().next(-1).toYmd() if nj else solar.toYmd()
         else:
-            jq_start = solar
-            
-        next_ln = ln.next(1)
-        while not next_ln.getJieQi():
-            next_ln = next_ln.next(1)
-        jq_end_solar = next_ln.next(-1).getSolar()
+            pj = ln.getPrevJieQi()
+            nj = ln.getNextJieQi()
+            jq_name = pj.getName() if pj else ""
+            jq_start = pj.getSolar().toYmd() if pj else solar.toYmd()
+            jq_end = nj.getSolar().next(-1).toYmd() if nj else solar.toYmd()
         
         jieqi_info = {
-            "name": cur_jq,
-            "start": jq_start.toYmd(),
-            "end": jq_end_solar.toYmd()
+            "name": jq_name,
+            "start": jq_start,
+            "end": jq_end
         }
         
         # 2. 緣主身分感應
         user_identity = ""
         if user_info and user_info.get("birth_date"):
             try:
-                # Robust parsing
                 b_str = str(user_info["birth_date"]).strip()
                 if b_str:
                     b_parts = [p.strip() for p in b_str.split('-')]
@@ -591,7 +814,6 @@ def get_raw_omens(user_info=None, target_date=None):
         lucky_hours = []
         try:
             for h_idx in range(12):
-                # Use Solar to ensure correct time-based Lunar object
                 h_solar = Solar.fromYmdHms(solar.getYear(), solar.getMonth(), solar.getDay(), h_idx * 2, 0, 0)
                 h_ln = h_solar.getLunar()
                 if h_ln.getTimeTianShen() in ["青龍", "明堂", "金匱", "天德", "玉堂", "司命"]:
@@ -600,7 +822,7 @@ def get_raw_omens(user_info=None, target_date=None):
             print(f"Error calculating lucky hours: {e}")
             lucky_hours = ["子", "午", "卯", "酉"] # Default fallback
 
-        return {
+        result = {
             "date": solar.toYmd(),
             "jieqi": jieqi_info,
             "user": user_identity,
@@ -616,6 +838,11 @@ def get_raw_omens(user_info=None, target_date=None):
             "cai_dir": ln.getDayPositionCaiDesc(),
             "lucky_hours": lucky_hours
         }
+        
+        if len(DAILY_OMENS_CACHE) > 500:
+            DAILY_OMENS_CACHE.clear()
+        DAILY_OMENS_CACHE[cache_key] = result
+        return result
     except Exception as e:
         print(f"Raw Huangli Error: {e}")
         return None
@@ -626,7 +853,7 @@ def get_daily_omens(user_info=None):
     if not data:
         return "\n【今日天機】：大氣流動平順，宜靜心修持。"
         
-    u = data['user']
+    u = data.get('user')
     user_str = f"屬{u['zodiac']} ({u['ganzhi']}，{u['age']}歲)" if u else "天機運轉中"
     
     return (f"\n【今日農民曆黃曆資訊（神識顯現）】：\n"
@@ -639,38 +866,26 @@ def get_daily_omens(user_info=None):
             f"{'、'.join(data['lucky_hours'])}\n"
             f"\n【黃曆啟示指令】：若緣主詢問今日吉凶、錦囊或避諱，請大師『先行呈現』上述顯現之黃曆資訊內容（原封不動），隨後再進行宗師級的深度解析。")
 
-
-
 def get_lottery_prediction(user_seed_str):
     """
-    根據台灣彩券開獎規則與使用者命盤種子，計算「今日靈動數」。
-    規則：
-    週一、四：威力彩 (第1區 1-38 選6 / 第2區 1-8 選1) + 今彩539
-    週二、五：大樂透 (1-49 選6) + 今彩539
-    週三、六：今彩539 (1-39 選5)
-    週日：僅推薦刮刮樂靈感號碼
+    根據台灣彩券開獎規則與使用者命盤種子，計算「今日靈動數」 (獨立 PRNG，不干擾主執行緒)。
     """
-    
-    # 建立命理隨機種子 (確保同一人同一天問到的號碼一致，增加神蹟感)
     try:
-        # 使用簡單的雜湊將字串轉為整數種子
         seed_val = sum(ord(c) for c in user_seed_str) + int(datetime.now().strftime("%Y%m%d"))
-        random.seed(seed_val)
+        rng = random.Random(seed_val)
     except:
-        random.seed(int(time.time()))
+        rng = random.Random(int(time.time()))
 
     weekday = datetime.now(timezone(timedelta(hours=8))).weekday() # 0=Mon, 6=Sun
-    
     predictions = []
     
-    # helper for sorted random sample
     def get_nums(start, end, count):
-        return sorted(random.sample(range(start, end + 1), count))
+        return sorted(rng.sample(range(start, end + 1), count))
 
     # 威力彩 (Mon=0, Thu=3)
     if weekday in [0, 3]:
         sec1 = get_nums(1, 38, 6)
-        sec2 = random.randint(1, 8)
+        sec2 = rng.randint(1, 8)
         predictions.append(f"【威力彩靈動】：第一區 {sec1} / 第二區 [{sec2}]")
         
     # 大樂透 (Tue=1, Fri=4)
@@ -684,12 +899,9 @@ def get_lottery_prediction(user_seed_str):
         predictions.append(f"【今彩539】：{nums}")
         
     if weekday == 6:
-        lucky = random.randint(1, 99)
+        lucky = rng.randint(1, 99)
         predictions.append(f"【週日財氣】：今日適合刮刮樂，幸運尾數 {lucky%10} 或總和 {lucky}")
         
-    # 恢復隨機狀態以免影響後續
-    random.seed()
-    
     return " | ".join(predictions)
 
 def get_love_vibe_instruction(age, gender):
@@ -775,16 +987,36 @@ def get_intent_sentiment_instruction(prompt):
 def get_bazi_analysis(birth_date_str, birth_hour_idx, gender_str):
     """
     使用 lunar_python 進行後台八字技術分析，提供給 AI 作為判斷依據。
+    精準支援時柱解析 (將時辰支或時辰索引對應至實際太陽時)。
     """
     try:
         if not birth_date_str: return ""
         # 解析日期 YYYY-MM-DD
-        parts = birth_date_str.split('-')
+        parts = [p.strip() for p in birth_date_str.split('-')]
         if len(parts) < 3: return ""
         y, m, d = int(parts[0]), int(parts[1]), int(parts[2])
         
-        # 轉換為國曆物件並獲取農曆資訊
-        solar = Solar.fromYmd(y, m, d)
+        # 時辰映射
+        hour = 0
+        branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
+        if birth_hour_idx is not None:
+            try:
+                if isinstance(birth_hour_idx, int):
+                    hour = (birth_hour_idx % 12) * 2
+                elif str(birth_hour_idx).isdigit():
+                    val = int(birth_hour_idx)
+                    hour = (val % 12) * 2 if val < 12 else min(23, val)
+                else:
+                    h_str = str(birth_hour_idx).replace("時", "").strip()
+                    for idx, b in enumerate(branches):
+                        if b in h_str:
+                            hour = idx * 2
+                            break
+            except:
+                hour = 0
+
+        # 轉換為國曆物件並獲取農曆資訊 (帶入正確時辰)
+        solar = Solar.fromYmdHms(y, m, d, hour, 0, 0)
         lunar = solar.getLunar()
         eight_char = lunar.getEightChar()
         
@@ -802,7 +1034,8 @@ def get_bazi_analysis(birth_date_str, birth_hour_idx, gender_str):
         # 進行簡單的技術掃描
         notes = []
         notes.append(f"- 【日主】：{day_master}")
-        notes.append(f"- 【五行分布】：年{eight_char.getYearNaYin()}，月{eight_char.getMonthNaYin()}，日{eight_char.getDayNaYin()}，時{eight_char.getTimeNaYin()}")
+        notes.append(f"- 【四柱干支】：年柱【{eight_char.getYear()}】、月柱【{eight_char.getMonth()}】、日柱【{eight_char.getDay()}】、時柱【{eight_char.getTime()}】")
+        notes.append(f"- 【五行納音分布】：年{eight_char.getYearNaYin()}，月{eight_char.getMonthNaYin()}，日{eight_char.getDayNaYin()}，時{eight_char.getTimeNaYin()}")
         
         # 偵測地支沖合 (僅舉例幾項常見的)
         zhi_str = eight_char.getYearZhi() + eight_char.getMonthZhi() + eight_char.getDayZhi() + eight_char.getTimeZhi()
@@ -899,7 +1132,7 @@ def get_nearby_temples(location, inquiry_text):
     return ""
 
 # --- App Globals ---
-app = Flask(__name__, static_folder='.', static_url_path='')
+app = Flask(__name__, static_folder=None)
 CORS(app)
 
 @app.route('/api/daily_omens', methods=['POST', 'OPTIONS'])
@@ -1154,19 +1387,36 @@ def stock_data_api():
                                 "y": [round(d.open, 2), round(d.high, 2), round(d.low, 2), round(d.close, 2)]
                             })
                         
+                        news_items = fetch_stock_news(f"台股 {tw_code}")
                         res_data = {
                             "success": True,
                             "symbol": symbol,
                             "name": f"台股 {tw_code} (twstock 備援)",
                             "currency": "TWD",
                             "data": chart_data,
-                            "indicators": indicators
+                            "indicators": indicators,
+                            "news": news_items
                         }
                         # Save to cache
-                        STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
+                        with STOCK_CACHE_LOCK:
+                            STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
                         return jsonify(res_data)
             except Exception as tw_err:
                 print(f"twstock fallback failed: {tw_err}")
+                
+            try:
+                tw_data = fetch_tw_stock_custom_scraper(tw_code)
+                if tw_data:
+                    df_c = pd.DataFrame([{"Date": datetime.strptime(d['x'], '%Y-%m-%d'), "Open": d['y'][0], "High": d['y'][1], "Low": d['y'][2], "Close": d['y'][3], "Volume": 0} for d in tw_data])
+                    df_c.set_index("Date", inplace=True)
+                    indicators = calculate_technical_indicators(df_c)
+                    news_items = fetch_stock_news(f"台股 {tw_code}")
+                    res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (證交所即時備援)", "currency": "TWD", "data": tw_data, "indicators": indicators, "news": news_items}
+                    with STOCK_CACHE_LOCK:
+                        STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
+                    return jsonify(res_data)
+            except Exception as scraper_e:
+                print(f"Custom scraper fallback failed: {scraper_e}")
                 
             return jsonify({"error": f"No data found for {symbol}. (Yahoo 限制頻繁且 twstock 備援失敗，請稍後再試)"}), 404
             
@@ -1192,6 +1442,7 @@ def stock_data_api():
         
         # Calculate indicators for yfinance data
         indicators = calculate_technical_indicators(hist)
+        news_items = fetch_stock_news(f"{stock_name} {symbol.split('.')[0]}")
 
         res_data = {
             "success": True,
@@ -1199,11 +1450,13 @@ def stock_data_api():
             "name": stock_name,
             "currency": currency,
             "data": chart_data,
-            "indicators": indicators
+            "indicators": indicators,
+            "news": news_items
         }
         
         # Save to cache
-        STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
+        with STOCK_CACHE_LOCK:
+            STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
         
         return jsonify(res_data)
     except Exception as e:
@@ -1235,8 +1488,10 @@ def stock_data_api():
                     df_s.set_index("Date", inplace=True)
                     indicators = calculate_technical_indicators(df_s)
                     chart_data = [{"x": d.date.strftime('%Y-%m-%d'), "y": [round(d.open, 2), round(d.high, 2), round(d.low, 2), round(d.close, 2)]} for d in unique_data]
-                    res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (twstock 終極備援)", "currency": "TWD", "data": chart_data, "indicators": indicators}
-                    STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
+                    news_items = fetch_stock_news(f"台股 {tw_code}")
+                    res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (twstock 終極備援)", "currency": "TWD", "data": chart_data, "indicators": indicators, "news": news_items}
+                    with STOCK_CACHE_LOCK:
+                        STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
                     return jsonify(res_data)
             except Exception as final_tw_e:
                 print(f"Final twstock fallback failed: {final_tw_e}")
@@ -1248,8 +1503,10 @@ def stock_data_api():
                     df_c = pd.DataFrame([{"Date": datetime.strptime(d['x'], '%Y-%m-%d'), "Open": d['y'][0], "High": d['y'][1], "Low": d['y'][2], "Close": d['y'][3], "Volume": 0} for d in tw_data])
                     df_c.set_index("Date", inplace=True)
                     indicators = calculate_technical_indicators(df_c)
-                    res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (終極感應)", "currency": "TWD", "data": tw_data, "indicators": indicators}
-                    STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
+                    news_items = fetch_stock_news(f"台股 {tw_code}")
+                    res_data = {"success": True, "symbol": symbol, "name": f"台股 {tw_code} (終極感應)", "currency": "TWD", "data": tw_data, "indicators": indicators, "news": news_items}
+                    with STOCK_CACHE_LOCK:
+                        STOCK_CACHE[symbol] = {"data": res_data, "timestamp": time.time()}
                     return jsonify(res_data)
             except Exception as scraper_e:
                 print(f"Custom scraper failed: {scraper_e}")
@@ -1689,53 +1946,75 @@ def handle_hidden_insights():
     save_hidden_insights(insights)
     return jsonify({"success": True})
 
+SAFE_STATIC_EXTENSIONS = {
+    '.png', '.ico', '.jpg', '.jpeg', '.html', '.css', '.js', '.mp3', '.wav', '.ogg', '.svg'
+}
+FORBIDDEN_FILES = {
+    'config.json', 'config.example.json', 'credentials.json', 'credentials2.json',
+    'user_records.json', 'user_records.xlsx', 'chat_history.json', 'hidden_insights.json',
+    'ziwei_rules.json', 'ziwei_constants.json', 'server_log.txt', 'procfile', 'runtime.txt'
+}
+
 @app.route('/<path:filename>')
 def serve_static(filename):
-    if filename.lower().endswith(('.png', '.ico', '.jpg', '.jpeg', '.html', '.css', '.js', '.json', '.mp3', '.wav', '.ogg')):
-        if os.path.exists(filename): return send_file(filename)
+    norm_name = os.path.normpath(filename).replace('\\', '/')
+    if norm_name.startswith('../') or norm_name.startswith('/') or '..' in norm_name:
+        return "Access Denied", 403
+    
+    base_name = os.path.basename(norm_name).lower()
+    
+    # 嚴格禁止下載機密設定檔、資料庫與 Python 程式碼
+    if base_name in FORBIDDEN_FILES or base_name.endswith('.py') or base_name.startswith('.'):
+        return "Access Denied", 403
+        
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    target_path = os.path.join(base_dir, norm_name)
+    
+    # 僅允許 manifest.json 作為合法的靜態 JSON 檔案
+    if base_name == 'manifest.json':
+        if os.path.exists(target_path) and os.path.isfile(target_path):
+            return send_file(target_path, mimetype='application/manifest+json')
+            
+    ext = os.path.splitext(base_name)[1].lower()
+    if ext in SAFE_STATIC_EXTENSIONS:
+        if os.path.exists(target_path) and os.path.isfile(target_path):
+            return send_file(target_path)
+            
     return "Not Found", 404
 
-@app.route('/api/save_record', methods=['POST', 'OPTIONS'])
-def save_record():
-    if request.method == 'OPTIONS':
-        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
-    data = request.json or {}
-    record = {
-        "timestamp": datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%dT%H:%M:%S'), "name": data.get("name", "Unknown"),
-        "gender": data.get("gender"), "birth_date": data.get("birth_date"),
-        "birth_hour": data.get("birth_hour"), "lunar_date": data.get("lunar_date")
-    }
-    
-    # --- Persistence Logic ---
-    try:
-        if db is not None and users_collection is not None:
+def _async_persist_record(record):
+    """背景執行緒儲存使用者紀錄與 Excel 同步"""
+    if db is not None and users_collection is not None:
+        try:
+            users_collection.insert_one(record.copy())
+        except Exception as e:
+            print(f"⚠️ MongoDB 寫入使用者紀錄失敗: {e}")
+
+    with FILE_LOCK_RECORD:
+        try:
+            global _CACHED_RECORDS
+            if _CACHED_RECORDS is not None:
+                recs = _CACHED_RECORDS
+            else:
+                recs = _read_records_from_storage()
+                _CACHED_RECORDS = recs
+            with open(RECORD_FILE, 'w', encoding='utf-8') as f:
+                json.dump(recs, f, ensure_ascii=False, indent=2)
+                
+            # Excel sync
             try:
-                users_collection.insert_one(record)
-            except Exception as e:
-                print(f"⚠️ MongoDB 寫入使用者紀錄失敗: {e}，切換至本地儲存。")
-                recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
-        else:
-            recs = load_json_file(RECORD_FILE); recs.append(record); save_json_file(RECORD_FILE, recs)
+                df = pd.DataFrame(recs)
+                df.rename(columns={
+                    "timestamp": "紀錄時間", "name": "姓名", "gender": "性別",
+                    "birth_date": "國曆生日", "birth_hour": "時辰(支)", "lunar_date": "農曆日期"
+                }, inplace=True)
+                excel_path = 'user_records.xlsx'
+                df.to_excel(excel_path, index=False, engine='openpyxl')
+            except Exception:
+                pass
+        except Exception as e:
+            print(f"⚠️ 本地使用者紀錄寫入失敗: {e}")
 
-        # --- Local Excel Sync ---
-        # Ensure we have a list of records to write to Excel
-        if 'recs' not in locals():
-            recs = load_json_file(RECORD_FILE)
-            
-        if recs:
-            df = pd.DataFrame(recs)
-            df.rename(columns={
-                "timestamp": "紀錄時間", "name": "姓名", "gender": "性別",
-                "birth_date": "國曆生日", "birth_hour": "時辰(支)", "lunar_date": "農曆日期"
-            }, inplace=True)
-            excel_path = 'user_records.xlsx'
-            df.to_excel(excel_path, index=False, engine='openpyxl')
-            print(f"💾 已同步備份至本地 Excel: {excel_path}")
-    except Exception as e:
-        if "pandas" not in str(e).lower(): 
-            print(f"⚠️ 紀錄儲存或 Excel 備份失敗: {e}")
-
-    # --- Google Sheets Export ---
     try:
         row = [
             record.get("timestamp"),
@@ -1745,9 +2024,29 @@ def save_record():
             record.get("birth_hour"),
             str(record.get("lunar_date"))
         ]
-        threading.Thread(target=append_to_sheet, args=("Users", row), daemon=True).start()
-    except: pass
-        
+        append_to_sheet("Users", row)
+    except Exception:
+        pass
+
+@app.route('/api/save_record', methods=['POST', 'OPTIONS'])
+def save_record():
+    if request.method == 'OPTIONS':
+        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
+    data = request.json or {}
+    record = {
+        "timestamp": datetime.now(timezone(timedelta(hours=8))).strftime('%Y-%m-%dT%H:%M:%S'), 
+        "name": data.get("name", "Unknown"),
+        "gender": data.get("gender"), "birth_date": data.get("birth_date"),
+        "birth_hour": data.get("birth_hour"), "lunar_date": data.get("lunar_date")
+    }
+    
+    _init_caches()
+    with FILE_LOCK_RECORD:
+        if _CACHED_RECORDS is not None:
+            _CACHED_RECORDS.append(record)
+            
+    # 背景非同步執行磁碟與雲端同步，給予前端毫秒級即時回應
+    threading.Thread(target=_async_persist_record, args=(record,), daemon=True).start()
     return make_response(jsonify({"success": True}), 200, {"Access-Control-Allow-Origin": "*"})
 
 @app.route('/api/chat', methods=['POST', 'OPTIONS'])
@@ -1773,17 +2072,14 @@ def chat():
     def generate():
         print(f">>> [命譜詳評啟動] 緣主: {user_info.get('user_name', '未知')}")
         
-        # 1. 解析命盤規則 (保持非阻塞)
-        
+        # 1. 解析命盤規則 (使用記憶體全域快取)
         matched = []
         if chart_data:
             try:
                 chart = create_chart_from_dict(chart_data, gender=gender)
-                rule_path = "ziwei_rules.json"
-                if os.path.exists(rule_path):
-                    with open(rule_path, 'r', encoding='utf-8') as f: 
-                        rules_data = json.load(f)
-                        matched = evaluate_rules(chart, rules_data)
+                rules_data = get_ziwei_rules()
+                if rules_data:
+                    matched = evaluate_rules(chart, rules_data)
             except Exception as e: 
                 print(f"規則引擎錯誤: {e}")
         
@@ -1821,15 +2117,18 @@ def chat():
         # 獲取適合的廟宇推薦 (根據地點與所問之事)
         temple_insights = get_nearby_temples(location, user_prompt)
         
-        # 獲取緣主生肖 (從 user_info 若無則用黃曆資訊輔助)
+        # 獲取天機吉凶 (優先計算，確保生肖判斷能正確引用)
+        daily_omens = get_daily_omens(user_info)
+        
+        # 獲取緣主生肖 (優先使用黃曆資訊，其次從 user_info 推算)
         zodiac_str = "未知"
         try:
             if daily_omens and isinstance(daily_omens, dict) and 'user' in daily_omens and daily_omens['user'] and 'zodiac' in daily_omens['user']:
                zodiac_str = daily_omens['user']['zodiac']
-            elif "zodiac" in user_info:
+            elif "zodiac" in user_info and user_info["zodiac"]:
                zodiac_str = user_info["zodiac"]
             else:
-               # 簡單粗暴年份推算生肖 (基準 1900 == 鼠)
+               # 基準 1900 == 鼠
                zodiacs = ["猴", "雞", "狗", "豬", "鼠", "牛", "虎", "兔", "龍", "蛇", "馬", "羊"]
                if user_info.get("birth_date") and '-' in user_info.get("birth_date"):
                    byear = int(user_info.get("birth_date").split('-')[0])
@@ -1847,9 +2146,6 @@ def chat():
             f"5. **生活的演繹 (生活化)**：**絕對禁止枯燥地背誦課本定義或術語**。所有的論斷都要轉化為「現代生活場景」，幽默、犀利且充滿故事感。\n"
             f"**絕對禁忌**：禁止提及「後台線索」、「搜尋資料」、「大數據」、「程式模組」等科技詞彙。"
         )
-
-        # 獲取天機吉凶
-        daily_omens = get_daily_omens(user_info)
         
         # 獲取年齡行為準則
         age_behavior = get_age_behavior_instruction(age)
@@ -2302,8 +2598,17 @@ def tts_handler():
     text = data.get('text', '')
     if not text: return jsonify({"error": "No text"}), 400
     
-    # Simple cleanup
     clean_text = text.replace("*", "").replace("#", "").strip()[:4000]
+    if not clean_text: return jsonify({"error": "Empty text"}), 400
+
+    import hashlib
+    text_hash = hashlib.md5(clean_text.encode('utf-8')).hexdigest()
+
+    # 檢查記憶體 LRU 音訊快取 (若命中則 0 毫秒即時回傳)
+    with TTS_CACHE_LOCK:
+        if text_hash in TTS_CACHE:
+            cached_audio = TTS_CACHE[text_hash]
+            return Response(cached_audio, mimetype="audio/mpeg")
 
     async def get_audio():
         # Using zh-CN-YunyangNeural for a more professional/master-like male voice
@@ -2317,8 +2622,19 @@ def tts_handler():
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        audio_data = loop.run_until_complete(get_audio())
-        loop.close()
+        try:
+            audio_data = loop.run_until_complete(get_audio())
+        finally:
+            loop.close()
+            
+        if audio_data:
+            with TTS_CACHE_LOCK:
+                if len(TTS_CACHE) >= TTS_CACHE_MAX:
+                    # 淘汰最舊的快取項目
+                    first_key = next(iter(TTS_CACHE))
+                    del TTS_CACHE[first_key]
+                TTS_CACHE[text_hash] = audio_data
+                
         return Response(audio_data, mimetype="audio/mpeg")
     except Exception as e:
         return jsonify({"error": str(e)}), 500
