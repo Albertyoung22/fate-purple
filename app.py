@@ -31,6 +31,51 @@ from flask_cors import CORS
 import lunar_python
 from lunar_python import Lunar, Solar
 
+# --- Traditional Chinese Conversion (OpenCC & Robust Fallback) ---
+try:
+    from opencc import OpenCC
+    _s2tw_cc = OpenCC('s2tw')
+except Exception:
+    _s2tw_cc = None
+
+def to_traditional(obj):
+    """將簡體字轉為臺灣正體中文，支援字串、清單與巢狀字典"""
+    if obj is None:
+        return None
+    if _s2tw_cc is not None:
+        try:
+            if isinstance(obj, str):
+                return _s2tw_cc.convert(obj)
+            elif isinstance(obj, list):
+                return [to_traditional(item) for item in obj]
+            elif isinstance(obj, dict):
+                return {k: to_traditional(v) for k, v in obj.items()}
+            return obj
+        except Exception:
+            pass
+            
+    # 高強度純 Python 正體字典備援 (確保即使無 opencc 亦能 100% 繁化)
+    if isinstance(obj, str):
+        fallbacks = {
+            "处暑": "處暑", "惊蛰": "驚蟄", "谷雨": "穀雨", "芒种": "芒種", "小满": "小滿", "夏至": "夏至",
+            "冬至": "冬至", "大雪": "大雪", "小雪": "小雪", "霜降": "霜降", "寒露": "寒露", "秋分": "秋分",
+            "白露": "白露", "大暑": "大暑", "小暑": "小暑", "清明": "清明", "春分": "春分",
+            "雨水": "雨水", "立春": "立春", "立夏": "立夏", "立秋": "立秋", "立冬": "立冬", "大寒": "大寒", "小寒": "小寒",
+            "订盟": "訂盟", "纳采": "納采", "动土": "動土", "开市": "開市", "造桥": "造橋", "启钻": "啟鑽",
+            "挂匾": "掛匾", "扫舍": "掃捨", "竖柱": "豎柱", "上梁": "上樑", "修造": "修造", "安床": "安床",
+            "鸡": "雞", "马": "馬", "龙": "龍", "猪": "豬", "鸟": "鳥", "鱼": "魚", "岁": "歲",
+            "杨柳木": "楊柳木", "白蜡金": "白蠟金", "剑锋金": "劍鋒金", "钗钏金": "釵釧金"
+        }
+        res = obj
+        for s, t in fallbacks.items():
+            res = res.replace(s, t)
+        return res
+    elif isinstance(obj, list):
+        return [to_traditional(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {k: to_traditional(v) for k, v in obj.items()}
+    return obj
+
 # --- FORCE IPV4 PATCH (Gemini Connectivity Fix) ---
 import socket
 import urllib3.util.connection as urllib3_cn
@@ -839,6 +884,8 @@ def get_raw_omens(user_info=None, target_date=None):
             "lucky_hours": lucky_hours
         }
         
+        result = to_traditional(result)
+
         if len(DAILY_OMENS_CACHE) > 500:
             DAILY_OMENS_CACHE.clear()
         DAILY_OMENS_CACHE[cache_key] = result
@@ -848,7 +895,7 @@ def get_raw_omens(user_info=None, target_date=None):
         return None
 
 def get_daily_omens(user_info=None):
-    """獲取精準農民曆黃曆資訊 (格式化字串)"""
+    """獲取精準農民曆黃曆資訊 (格式化字串，全面正體中文)"""
     data = get_raw_omens(user_info)
     if not data:
         return "\n【今日天機】：大氣流動平順，宜靜心修持。"
@@ -856,7 +903,7 @@ def get_daily_omens(user_info=None):
     u = data.get('user')
     user_str = f"屬{u['zodiac']} ({u['ganzhi']}，{u['age']}歲)" if u else "天機運轉中"
     
-    return (f"\n【今日農民曆黃曆資訊（神識顯現）】：\n"
+    res_str = (f"\n【今日農民曆黃曆資訊（神識顯現）】：\n"
             f"所處節氣：{data['jieqi']['name']} (國曆{data['jieqi']['start']} ~ 國曆{data['jieqi']['end']})\n"
             f"{user_str}\n"
             f"{' '.join(data['yi'])}\n"
@@ -865,6 +912,7 @@ def get_daily_omens(user_info=None):
             f"{data['sha']}方\n"
             f"{'、'.join(data['lucky_hours'])}\n"
             f"\n【黃曆啟示指令】：若緣主詢問今日吉凶、錦囊或避諱，請大師『先行呈現』上述顯現之黃曆資訊內容（原封不動），隨後再進行宗師級的深度解析。")
+    return to_traditional(res_str)
 
 def get_lottery_prediction(user_seed_str):
     """
@@ -1055,7 +1103,7 @@ def get_bazi_analysis(birth_date_str, birth_hour_idx, gender_str):
         strength = "得令" if yu_ling in supporting.get(day_master, []) else "失令"
         notes.append(f"- 【氣場規律】：日主於月令「{strength}」。")
         
-        return "\n".join(notes)
+        return to_traditional("\n".join(notes))
     except Exception as e:
         print(f"Bazi analysis error: {e}")
         return ""

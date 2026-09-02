@@ -19,3 +19,4 @@ twstock
 lxml
 beautifulsoup4
 ortools>=9.8.0
+opencc-python-reimplemented
