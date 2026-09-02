@@ -93,6 +93,9 @@ from master_book import MASTER_BOOK
 from bazi_master import BAZI_MASTER_BOOK
 from rule_engine import create_chart_from_dict, evaluate_rules, PALACE_NAMES
 from fate_cpsat_solver import FateCPSATSolver, stream_cpsat_ai, solve_fate_cpsat
+from iching_engine import cast_iching_hexagram
+from synastry_engine import analyze_compatibility
+from flow_year_engine import calculate_flow_year_radar
 
 # --- Configuration & Constants Loading ---
 def load_config():
@@ -867,6 +870,31 @@ def get_raw_omens(user_info=None, target_date=None):
             print(f"Error calculating lucky hours: {e}")
             lucky_hours = ["子", "午", "卯", "酉"] # Default fallback
 
+        # 額外道家傳統吉凶神煞與五行穿搭
+        day_nayin = ln.getDayNaYin()
+        xi_dir = ln.getDayPositionXiDesc()
+        fu_dir = ln.getDayPositionFuDesc()
+        yang_gui_dir = ln.getDayPositionYangGuiDesc()
+        yin_gui_dir = ln.getDayPositionYinGuiDesc()
+        pengzu = f"{ln.getPengZuGan()}，{ln.getPengZuZhi()}"
+        xiu_info = {
+            "name": ln.getXiu(),
+            "luck": ln.getXiuLuck(),
+            "song": ln.getXiuSong()
+        }
+        jianchu = ln.getZhiXing()
+        
+        # 依日柱納音五行推薦開運色系與食療
+        nayin_element = day_nayin[-1] if day_nayin else "土"
+        lucky_attire_map = {
+            "金": {"colors": "米白色、亮銀灰、鵝黃色", "avoid": "深艷紅、亮粉紅", "accessory": "金屬飾品、白水晶、銀手鐲", "food": "百合、白蘿蔔、銀耳蓮子湯 (潤肺生津)"},
+            "木": {"colors": "青翠綠、墨綠色、天藍色", "avoid": "白金屬色、銀白色", "accessory": "檀木手串、綠幽靈、翡翠", "food": "菠菜、綠花椰、綠茶、奇異果 (疏肝明目)"},
+            "水": {"colors": "深湛藍、玄黑色、純白色", "avoid": "土黃色、咖啡褐", "accessory": "黑曜石、海藍寶、珍珠", "food": "黑豆、黑芝麻、黑木耳、海帶 (滋陰固腎)"},
+            "火": {"colors": "硃砂紅、暖橙色、暗紫色", "avoid": "深冷藍、暗黑色", "accessory": "南紅瑪瑙、石榴石、硃砂", "food": "紅棗、枸杞、胡蘿蔔、紅豆湯 (養心安神)"},
+            "土": {"colors": "焦糖褐、米黃色、卡其色", "avoid": "濃郁翠綠、青草色", "accessory": "黃水晶、琥珀蜜蠟、玉石", "food": "南瓜、地瓜、山藥、小米粥 (健脾和胃)"}
+        }
+        attire = lucky_attire_map.get(nayin_element, lucky_attire_map["土"])
+
         result = {
             "date": solar.toYmd(),
             "jieqi": jieqi_info,
@@ -881,6 +909,14 @@ def get_raw_omens(user_info=None, target_date=None):
             "chong": chong,
             "sha": sha,
             "cai_dir": ln.getDayPositionCaiDesc(),
+            "xi_dir": xi_dir,
+            "fu_dir": fu_dir,
+            "gui_dir": f"陽貴 {yang_gui_dir} / 陰貴 {yin_gui_dir}",
+            "pengzu": pengzu,
+            "xiu": xiu_info,
+            "jianchu": jianchu,
+            "day_nayin": day_nayin,
+            "lucky_attire": attire,
             "lucky_hours": lucky_hours
         }
         
@@ -1203,6 +1239,34 @@ def daily_omens_api():
         return jsonify(raw)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/iching_divine', methods=['POST', 'OPTIONS'])
+def iching_divine_api():
+    if request.method == 'OPTIONS':
+        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
+    data = request.json or {}
+    question = (data.get("question") or "心中所求").strip()
+    res = cast_iching_hexagram(question=question)
+    return jsonify(res)
+
+@app.route('/api/compatibility', methods=['POST', 'OPTIONS'])
+def compatibility_api():
+    if request.method == 'OPTIONS':
+        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
+    data = request.json or {}
+    p1 = data.get("p1") or {}
+    p2 = data.get("p2") or {}
+    relation_type = data.get("relation_type", "情侶合婚")
+    res = analyze_compatibility(p1, p2, relation_type=relation_type)
+    return jsonify(res)
+
+@app.route('/api/flow_year_radar', methods=['POST', 'OPTIONS'])
+def flow_year_radar_api():
+    if request.method == 'OPTIONS':
+        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
+    data = request.json or {}
+    res = calculate_flow_year_radar(data)
+    return jsonify(res)
 
 @app.errorhandler(Exception)
 def handle_exception(e):

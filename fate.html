@@ -2221,6 +2221,484 @@
             );
         };
 
+        // --- 易經六十四卦靈動起卦 Modal ---
+        const IChingModal = ({ onClose }) => {
+            const [question, setQuestion] = React.useState('');
+            const [isCasting, setIsCasting] = React.useState(false);
+            const [result, setResult] = React.useState(null);
+
+            const handleCast = async (qText) => {
+                const q = (qText || question || '心中所求之事').trim();
+                setIsCasting(true);
+                setResult(null);
+                try {
+                    const res = await fetch('/api/iching_divine', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ question: q })
+                    });
+                    const data = await res.json();
+                    setTimeout(() => {
+                        setResult(data);
+                        setIsCasting(false);
+                    }, 600);
+                } catch (e) {
+                    alert('起卦失敗，請稍後重試：' + e.message);
+                    setIsCasting(false);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in" onClick={onClose}>
+                    <div className="bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 border border-amber-500/40 rounded-[2.5rem] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto text-white p-6 md:p-8 relative" onClick={e => e.stopPropagation()}>
+                        <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors">
+                            <Icon name="x" className="w-5 h-5" />
+                        </button>
+
+                        <div className="text-center mb-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-black tracking-widest uppercase mb-2">
+                                <Icon name="compass" className="w-3.5 h-3.5" /> 易經靈動神卦
+                            </div>
+                            <h3 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-300 font-serif">
+                                伏羲文王六十四卦 · 靈機指引
+                            </h3>
+                            <p className="text-xs text-slate-300 mt-1">默念心中困惑之事，搖動三枚乾隆通寶，洞察天時與生機轉折</p>
+                        </div>
+
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={question}
+                                    onChange={e => setQuestion(e.target.value)}
+                                    placeholder="例如：今年該轉職換工作嗎？或是此合作對象可信否？"
+                                    className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder-slate-400 font-medium"
+                                    onKeyDown={e => e.key === 'Enter' && handleCast()}
+                                />
+                                <button
+                                    onClick={() => handleCast()}
+                                    disabled={isCasting}
+                                    className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-all disabled:opacity-50"
+                                >
+                                    {isCasting ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkles" className="w-4 h-4" />}
+                                    {isCasting ? "起卦通神中..." : "誠心起卦"}
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-white/5 text-[11px]">
+                                <span className="text-slate-400 text-[10px] self-center">快速起卦：</span>
+                                {["這份工作該接嗎？", "近期求財順遂否？", "與此人有正緣否？", "此官司是非能化解嗎？"].map((q, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => { setQuestion(q); handleCast(q); }}
+                                        className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-400/40 text-slate-300 hover:text-amber-200 transition-colors"
+                                    >
+                                        {q}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {isCasting && (
+                            <div className="py-12 flex flex-col items-center justify-center gap-4 animate-pulse">
+                                <div className="flex gap-4">
+                                    <span className="w-10 h-10 rounded-full border-2 border-amber-400 flex items-center justify-center font-black text-amber-300 text-xs bg-amber-950/40">通</span>
+                                    <span className="w-10 h-10 rounded-full border-2 border-amber-400 flex items-center justify-center font-black text-amber-300 text-xs bg-amber-950/40">寶</span>
+                                    <span className="w-10 h-10 rounded-full border-2 border-amber-400 flex items-center justify-center font-black text-amber-300 text-xs bg-amber-950/40">乾</span>
+                                </div>
+                                <p className="text-sm font-bold text-amber-200">正在搖動乾隆古錢，感應天地陰陽六爻之變...</p>
+                            </div>
+                        )}
+
+                        {result && !isCasting && (
+                            <div className="space-y-6 animate-in fade-in zoom-in duration-300">
+                                <div className="p-6 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/5 rounded-3xl border border-amber-400/40 relative overflow-hidden">
+                                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                        <div className="flex items-center gap-4 text-center md:text-left">
+                                            <span className="text-6xl font-serif text-amber-300 drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]">
+                                                {result.original_hexagram.symbol}
+                                            </span>
+                                            <div>
+                                                <div className="flex items-center gap-2 justify-center md:justify-start">
+                                                    <h4 className="text-2xl font-black text-amber-100 font-serif">
+                                                        {result.original_hexagram.name}
+                                                    </h4>
+                                                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black">
+                                                        本卦 · {result.original_hexagram.nature}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs font-bold text-amber-300/90 mt-1">
+                                                    {result.original_hexagram.attribute}
+                                                </p>
+                                                <p className="text-xs text-slate-300 italic mt-1">
+                                                    「{result.original_hexagram.quote}」
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {result.has_changes && result.changed_hexagram && (
+                                            <div className="text-center md:text-right p-3 bg-white/5 rounded-2xl border border-white/10">
+                                                <span className="text-xs font-black text-indigo-300 block">轉向變卦 (未來走向)</span>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-2xl text-indigo-300">{result.changed_hexagram.symbol}</span>
+                                                    <span className="text-base font-black text-white">{result.changed_hexagram.name}</span>
+                                                </div>
+                                                <span className="text-[10px] text-indigo-200 block mt-0.5">{result.changed_hexagram.attribute}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="p-4 bg-black/30 rounded-2xl border border-white/10">
+                                    <h5 className="text-xs font-black text-amber-300/80 mb-2 flex items-center gap-1.5">
+                                        <Icon name="align-justify" className="w-3.5 h-3.5" /> 六爻排盤圖解 (初爻至上爻)
+                                    </h5>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                        {result.lines_visual.map((line, idx) => (
+                                            <div key={idx} className={`p-2 rounded-xl text-xs font-bold ${line.includes('動爻') ? 'bg-amber-500/20 text-amber-200 border border-amber-400/50' : 'bg-white/5 text-slate-300'}`}>
+                                                {line}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="p-5 bg-gradient-to-br from-indigo-950 to-slate-900 rounded-3xl border border-indigo-400/30 space-y-3">
+                                    <h5 className="text-sm font-black text-amber-300 flex items-center gap-2">
+                                        <Icon name="feather" className="w-4 h-4 text-amber-400" />
+                                        道長白話斷卦與破局心法
+                                    </h5>
+                                    <div className="text-xs text-slate-200 leading-relaxed space-y-2">
+                                        <p><b className="text-amber-200">【卦象大意】：</b>{result.original_hexagram.judgment}</p>
+                                        <p><b className="text-emerald-300">【建議心法】：</b>{result.original_hexagram.mindset}</p>
+                                        {result.has_changes && result.changed_hexagram && (
+                                            <p><b className="text-indigo-300">【變卦轉機】：</b>{result.changed_hexagram.judgment}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 雙人八字合婚 / 貴人合盤 Modal ---
+        const SynastryModal = ({ defaultName, defaultBirth, defaultHour, defaultGender, onClose }) => {
+            const [p1, setP1] = React.useState({
+                name: defaultName || '緣主甲',
+                birth_date: defaultBirth || '1992-05-18',
+                birth_hour: defaultHour !== undefined ? defaultHour : 6,
+                gender: defaultGender || 'M'
+            });
+            const [p2, setP2] = React.useState({
+                name: '緣主乙',
+                birth_date: '1993-08-24',
+                birth_hour: 4,
+                gender: 'F'
+            });
+            const [relationType, setRelationType] = React.useState('情侶合婚');
+            const [loading, setLoading] = React.useState(false);
+            const [result, setResult] = React.useState(null);
+
+            const handleMatch = async () => {
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/compatibility', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ p1, p2, relation_type: relationType })
+                    });
+                    const data = await res.json();
+                    setResult(data);
+                } catch (e) {
+                    alert('合盤失敗：' + e.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in" onClick={onClose}>
+                    <div className="bg-gradient-to-b from-slate-900 via-purple-950 to-slate-900 border border-pink-500/40 rounded-[2.5rem] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto text-white p-6 md:p-8 relative" onClick={e => e.stopPropagation()}>
+                        <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors">
+                            <Icon name="x" className="w-5 h-5" />
+                        </button>
+
+                        <div className="text-center mb-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/20 border border-pink-400/40 text-pink-300 text-xs font-black tracking-widest uppercase mb-2">
+                                <Icon name="heart" className="w-3.5 h-3.5" /> 雙人命譜因緣合盤
+                            </div>
+                            <h3 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-200 via-rose-100 to-purple-200 font-serif">
+                                八字夫妻宮 · 三世宿緣測算
+                            </h3>
+                            <p className="text-xs text-slate-300 mt-1">合參兩造日主五行生剋、地支六合三合沖害、納音共振與避雷錦囊</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                                <h4 className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                                    <Icon name="user" className="w-3.5 h-3.5" /> 本人資訊
+                                </h4>
+                                <input
+                                    type="text"
+                                    value={p1.name}
+                                    onChange={e => setP1({ ...p1, name: e.target.value })}
+                                    className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white"
+                                    placeholder="姓名"
+                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input
+                                        type="date"
+                                        value={p1.birth_date}
+                                        onChange={e => setP1({ ...p1, birth_date: e.target.value })}
+                                        className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white"
+                                    />
+                                    <select
+                                        value={p1.birth_hour}
+                                        onChange={e => setP1({ ...p1, birth_hour: parseInt(e.target.value) })}
+                                        className="bg-slate-800 border border-white/20 rounded-xl px-3 py-2 text-xs text-white"
+                                    >
+                                        {['子(23-01)', '丑(01-03)', '寅(03-05)', '卯(05-07)', '辰(07-09)', '巳(09-11)', '午(11-13)', '未(13-15)', '申(15-17)', '酉(17-19)', '戌(19-21)', '亥(21-23)'].map((h, i) => (
+                                            <option key={i} value={i}>{h}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                                <h4 className="text-xs font-black text-pink-300 flex items-center gap-1.5">
+                                    <Icon name="heart" className="w-3.5 h-3.5" /> 對方資訊
+                                </h4>
+                                <input
+                                    type="text"
+                                    value={p2.name}
+                                    onChange={e => setP2({ ...p2, name: e.target.value })}
+                                    className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white"
+                                    placeholder="對方姓名"
+                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input
+                                        type="date"
+                                        value={p2.birth_date}
+                                        onChange={e => setP2({ ...p2, birth_date: e.target.value })}
+                                        className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white"
+                                    />
+                                    <select
+                                        value={p2.birth_hour}
+                                        onChange={e => setP2({ ...p2, birth_hour: parseInt(e.target.value) })}
+                                        className="bg-slate-800 border border-white/20 rounded-xl px-3 py-2 text-xs text-white"
+                                    >
+                                        {['子(23-01)', '丑(01-03)', '寅(03-05)', '卯(05-07)', '辰(07-09)', '巳(09-11)', '午(11-13)', '未(13-15)', '申(15-17)', '酉(17-19)', '戌(19-21)', '亥(21-23)'].map((h, i) => (
+                                            <option key={i} value={i}>{h}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-300">合盤類型：</span>
+                                {['情侶合婚', '事業合夥', '知己貴人'].map((t) => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setRelationType(t)}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${relationType === t ? 'bg-pink-600 text-white shadow-lg shadow-pink-500/30' : 'bg-white/10 text-slate-300 hover:bg-white/15'}`}
+                                    >
+                                        {t}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={handleMatch}
+                                disabled={loading}
+                                className="px-6 py-2.5 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-black rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-pink-500/30 active:scale-95 disabled:opacity-50"
+                            >
+                                {loading ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkles" className="w-4 h-4" />}
+                                {loading ? "正在合盤推演..." : "開始合盤推演"}
+                            </button>
+                        </div>
+
+                        {result && (
+                            <div className="space-y-5 animate-in fade-in zoom-in duration-300">
+                                <div className="p-6 bg-gradient-to-br from-pink-900/30 via-purple-900/20 to-slate-900 rounded-3xl border border-pink-400/40 flex flex-col md:flex-row items-center justify-between gap-6">
+                                    <div className="flex items-center gap-5">
+                                        <div className="relative w-20 h-20 rounded-full border-4 border-pink-400/80 flex flex-col items-center justify-center bg-pink-950/50 shadow-[0_0_20px_rgba(244,114,182,0.4)] shrink-0">
+                                            <span className="text-2xl font-black text-pink-200">{result.score}</span>
+                                            <span className="text-[9px] font-bold text-pink-300">契合指數</span>
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="text-xl font-black text-white font-serif">{result.destiny_title}</h4>
+                                                <span className="text-xs text-amber-300">{result.stars}</span>
+                                            </div>
+                                            <p className="text-xs text-pink-200/90 mt-1">{result.advice}</p>
+                                            <div className="flex gap-3 text-[11px] text-slate-300 mt-2">
+                                                <span>{result.p1_name}：{result.p1_details}</span>
+                                                <span>|</span>
+                                                <span>{result.p2_name}：{result.p2_details}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30">
+                                        <h5 className="text-xs font-black text-emerald-300 mb-2 flex items-center gap-1.5">
+                                            <Icon name="check-circle" className="w-3.5 h-3.5 text-emerald-400" />
+                                            相處蜜月優勢 (生合之處)
+                                        </h5>
+                                        <ul className="space-y-1.5 text-xs text-slate-300 font-medium">
+                                            {result.bonuses.map((b, i) => (
+                                                <li key={i} className="flex items-start gap-1.5">
+                                                    <span className="text-emerald-400 shrink-0">✦</span>
+                                                    <span>{b}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+
+                                    <div className="p-4 rounded-2xl bg-rose-950/20 border border-rose-500/30">
+                                        <h5 className="text-xs font-black text-rose-300 mb-2 flex items-center gap-1.5">
+                                            <Icon name="alert-triangle" className="w-3.5 h-3.5 text-rose-400" />
+                                            避雷防爆警示 (磨合指南)
+                                        </h5>
+                                        <ul className="space-y-1.5 text-xs text-slate-300 font-medium">
+                                            {result.cautions.map((c, i) => (
+                                                <li key={i} className="flex items-start gap-1.5">
+                                                    <span className="text-rose-400 shrink-0">⚠️</span>
+                                                    <span>{c}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 2026 丙午流年與十二流月雷達 Modal ---
+        const FlowYearModal = ({ userBirthDate, userBirthHour, onClose }) => {
+            const [loading, setLoading] = React.useState(true);
+            const [radarData, setRadarData] = React.useState(null);
+
+            React.useEffect(() => {
+                (async () => {
+                    try {
+                        const res = await fetch('/api/flow_year_radar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ birth_date: userBirthDate, birth_hour: userBirthHour })
+                        });
+                        const data = await res.json();
+                        setRadarData(data);
+                    } catch (e) {
+                        console.error(e);
+                    } finally {
+                        setLoading(false);
+                    }
+                })();
+            }, [userBirthDate, userBirthHour]);
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in" onClick={onClose}>
+                    <div className="bg-gradient-to-b from-slate-900 via-red-950 to-slate-900 border border-red-500/40 rounded-[2.5rem] shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto text-white p-6 md:p-8 relative" onClick={e => e.stopPropagation()}>
+                        <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors">
+                            <Icon name="x" className="w-5 h-5" />
+                        </button>
+
+                        <div className="text-center mb-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 border border-red-400/40 text-red-300 text-xs font-black tracking-widest uppercase mb-2">
+                                <Icon name="calendar" className="w-3.5 h-3.5" /> 2026 流年運勢大觀
+                            </div>
+                            <h3 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-200 via-amber-100 to-red-300 font-serif">
+                                歲次丙午赤馬年 · 十二流月吉凶曲線
+                            </h3>
+                            <p className="text-xs text-slate-300 mt-1">天同化祿、天機化權、文昌化科、廉貞化忌 · 掌握年度巔峰與避險時機</p>
+                        </div>
+
+                        {loading ? (
+                            <div className="py-16 text-center">
+                                <Icon name="loader" className="w-8 h-8 animate-spin mx-auto text-red-400 mb-2" />
+                                <p className="text-xs text-slate-400 font-bold">正在演算 2026 丙午流年十二月令氣場...</p>
+                            </div>
+                        ) : radarData ? (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                                    {radarData.four_transforms.map((item, idx) => (
+                                        <div key={idx} className="p-3 rounded-2xl bg-white/5 border border-red-500/20 text-center">
+                                            <div className="flex items-center justify-center gap-1.5 mb-1">
+                                                <span className="font-black text-amber-200 text-sm">{item.star}</span>
+                                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${item.trans === '化忌' ? 'bg-rose-500/30 text-rose-300' : 'bg-emerald-500/30 text-emerald-300'}`}>
+                                                    {item.trans}
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] text-slate-300 leading-tight">{item.effect}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="p-5 rounded-3xl bg-emerald-950/30 border border-emerald-500/40">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-xs font-black text-emerald-300 flex items-center gap-1.5">
+                                                <Icon name="trending-up" className="w-4 h-4 text-emerald-400" /> 年度最強巔峰月
+                                            </span>
+                                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 font-black text-xs">
+                                                {radarData.peak_month.score} 分
+                                            </span>
+                                        </div>
+                                        <h5 className="text-base font-black text-white">{radarData.peak_month.name} · {radarData.peak_month.theme}</h5>
+                                        <p className="text-xs text-emerald-200/80 mt-1 leading-relaxed">{radarData.peak_month.advice}</p>
+                                    </div>
+
+                                    <div className="p-5 rounded-3xl bg-rose-950/30 border border-rose-500/40">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-xs font-black text-rose-300 flex items-center gap-1.5">
+                                                <Icon name="shield-alert" className="w-4 h-4 text-rose-400" /> 年度謹慎防守月
+                                            </span>
+                                            <span className="px-2.5 py-0.5 rounded-full bg-rose-500/30 text-rose-200 font-black text-xs">
+                                                {radarData.caution_month.score} 分
+                                            </span>
+                                        </div>
+                                        <h5 className="text-base font-black text-white">{radarData.caution_month.name} · {radarData.caution_month.theme}</h5>
+                                        <p className="text-xs text-rose-200/80 mt-1 leading-relaxed">{radarData.caution_month.advice}</p>
+                                    </div>
+                                </div>
+
+                                <div className="p-5 rounded-3xl bg-black/40 border border-white/10">
+                                    <h5 className="text-xs font-black text-amber-300 mb-3 flex items-center gap-1.5">
+                                        <Icon name="bar-chart-2" className="w-4 h-4" /> 1~12 月四季氣數波動明細
+                                    </h5>
+                                    <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                                        {radarData.monthly_data.map((m, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-xs">
+                                                <div className="w-28 font-bold text-white flex items-center gap-1">
+                                                    <span>{m.name}</span>
+                                                </div>
+                                                <div className="flex-1 px-4 truncate text-slate-300 text-[11px]">
+                                                    {m.theme}
+                                                </div>
+                                                <div className="flex items-center gap-3 shrink-0 font-mono">
+                                                    <span className="text-amber-300">財 {m.wealth}</span>
+                                                    <span className="text-indigo-300">事 {m.career}</span>
+                                                    <span className="text-pink-300">情 {m.love}</span>
+                                                    <span className="font-black text-white px-2 py-0.5 rounded bg-white/10">{m.overall}分</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+                </div>
+            );
+        };
+
         const AlmanacWidget = ({ userBirthDate }) => {
             const today = new Date();
             const [queryDate, setQueryDate] = React.useState({
@@ -2398,6 +2876,37 @@
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Section 5: Celestial Sync 2.0 (Taoist Wisdom & Attire) */}
+                            {data.lucky_attire && (
+                                <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-2.5 text-[11px]">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="font-black text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                            <Icon name="sparkles" className="w-3 h-3 text-amber-600" />
+                                            今日開運穿搭
+                                        </span>
+                                        <span className="font-bold text-slate-800">{data.lucky_attire.colors}</span>
+                                        <span className="text-slate-300">|</span>
+                                        <span className="text-slate-600">忌：<span className="text-rose-600 font-bold">{data.lucky_attire.avoid}</span></span>
+                                        <span className="text-slate-300">|</span>
+                                        <span className="text-slate-600">配飾：{data.lucky_attire.accessory}</span>
+                                        <span className="text-slate-300">|</span>
+                                        <span className="text-slate-600">食療：{data.lucky_attire.food}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-slate-500 font-bold ml-auto text-[10px]">
+                                        {data.xi_dir && <span>喜神：<b className="text-slate-800">{data.xi_dir}</b></span>}
+                                        {data.gui_dir && <span>貴人：<b className="text-slate-800">{data.gui_dir}</b></span>}
+                                        {data.jianchu && <span>建除：<b className="text-indigo-600 font-black">{data.jianchu}日</b></span>}
+                                        {data.xiu && <span>星宿：<b className="text-emerald-700 font-black">{data.xiu.name} ({data.xiu.luck})</b></span>}
+                                    </div>
+                                    {data.pengzu && (
+                                        <div className="w-full text-[9px] text-slate-400 font-medium truncate pt-1 border-t border-slate-200/40">
+                                            彭祖百忌：{data.pengzu}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         ) : (
                             <div className="p-4 text-center">
                                 <button onClick={fetchData} className="text-[10px] font-black text-rose-500">天機重連</button>
@@ -2667,6 +3176,9 @@
             const [showTalisman, setShowTalisman] = useState(false);
             const [showGuide, setShowGuide] = useState(false);
             const [talismanText, setTalismanText] = useState("");
+            const [showIChing, setShowIChing] = useState(false);
+            const [showSynastry, setShowSynastry] = useState(false);
+            const [showFlowYear, setShowFlowYear] = useState(false);
 
             const chatEndRef = useRef(null);
             const baziRef = useRef(null);
@@ -4433,10 +4945,28 @@ ${newsStats}
                                             {targetMonth}月運勢
                                         </div>
                                     </button>
-                                    <button onClick={() => handleBazi()} disabled={actionLoading === 'bazi'} className={`bg-slate-700 text-white p-3 rounded-2xl shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] col-span-full ${actionLoading === 'bazi' ? 'opacity-75 cursor-not-allowed' : ''} `}>
+                                    <button onClick={() => handleBazi()} disabled={actionLoading === 'bazi'} className={`bg-slate-700 text-white p-3 rounded-2xl shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'bazi' ? 'opacity-75 cursor-not-allowed' : ''} `}>
                                         <div className="flex items-center gap-1">
                                             {actionLoading === 'bazi' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="compass" className="w-3 h-3" />}
                                             八字論命
+                                        </div>
+                                    </button>
+                                    <button onClick={() => setShowIChing(true)} className="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 text-white p-3 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-1 font-black text-[11px] border border-amber-300/30">
+                                        <div className="flex items-center gap-1">
+                                            <Icon name="compass" className="w-3 h-3" />
+                                            易經神卦
+                                        </div>
+                                    </button>
+                                    <button onClick={() => setShowSynastry(true)} className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white p-3 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-1 font-black text-[11px] border border-pink-300/30">
+                                        <div className="flex items-center gap-1">
+                                            <Icon name="heart" className="w-3 h-3" />
+                                            合婚合盤
+                                        </div>
+                                    </button>
+                                    <button onClick={() => setShowFlowYear(true)} className="bg-gradient-to-r from-red-600 to-amber-700 hover:from-red-700 hover:to-amber-800 text-white p-3 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-1 font-black text-[11px] border border-red-300/30 col-span-full">
+                                        <div className="flex items-center gap-1">
+                                            <Icon name="calendar" className="w-3.5 h-3.5" />
+                                            2026 丙午流年與十二流月雷達
                                         </div>
                                     </button>
                                 </div>
@@ -4768,6 +5298,9 @@ ${newsStats}
                         {wisdomText && <WisdomCardModal text={wisdomText} onClose={() => setWisdomText("")} />}
                         {showDestinyCard && <DestinyShareModal userName={userName} gender={gender} destiny={destiny} chartData={chartData} onClose={() => setShowDestinyCard(false)} />}
                         {showTalisman && <TalismanModal text={talismanText} onClose={() => setShowTalisman(false)} />}
+                        {showIChing && <IChingModal onClose={() => setShowIChing(false)} />}
+                        {showSynastry && <SynastryModal defaultName={userName} defaultBirth={birthDate} defaultHour={birthHour} defaultGender={gender} onClose={() => setShowSynastry(false)} />}
+                        {showFlowYear && <FlowYearModal userBirthDate={birthDate} userBirthHour={birthHour} onClose={() => setShowFlowYear(false)} />}
 
                         {showStockModal && stockChartData && (
                             <div className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
