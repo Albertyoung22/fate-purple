@@ -371,23 +371,31 @@ class FateCPSATSolver:
         age = self.user_info.get("age", 30)
         name = self.user_info.get("user_name", "緣主")
         
-        # 精準提取用戶真實提問，徹底隔離背景命盤資訊 (避免背景命盤包含的八字、財帛宮等關鍵字干擾)
+        # 精準提取用戶真實提問，徹底隔離背景命盤資訊與系統指令
         clean_q = prompt
-        if "--------------------------------------------------" in prompt:
-            clean_q = prompt.split("--------------------------------------------------")[-1]
-        elif "【緣主提問】" in prompt:
-            clean_q = prompt.split("【緣主提問】")[-1]
-        elif "【緣主祈求】" in prompt:
-            clean_q = prompt.split("【緣主祈求】")[-1]
-        elif "【大師指令】" in prompt:
-            clean_q = prompt.split("【大師指令】")[-1]
-        elif "【指令】" in prompt:
-            clean_q = prompt.split("【指令】")[-1]
-        elif "請詳細分析" in prompt:
-            clean_q = prompt.split("請詳細分析")[-1]
-        elif "\n\n" in prompt:
-            paras = [p for p in prompt.split("\n\n") if p.strip()]
-            clean_q = paras[-1]
+        
+        # 先以常見的分隔標記與系統指令標籤截斷尾部 (防止【大師指令】等尾部內文侵入 clean_q)
+        for tail_marker in ["\n\n【大師指令】", "\n\n【特別要求】", "\n\n(請強制使用", "\n【最高優先權指令】"]:
+            if tail_marker in clean_q:
+                clean_q = clean_q.split(tail_marker)[0]
+
+        # 再提取提問標籤後方的真正提問內容
+        for head_marker in ["--------------------------------------------------", "【緣主提問】：", "【緣主提問】", "【緣主祈求】：", "【緣主祈求】", "【提問】：", "【提問】", "用戶提問：「", "用戶提問：", "用戶測字：「", "用戶測字："]:
+            if head_marker in clean_q:
+                clean_q = clean_q.split(head_marker)[-1]
+                break
+        
+        # 若仍有多段，剔除背景段落並取得用戶提問段落
+        raw_paras = [p.strip() for p in clean_q.split("\n\n") if p.strip()]
+        valid_paras = [
+            p for p in raw_paras
+            if not any(p.startswith(prefix) for prefix in ["【重要：緣主", "【當下天時", "【時空宮位", "【特別要求】", "(請強制", "請務必結合"])
+        ]
+        if valid_paras:
+            clean_q = valid_paras[-1]
+        
+        # 計算純粹淨化的提問 (剔除標點符號與前後引號)
+        actual_q = clean_q.strip("」」：「」 \t\r\n。！,!?！？")
 
         # =========================================================================
         # 第一優先級：前端明確指定之 target_type 專案分流 (Top Priority Explicit Routing)
@@ -397,7 +405,7 @@ class FateCPSATSolver:
         elif target_type == "pastLife":
             return self._handle_past_life(name)
         elif target_type == "glyph":
-            return self._handle_glyph(name, clean_q)
+            return self._handle_glyph(name, clean_q, prompt=prompt)
         elif target_type == "dream":
             return self._handle_dream(name)
         elif target_type == "stock":
@@ -422,8 +430,15 @@ class FateCPSATSolver:
         # =========================================================================
         # 第二優先級：緣主自訂提問 (Chat) 依語義精準匹配專題 (全面覆蓋所有人生命題)
         # =========================================================================
-        # 1. 幸運號碼與偏財
-        if any(kw in clean_q for kw in ["號碼", "樂透", "威力彩", "539", "幸運號", "彩券", "偏財", "明牌", "靈動數"]):
+        # 1. 測字占卜 (包含明確文字占卜關鍵字，或實際提問長度<=2字且非特定多字問事大項，優先防攔)
+        if (target_type == "glyph" or 
+            any(kw in clean_q for kw in ["測字", "漢字", "文字占卜", "卜字", "拆字", "解字", "字相", "觀字", "測一字", "幫我測", "請問這個字", "測字：", "測字:"]) or 
+            any(kw in prompt for kw in ["用戶測字", "測字占卜"]) or 
+            (len(actual_q) <= 2 and any('\u4e00' <= c <= '\u9fff' for c in actual_q) and not any(kw in actual_q for kw in ["運勢", "健康", "工作", "財運", "婚姻", "十年", "八字", "事業", "股市", "股票", "官祿", "疾厄", "田宅", "父母", "兄弟", "奴僕"]))):
+            return self._handle_glyph(name, clean_q, prompt=prompt)
+
+        # 2. 幸運號碼與偏財
+        elif any(kw in clean_q for kw in ["號碼", "樂透", "威力彩", "539", "幸運號", "彩券", "偏財", "明牌", "靈動數"]):
             return self._handle_lucky_numbers(name)
 
         # 2. 出門吉位與避諱
@@ -501,10 +516,6 @@ class FateCPSATSolver:
         # 20. 八字命書
         elif any(kw in clean_q for kw in ["八字詳批", "子平八字", "四柱八字", "子平", "命書", "日主強弱"]):
             return self._handle_bazi(name)
-
-        # 21. 測字占卜
-        elif any(kw in clean_q for kw in ["測字", "漢字", "文字占卜", "卜字"]):
-            return self._handle_glyph(name, clean_q)
 
         # 22. 夢境解析
         elif any(kw in clean_q for kw in ["夢境", "做夢", "夢見", "解夢"]):
@@ -594,21 +605,205 @@ class FateCPSATSolver:
             f"✦ 【今生指引】：多行善事、寬恕放下，心清則慧海生，善用自身才智溫暖周遭，自能修得今生福慧雙圓。"
         )
 
-    def _handle_glyph(self, name, clean_q):
-        char = "吉"
-        for marker in ["用戶測字：「", "測字：「", "測字: ", "字：", "字:"]:
-            if marker in clean_q:
-                part = clean_q.split(marker)[-1]
-                for end in ["」", "」", "。", " ", "\n"]:
-                    if end in part: part = part.split(end)[0]
-                if part: char = part.strip()[:2]; break
+    def _extract_glyph_char(self, clean_q, prompt=""):
+        import re
+        full_text = f"{clean_q} {prompt}"
+        
+        # 1. 優先匹配顯式標記
+        markers = [
+            r'用戶測字：「([^」]+)」',
+            r'測字：「([^」]+)」',
+            r'測字：([^\s\n。」]+)',
+            r'測字: ([^\s\n。」]+)',
+            r'字：([^\s\n。」]+)',
+            r'字: ([^\s\n。」]+)',
+            r'測「([^」]+)」',
+            r'測【([^】]+)】',
+            r'測([^字\s\n。]{1,2})字',
+            r'卜字：「([^」]+)」',
+            r'卜字：([^\s\n。」]+)',
+            r'用戶提問：「([^」]+)」',
+            r'【緣主提問】：([^\s\n。」]+)',
+            r'【提問】：([^\s\n。」]+)'
+        ]
+        
+        for pattern in markers:
+            match = re.search(pattern, full_text)
+            if match:
+                candidate = match.group(1).strip()
+                for stop in ["用戶", "提問", "緣主", "大師", "指令", "一個", "字", "請", "幫我", "問", "想", "測"]:
+                    candidate = candidate.replace(stop, "")
+                if candidate:
+                    for ch in candidate:
+                        if '\u4e00' <= ch <= '\u9fff':
+                            return ch
 
+        # 2. 若無標記，清理常見包裝詞與停用詞後提取第一個漢字
+        stop_words = ["用戶", "提問", "緣主", "大師", "指令", "測字", "拆字", "文字占卜", "卜字", "請測", "幫我測", "問事", "測一字", "測", "字", "請", "幫我", "問", "一個", "的", "這個"]
+        clean_strip = clean_q.strip()
+        for sw in stop_words:
+            clean_strip = clean_strip.replace(sw, "")
+        clean_strip = clean_strip.strip()
+        
+        for ch in clean_strip:
+            if '\u4e00' <= ch <= '\u9fff':
+                return ch
+                
+        # 3. 備援機制：尋找 prompt 中「測」字或 quotes 附近的漢字
+        match = re.search(r'[測「【][^\u4e00-\u9fff]*([\u4e00-\u9fff])', full_text)
+        if match:
+            return match.group(1)
+            
+        return "吉"
+
+    def _analyze_character_glyph(self, char):
+        """專屬漢字拆字與五行剖析字典引擎 (支援擴充與動態合成)"""
+        GLYPH_DB = {
+            "情": {
+                "radicals": "「忄」（豎心旁，主心念與情志） + 「青」（主生機、青春、歲月）",
+                "five_elements": "陰陽五行屬【水木相生、心火感應】",
+                "meaning": "【情】字左立豎心，右托青藍。心念為情意之起點，右旁「青」字如春草正茂，意謂你當前所懸念的情緣或心境正在萌芽與化育之中。豎心旁亦象徵心中有牽掛、有熱情，然情感波動較大。",
+                "advice": "情不宜過急過猛，急則傷心動氣。宜持平常心，少幾分執念，多幾分包容。順應天時氣脈，待歲月沉澱，真情自會水到渠成。",
+                "palace_ref": "夫妻宮與福德宮"
+            },
+            "財": {
+                "radicals": "「貝」（古代資財、寶物） + 「才」（才能、智慧、本領）",
+                "five_elements": "五行屬【金土生旺、木以立本】",
+                "meaning": "【財】字由「貝」與「才」組合而成。貝為財庫與實體資產，才為個人才能與專業智慧。此字明示財富乃隨才能而至，並非憑空妄求。",
+                "advice": "求財宜立足專長，穩紮穩打。切忌冒險投機，貝庫需嚴守，廣結善緣自能聚財入庫。",
+                "palace_ref": "財帛宮與田宅宮"
+            },
+            "吉": {
+                "radicals": "「士」（君子、賢人） + 「口」（吉慶之言、言語）",
+                "five_elements": "五行屬【土金相生、金水相涵】",
+                "meaning": "【吉】字上士下口，士為有德君子，口為和氣安祥。此字乃否極泰來、吉星高照之象！預示當前所謀所問之事正向舒展，有貴人相助。",
+                "advice": "處事宜持君子之風，修口德、積善緣。逢人多道吉言，祥瑞之氣自然隨身。",
+                "palace_ref": "命宮與遷移宮"
+            },
+            "運": {
+                "radicals": "「辶」（辵部，走動遷轉） + 「軍」（陣營、兵馬、實力）",
+                "five_elements": "五行屬【水金相生、動中生旺】",
+                "meaning": "【運】字帶走字旁（辶），內包「軍」。運者轉動也，暗示現狀宜動不宜過靜。內中「軍」字代表緣主早已備齊實力，唯需突破僵局。",
+                "advice": "動則生財，靜則滯礙。宜把握天時大膽開展，向吉方出行交涉，時來運轉即在眼前。",
+                "palace_ref": "遷移宮與官祿宮"
+            },
+            "愛": {
+                "radicals": "「爪」（牽繫） + 「冖」（包容庇護） + 「心」（真心） + 「友」（相伴）",
+                "five_elements": "五行屬【火土相生、溫潤和合】",
+                "meaning": "【愛】字繁體中間有「心」，四方有庇護與攜手之象。暗示當前問事核心在於「體貼與真心」。少一分計較，多一分溫柔包容。",
+                "advice": "用心傾聽，溫柔關懷。以誠相待，愛意與善緣自能長青。",
+                "palace_ref": "夫妻宮與福德宮"
+            },
+            "勝": {
+                "radicals": "「月」（肉身時月） + 「券/力」（憑證與力量）",
+                "five_elements": "五行屬【金木相克、火煉成器】",
+                "meaning": "【勝】字起筆有力，左月為根基，右依實力。象徵所問之事競爭劇烈，需歷經一番心血，但最終必能憑藉韌性脫穎而出！",
+                "advice": "保持沉著，嚴守紀律。臨陣莫慌，勝利終歸堅忍之人。",
+                "palace_ref": "官祿宮與命宮"
+            },
+            "緣": {
+                "radicals": "「纟」（絞絲旁，千絲萬縷） + 「彖」（緣由、卦象）",
+                "five_elements": "五行屬【水木相滋、宿世牽繫】",
+                "meaning": "【緣】字絞絲旁象徵人與人、人與事之間冥冥中的牽繫。暗示當前遭遇並非偶然，皆是宿世善緣或時空造化之結果。",
+                "advice": "隨緣順變，莫強求無理之果。善待眼前人事物，結善緣即是得大福報。",
+                "palace_ref": "夫妻宮與奴僕宮"
+            },
+            "福": {
+                "radicals": "「礻」（示字旁，神明祈福） + 「一口田」（衣食無憂、安居）",
+                "five_elements": "五行屬【土金相生、福澤深厚】",
+                "meaning": "【福】字左為神明垂示，右有一口田。暗示緣主命中自帶福澤，眼前縱有微小波折，亦能受天地暗中庇佑，化險為夷。",
+                "advice": "知足常樂，厚德載物。多行善積德，福祿綿延不絕。",
+                "palace_ref": "福德宮與田宅宮"
+            },
+            "安": {
+                "radicals": "「宀」（寶蓋頭，家宅房屋） + 「女」（女子安居、平定）",
+                "five_elements": "五行屬【土水相和、安居樂業】",
+                "meaning": "【安】字屋簷之下有女子安坐，象徵家宅和諧、身心泰然。此字問事主求穩不求急，以安寧、穩健為第一要務。",
+                "advice": "靜心修養，穩守本業。莫聽外在喧囂，家安則百事興。",
+                "palace_ref": "田宅宮與疾厄宮"
+            },
+            "平": {
+                "radicals": "「干」（盾牌、干戈） + 「丷」（分化、平衡）",
+                "five_elements": "五行屬【水木相調、平淡致遠】",
+                "meaning": "【平】字字形平衡，兩點分立。象徵風浪漸平、局勢趨於穩定。雖然短期內無狂風暴雨般的爆發，但也無凶險墜落之虞。",
+                "advice": "保持平常心，順其自然。平淡之中見真諦，從容面對即是智慧。",
+                "palace_ref": "命宮與福德宮"
+            },
+            "升": {
+                "radicals": "「千」（積累） + 「十」（圓滿、升騰）",
+                "five_elements": "五行屬【木火通明、步步高陞】",
+                "meaning": "【升】字起筆向上，如日方升。問事業主升遷躍進，問財運主節節高升，問學業主金榜題名。乃蓄力已久爆發突破之兆。",
+                "advice": "展現自信，勇敢爭取。把握當前契機，順勢登上新台階。",
+                "palace_ref": "官祿宮與財帛宮"
+            },
+            "命": {
+                "radicals": "「人」（凡人蒼生） + 「一」（立身之地） + 「口/卩」（受命印信）",
+                "five_elements": "五行屬【金木交會、天道運行】",
+                "meaning": "【命】字頂天立地，下承印信。問事主「天命與責任」。凡人逢命字，當思考此事的長遠意義，非一時得失衝動。",
+                "advice": "修身立命，順應天時。盡人事以聽天命，豁達則無往不利。",
+                "palace_ref": "命宮與身宮"
+            }
+        }
+        
+        if char in GLYPH_DB:
+            return GLYPH_DB[char]
+            
+        # 動態漢字部首與拆字剖析器 (Dynamic Structural Deconstructor for Generic Characters)
+        radicals_found = []
+        elem = "五行中和"
+        
+        if any(r in char for r in ["心", "忄", "灬", "火", "日", "光"]):
+            radicals_found.append("「心/火部」（主熱情、靈識、情感波動）")
+            elem = "陰陽五行屬【火性靈動、意念生發】"
+        if any(r in char for r in ["水", "氵", "冫", "雨", "子", "月"]):
+            radicals_found.append("「水/月部」（主智慧、潤澤、情感沉澱）")
+            elem = "陰陽五行屬【水性溫潤、智慮深遠】"
+        if any(r in char for r in ["木", "艸", "艹", "竹", "林", "青"]):
+            radicals_found.append("「木/草部」（主生機、蓬勃、成長茁壯）")
+            elem = "陰陽五行屬【木性生旺、春意漸濃】"
+        if any(r in char for r in ["金", "貝", "刀", "刂", "戈", "玉"]):
+            radicals_found.append("「金/寶部」（主決斷、資財、剛健果敢）")
+            elem = "陰陽五行屬【金性剛健、利器得展】"
+        if any(r in char for r in ["土", "宀", "田", "石", "山", "阜"]):
+            radicals_found.append("「土/宅部」（主穩固、包容、基業紮實）")
+            elem = "陰陽五行屬【土性厚重、承載萬物】"
+        if any(r in char for r in ["人", "亻", "女", "子"]):
+            radicals_found.append("「人/女部」（主貴人、情誼、親和互動）")
+        if any(r in char for r in ["走", "辶", "行"]):
+            radicals_found.append("「走/辵部」（主遷轉、出行、動中求變）")
+            
+        rad_str = "、".join(radicals_found) if radicals_found else "端正筆畫構造，起落有序"
+        
+        return {
+            "radicals": f"字體結構含 {rad_str}",
+            "five_elements": elem,
+            "meaning": f"【{char}】字形骨格清晰，起筆端凝，收筆有度。此字象徵當前所問之事初時似有微迷霧，然骨體正大，內蘊後勁與轉化之力。文字脈絡反映緣主此刻內心既有企求亦帶審慎。",
+            "advice": "靜觀其變，沉得住氣。堅守本心，順應天時方位，困難自可迎刃而解。",
+            "palace_ref": "命宮與福德宮"
+        }
+
+    def _handle_glyph(self, name, clean_q, prompt=""):
+        char = self._extract_glyph_char(clean_q, prompt)
+        info = self._analyze_character_glyph(char)
+        
+        life_score = self.palace_scores.get("命宮", 70)
+        karma_score = self.palace_scores.get("福德宮", 65)
+        
         return (
             f"【紫微天機道長 · 測字神算破玄機】：\n\n"
-            f"緣主所卜之字為：「**{char}**」。老道凝神觀字相、審形體、辨五行生剋：\n\n"
-            f"1. **字形骨架解析**：字如其人，亦如其事。「{char}」字起筆端凝，收筆有度，象徵當前所問之事初時似有迷霧，然骨格端正，內藏生機。\n"
-            f"2. **五行陰陽剖析**：此字氣息與你的命宮氣場互為感應，顯示所謀之事關鍵在於『沉得住氣、靜待時機』，切莫操之過急。\n"
-            f"3. **大師一語斷吉凶**：事有轉機，貴人將至！眼前若有猶豫不決之處，順其自然、堅守本心，不出百日必見柳暗花明之喜！"
+            f"緣主 {name} 凝神所卜之字為：「**{char}**」。老道開觀字相、審部首、辨五行氣脈，特為你合參命盤排布：\n\n"
+            f"✦ 【一、漢字結構與部首拆解】\n"
+            f"- **字形骨架**：{info['radicals']}。\n"
+            f"- **五行氣脈**：{info['five_elements']}。\n"
+            f"- **拆字寓意**：{info['meaning']}\n\n"
+            f"✦ 【二、與緣主命盤宮位感應】\n"
+            f"老道觀你命中氣數（命宮底氣 **{life_score} 分**、福德情志 **{karma_score} 分**）：\n"
+            f"此「**{char}**」字起筆與你盤中【{info['palace_ref']}】之動能產生微妙共振。字相顯示，當前所問之事表面雖有紛繞或猶豫，然內藏轉機與生機，切莫因一時心亂而自失方寸。\n\n"
+            f"✦ 【三、大師指點迷津與開運時空】\n"
+            f"- **定心心法**：{info['advice']}\n"
+            f"- **天時吉方**：若逢抉擇難定之際，宜選在每日 **{self.best_timing}**，面朝你的生旺吉方【**{self.best_direction}**】靜心深思，吉氣加持，難關自可解開！\n\n"
+            f"✦ 【老道定心真言】\n"
+            f"『字隨心轉，心正字端。』順應天時氣脈而行，眼前迷霧轉瞬即散，前程必定一片朗然！"
         )
 
     def _handle_dream(self, name):

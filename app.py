@@ -9,11 +9,14 @@ import webbrowser
 import logging
 import time
 import asyncio
+# pyrefly: ignore [missing-import]
 import edge_tts
 if os.name == 'nt':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 import pandas as pd
+# pyrefly: ignore [missing-import]
 from werkzeug.exceptions import HTTPException
+# pyrefly: ignore [missing-import]
 import yfinance as yf
 import xml.etree.ElementTree as ET
 from urllib.parse import quote
@@ -27,13 +30,17 @@ except ImportError:
     HAS_TK = False
     print("Tkinter not found (Headless environment detected). GUI will be disabled.")
 from datetime import datetime, timedelta, timezone
+# pyrefly: ignore [missing-import]
 from flask import Flask, request, jsonify, make_response, send_file, Response, stream_with_context, send_from_directory
 from flask_cors import CORS
+# pyrefly: ignore [missing-import]
 import lunar_python
+# pyrefly: ignore [missing-import]
 from lunar_python import Lunar, Solar
 
 # --- Traditional Chinese Conversion (OpenCC & Robust Fallback) ---
 try:
+    # pyrefly: ignore [missing-import]
     from opencc import OpenCC
     _s2tw_cc = OpenCC('s2tw')
 except Exception:
@@ -79,6 +86,7 @@ def to_traditional(obj):
 
 # --- FORCE IPV4 PATCH (Gemini Connectivity Fix) ---
 import socket
+# pyrefly: ignore [missing-import]
 import urllib3.util.connection as urllib3_cn
 
 def allowed_gai_family():
@@ -87,6 +95,7 @@ urllib3_cn.allowed_gai_family = allowed_gai_family
 # ------------------------------------------------
 
 try:
+    # pyrefly: ignore [missing-import]
     from google import genai
 except ImportError:
     genai = None
@@ -2191,7 +2200,15 @@ def serve_static(filename):
     ext = os.path.splitext(base_name)[1].lower()
     if ext in SAFE_STATIC_EXTENSIONS:
         if os.path.exists(target_path) and os.path.isfile(target_path):
-            return send_file(target_path)
+            mimetypes_map = {
+                '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+                '.gif': 'image/gif', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
+                '.css': 'text/css', '.js': 'application/javascript', '.html': 'text/html',
+                '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg'
+            }
+            with open(target_path, 'rb') as f:
+                content = f.read()
+            return Response(content, mimetype=mimetypes_map.get(ext, 'application/octet-stream'))
             
     return "Not Found", 404
 

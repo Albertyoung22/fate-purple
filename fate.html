@@ -3183,6 +3183,42 @@
 
             const chatEndRef = useRef(null);
             const baziRef = useRef(null);
+               const MasterPresence = ({ isSpeaking }) => {
+                const [imgSrc, setImgSrc] = useState("master_portrait.jpg");
+
+                const handleImgError = () => {
+                    if (imgSrc === "master_portrait.jpg") {
+                        setImgSrc("master_avatar.svg");
+                    } else if (imgSrc === "master_avatar.svg") {
+                        setImgSrc("https://api.dicebear.com/7.x/notionists/svg?seed=TianjiMaster");
+                    }
+                };
+
+                return (
+                    <div className="flex flex-col items-center mb-10 no-print animate-in fade-in slide-in-from-top-6 duration-1000 relative">
+                        {isSpeaking && <div className="resonance-ring"></div>}
+                        {isSpeaking && <div className="resonance-ring" style={{ animationDelay: '0.6s' }}></div>}
+                        <div className={`master-avatar-ring ${isSpeaking ? 'breathing-avatar ring-4 ring-indigo-400/50' : ''} z-10 relative overflow-hidden`}>
+                            {isSpeaking && <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/20 to-transparent animate-pulse pointer-events-none"></div>}
+                            <div className="master-avatar-inner border-[6px] border-indigo-900/10 bg-indigo-950 overflow-hidden">
+                                <img
+                                    src={imgSrc}
+                                    className="w-full h-full object-cover transition-all duration-700"
+                                    alt="紫微天機道長"
+                                    onError={handleImgError}
+                                />
+                            </div>
+                            <div className={`absolute bottom-1 right-1 w-5 h-5 rounded-full border-4 border-white ${isSpeaking ? 'bg-amber-400 animate-ping shadow-[0_0_10px_rgba(251,191,36,0.8)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} title={isSpeaking ? "天機推演中" : "入定觀星中"}></div>
+                        </div>
+                        <div className="text-center mt-3">
+                            <h3 className="text-sm font-black tracking-[0.2em] text-indigo-950 uppercase flex items-center justify-center gap-1.5">
+                                <span>紫微天機道長</span>
+                            </h3>
+                            <p className="text-[10px] text-slate-400 font-bold tracking-widest mt-0.5 animate-pulse">觀星悟道中</p>
+                        </div>
+                    </div>
+                );
+            };
             const reportRef = useRef(null);
             const chatCardRef = useRef(null);
             const chatInputRef = useRef(null);
@@ -3335,52 +3371,7 @@
                 return <div className="heavenly-widget no-print">{status}</div>;
             };
 
-            const MasterPresence = ({ isSpeaking }) => {
-                const [imgSrc, setImgSrc] = useState("master_portrait.jpg");
-                const [attempt, setAttempt] = useState(0);
 
-                const handleImgError = () => {
-                    if (attempt === 0) {
-                        setImgSrc("master_portrait.jpg");
-                        setAttempt(1);
-                    } else if (attempt === 1) {
-                        setImgSrc("master_avatar.svg");
-                        setAttempt(2);
-                    } else if (attempt === 2) {
-                        setImgSrc("https://api.dicebear.com/7.x/notionists/svg?seed=TianjiMaster");
-                        setAttempt(3);
-                    }
-                };
-
-                return (
-                    <div className="flex flex-col items-center mb-10 no-print animate-in fade-in slide-in-from-top-6 duration-1000 relative">
-                        {isSpeaking && <div className="resonance-ring"></div>}
-                        {isSpeaking && <div className="resonance-ring" style={{ animationDelay: '0.6s' }}></div>}
-                        <div className={`master-avatar-ring ${isSpeaking ? 'breathing-avatar ring-4 ring-indigo-400/50' : ''} z-10 relative overflow-hidden`}>
-                            {isSpeaking && <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/20 to-transparent animate-pulse pointer-events-none"></div>}
-                            <div className="master-avatar-inner border-[6px] border-indigo-900/10 bg-indigo-950 overflow-hidden">
-                                <img
-                                    src={imgSrc}
-                                    className="w-full h-full object-cover transition-all duration-700"
-                                    alt="天機道長"
-                                    onError={handleImgError}
-                                />
-                            </div>
-                            <div className={`absolute bottom-1 right-1 w-5 h-5 rounded-full border-4 border-white ${isSpeaking ? 'bg-amber-400 animate-ping shadow-[0_0_10px_rgba(251,191,36,0.8)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} title={isSpeaking ? "天機推演中" : "入定觀星中"}></div>
-                        </div>
-                        <div className="mt-4 flex flex-col items-center relative">
-                            <h4 className="text-[17px] font-black tracking-[0.5em] text-indigo-950 drop-shadow-sm">紫微天機道長</h4>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className="h-px w-6 bg-indigo-200"></span>
-                                <span className="text-[11px] font-black tracking-[0.2em] text-indigo-400 uppercase italic">
-                                    {isSpeaking ? '天機凝神推算中...' : '觀星悟道中'}
-                                </span>
-                                <span className="h-px w-6 bg-indigo-200"></span>
-                            </div>
-                        </div>
-                    </div>
-                );
-            };
 
             const bureau = useMemo(() => {
                 if (!destiny) return "金四局";
@@ -4111,14 +4102,19 @@ ${chartContext}
                 }, 2000);
             };
 
-            const handleGlyph = async () => {
-                if (!input.trim()) { alert("請先輸入一個字！"); return; }
+            const handleGlyph = async (overrideChar = null) => {
+                let rawInput = (typeof overrideChar === 'string' && overrideChar) ? overrideChar.trim() : input.trim();
+                if (!rawInput) {
+                    const userTyped = window.prompt("🔮【紫微天機 · 測字神算】\n請輸入您心中懸念或欲占卜的漢字（例如：情、財、運、吉、勝、命）：", "吉");
+                    if (!userTyped || !userTyped.trim()) return;
+                    rawInput = userTyped.trim();
+                }
                 if (!checkName() || !checkDate()) return;
                 playRitualSound('start');
                 await saveUserProfile(true);
-                const char = input.trim().charAt(0);
-                const q = input.trim();
-                setInput("");
+                const char = rawInput.charAt(0);
+                const q = rawInput;
+                if (!overrideChar) setInput("");
                 setChat(prev => [...prev, { role: 'user', text: `測字：「${char}」 - ${q} ` }, { role: 'assistant', text: "" }]);
                 setIsChatLoading(true);
                 setActionLoading('glyph');
@@ -4899,13 +4895,12 @@ ${newsStats}
                                     <button onClick={() => handleStockPrediction()} disabled={actionLoading === 'stock'} className={`bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-3 rounded-2xl shadow-lg hover:from-blue-800 hover:to-indigo-900 transition-all flex items-center justify-center gap-1 font-black text-[11px] border border-blue-400/30 ${actionLoading === 'stock' ? 'opacity-75 cursor-not-allowed' : ''} `}>
                                         {actionLoading === 'stock' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="trending-up" className="w-4 h-4" />} 天機股市預測分析
                                     </button>
-                                    <div className="flex gap-2">
-                                        <button onClick={handleDailyTip} disabled={actionLoading === 'daily'} className="flex-1 bg-gradient-to-tr from-amber-500 to-orange-500 text-white rounded-2xl py-3 font-black shadow-lg shadow-amber-200 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group disabled:opacity-50 text-sm">
-                                            {actionLoading === 'daily' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkles" className="w-4 h-4 group-hover:rotate-12 transition-transform" />}
-                                            今日錦囊妙計
-                                        </button>
-
-                                    </div>
+                                    <button onClick={handleDailyTip} disabled={actionLoading === 'daily'} className={`bg-gradient-to-tr from-amber-500 to-orange-500 text-white p-3 rounded-2xl shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'daily' ? 'opacity-75 cursor-not-allowed' : ''} `}>
+                                        {actionLoading === 'daily' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkles" className="w-4 h-4" />} 今日錦囊妙計
+                                    </button>
+                                    <button onClick={() => handleGlyph()} disabled={actionLoading === 'glyph'} className={`bg-amber-600 text-white p-3 rounded-2xl shadow-lg hover:bg-amber-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-amber-200 ring-offset-1 ${actionLoading === 'glyph' ? 'opacity-75 cursor-not-allowed' : ''} `}>
+                                        {actionLoading === 'glyph' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="pen-tool" className="w-4 h-4" />} 測字神算
+                                    </button>
                                     <button onClick={() => handlePastLife()} disabled={actionLoading === 'pastLife'} className={`bg-purple-600 text-white p-3 rounded-2xl shadow-lg hover:bg-purple-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'pastLife' ? 'opacity-75 cursor-not-allowed' : ''} `}>
                                         {actionLoading === 'pastLife' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="infinity" className="w-4 h-4" />} 前世因果
                                     </button>
