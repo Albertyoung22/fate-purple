@@ -106,6 +106,8 @@ from fate_cpsat_solver import FateCPSATSolver, stream_cpsat_ai, solve_fate_cpsat
 from iching_engine import cast_iching_hexagram
 from synastry_engine import analyze_compatibility
 from flow_year_engine import calculate_flow_year_radar
+from temple_engine import draw_temple_lot, toss_moon_blocks, format_temple_response
+from fengshui_calendar_engine import analyze_fengshui_home, generate_ics_calendar
 
 # --- Configuration & Constants Loading ---
 def load_config():
@@ -1277,6 +1279,46 @@ def flow_year_radar_api():
     data = request.json or {}
     res = calculate_flow_year_radar(data)
     return jsonify(res)
+
+@app.route('/api/temple_draw', methods=['POST', 'OPTIONS'])
+def temple_draw_api():
+    if request.method == 'OPTIONS':
+        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
+    data = request.json or {}
+    temple_type = data.get("temple_type", "guanyin")
+    lot = draw_temple_lot(temple_type)
+    return jsonify({"success": True, "lot": lot})
+
+@app.route('/api/temple_toss', methods=['POST', 'OPTIONS'])
+def temple_toss_api():
+    if request.method == 'OPTIONS':
+        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
+    toss_res = toss_moon_blocks()
+    return jsonify({"success": True, "toss": toss_res})
+
+@app.route('/api/fengshui_analyze', methods=['POST', 'OPTIONS'])
+def fengshui_analyze_api():
+    if request.method == 'OPTIONS':
+        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
+    data = request.json or {}
+    facing = data.get("facing", "坐北朝南")
+    house_type = data.get("house_type", "住宅公寓")
+    res = analyze_fengshui_home(facing_direction=facing, house_type=house_type)
+    return jsonify({"success": True, "fengshui": res})
+
+@app.route('/api/export_calendar_ics', methods=['GET', 'POST', 'OPTIONS'])
+def export_calendar_ics_api():
+    if request.method == 'OPTIONS':
+        resp = make_response(); resp.headers.add("Access-Control-Allow-Origin", "*"); resp.headers.add("Access-Control-Allow-Headers", "*"); return resp
+    user_name = request.args.get("name") or (request.json or {}).get("name") or "緣主"
+    start_date = request.args.get("start_date") or (request.json or {}).get("start_date") or None
+    days = int(request.args.get("days") or (request.json or {}).get("days") or 30)
+    ics_text = generate_ics_calendar(user_name=user_name, start_date_str=start_date, days_count=days)
+    
+    resp = Response(ics_text, mimetype="text/calendar")
+    resp.headers["Content-Disposition"] = f'attachment; filename="fate_calendar_{quote(user_name)}.ics"'
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
 
 @app.errorhandler(Exception)
 def handle_exception(e):

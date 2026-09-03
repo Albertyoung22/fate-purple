@@ -2699,6 +2699,429 @@
             );
         };
 
+        // --- 天機靈籤與擲筊求籤 Modal ---
+        const TempleModal = ({ userName, onClose }) => {
+            const [templeType, setTempleType] = React.useState('guanyin');
+            const [question, setQuestion] = React.useState('');
+            const [step, setStep] = React.useState('draw'); // 'draw' | 'toss' | 'result'
+            const [isDrawing, setIsDrawing] = React.useState(false);
+            const [currentLot, setCurrentLot] = React.useState(null);
+            const [isTossing, setIsTossing] = React.useState(false);
+            const [tossHistory, setTossHistory] = React.useState([]);
+            const [latestToss, setLatestToss] = React.useState(null);
+
+            const templeTitles = {
+                guanyin: { name: "普陀山 · 觀音大士靈籤", desc: "大慈大悲，救苦救難，指引人生迷津", color: "from-rose-500 to-pink-600" },
+                guandi: { name: "解州祖廟 · 關聖帝君靈籤", desc: "忠義千秋，威靈赫赫，專斷事業財運", color: "from-amber-600 to-red-700" },
+                mazu: { name: "鹿港朝天宮 · 媽祖百籤", desc: "海神聖母，慈航普渡，庇佑家宅平安與出行", color: "from-blue-600 to-indigo-700" }
+            };
+
+            const handleDraw = async () => {
+                setIsDrawing(true);
+                setCurrentLot(null);
+                setTossHistory([]);
+                setLatestToss(null);
+                try {
+                    const res = await fetch('/api/temple_draw', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ temple_type: templeType })
+                    });
+                    const data = await res.json();
+                    setTimeout(() => {
+                        setCurrentLot(data.lot);
+                        setIsDrawing(false);
+                        setStep('toss');
+                    }, 1200);
+                } catch (e) {
+                    alert('抽籤感應未通，請稍後重試：' + e.message);
+                    setIsDrawing(false);
+                }
+            };
+
+            const handleToss = async () => {
+                setIsTossing(true);
+                try {
+                    const res = await fetch('/api/temple_toss', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+                    const data = await res.json();
+                    setTimeout(() => {
+                        setLatestToss(data.toss);
+                        setTossHistory(prev => [...prev, data.toss]);
+                        setIsTossing(false);
+                        if (data.toss.is_confirmed) {
+                            setTimeout(() => setStep('result'), 1000);
+                        }
+                    }, 800);
+                } catch (e) {
+                    alert('擲筊失敗：' + e.message);
+                    setIsTossing(false);
+                }
+            };
+
+            const handleDirectReveal = () => {
+                setStep('result');
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in" onClick={onClose}>
+                    <div className="bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 border border-amber-500/40 rounded-[2.5rem] shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto text-white p-6 md:p-8 relative" onClick={e => e.stopPropagation()}>
+                        <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors">
+                            <Icon name="x" className="w-5 h-5" />
+                        </button>
+
+                        <div className="text-center mb-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-black tracking-widest uppercase mb-2">
+                                <Icon name="flame" className="w-3.5 h-3.5" /> 神明靈籤 · 擲筊問卜
+                            </div>
+                            <h3 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-300 font-serif">
+                                {templeTitles[templeType].name}
+                            </h3>
+                            <p className="text-xs text-slate-300 mt-1">{templeTitles[templeType].desc}</p>
+                        </div>
+
+                        {/* 籤筒選擇切換 */}
+                        <div className="grid grid-cols-3 gap-2 mb-6">
+                            {[
+                                { key: 'guanyin', name: '觀音靈籤', icon: 'heart' },
+                                { key: 'guandi', name: '關帝靈籤', icon: 'shield' },
+                                { key: 'mazu', name: '天上聖母籤', icon: 'anchor' }
+                            ].map(t => (
+                                <button
+                                    key={t.key}
+                                    onClick={() => { setTempleType(t.key); setStep('draw'); setCurrentLot(null); setLatestToss(null); }}
+                                    className={`py-2.5 px-3 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${templeType === t.key ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 shadow-lg shadow-amber-500/30 ring-2 ring-amber-300' : 'bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10'}`}
+                                >
+                                    <Icon name={t.icon} className="w-3.5 h-3.5" /> {t.name}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* 步驟一：抽籤 */}
+                        {step === 'draw' && (
+                            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-5">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-amber-300">請默念緣主姓名與心中所祈求之事：</label>
+                                    <input
+                                        type="text"
+                                        value={question}
+                                        onChange={e => setQuestion(e.target.value)}
+                                        placeholder="例如：弟子求問今年創業經商吉凶..."
+                                        className="w-full bg-black/40 border border-amber-400/30 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-amber-400"
+                                    />
+                                </div>
+
+                                <div className="py-6 flex flex-col items-center justify-center">
+                                    <div className={`w-28 h-36 bg-gradient-to-b from-amber-800 to-amber-950 border-2 border-amber-400 rounded-3xl flex flex-col items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)] relative ${isDrawing ? 'animate-bounce' : 'hover:scale-105 transition-transform'}`}>
+                                        <div className="w-20 h-4 bg-amber-600 rounded-full border border-amber-300 mb-2"></div>
+                                        <div className="flex gap-1">
+                                            <div className="w-1.5 h-16 bg-amber-200 rounded-full"></div>
+                                            <div className="w-1.5 h-20 bg-amber-300 rounded-full"></div>
+                                            <div className="w-1.5 h-14 bg-amber-200 rounded-full"></div>
+                                        </div>
+                                        <span className="text-[10px] font-black text-amber-300 mt-2">天機靈籤筒</span>
+                                    </div>
+                                    <p className="text-xs text-slate-300 mt-4">
+                                        {isDrawing ? "✨ 神光感應，正在為緣主搖動籤筒..." : "心誠則靈，點擊下方按鈕誠心抽取神籤"}
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={handleDraw}
+                                    disabled={isDrawing}
+                                    className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-black rounded-2xl text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-500/20 active:scale-95 transition-all disabled:opacity-50"
+                                >
+                                    {isDrawing ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkles" className="w-4 h-4" />}
+                                    {isDrawing ? "神明搖籤中..." : "誠心抽籤"}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* 步驟二：擲筊確認 */}
+                        {step === 'toss' && currentLot && (
+                            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-5 animate-in fade-in">
+                                <div className="p-4 bg-amber-950/40 border border-amber-500/30 rounded-2xl">
+                                    <span className="text-xs text-amber-300 font-black">抽得籤支</span>
+                                    <h4 className="text-xl font-black text-amber-100 font-serif mt-1">{currentLot.title}</h4>
+                                    <p className="text-xs text-slate-300 mt-1">需向神明擲筊請示，獲【聖筊】方能開解籤詩</p>
+                                </div>
+
+                                <div className="py-6 flex flex-col items-center justify-center">
+                                    {/* 筊杯展示 */}
+                                    <div className="flex items-center justify-center gap-8 my-2">
+                                        <div className={`w-16 h-20 rounded-[40px_10px_40px_10px] border-2 border-red-400 flex items-center justify-center font-black text-xs shadow-lg transition-transform ${latestToss?.block1 === '陽' ? 'bg-amber-100 text-red-900 rotate-12' : 'bg-red-800 text-amber-100 -rotate-12'} ${isTossing ? 'animate-spin' : ''}`}>
+                                            {latestToss ? (latestToss.block1 === '陽' ? '陽面 (平)' : '陰面 (凸)') : '筊杯甲'}
+                                        </div>
+                                        <div className={`w-16 h-20 rounded-[10px_40px_10px_40px] border-2 border-red-400 flex items-center justify-center font-black text-xs shadow-lg transition-transform ${latestToss?.block2 === '陽' ? 'bg-amber-100 text-red-900 -rotate-12' : 'bg-red-800 text-amber-100 rotate-12'} ${isTossing ? 'animate-spin' : ''}`}>
+                                            {latestToss ? (latestToss.block2 === '陽' ? '陽面 (平)' : '陰面 (凸)') : '筊杯乙'}
+                                        </div>
+                                    </div>
+
+                                    {latestToss && (
+                                        <div className={`mt-4 p-3 rounded-2xl border text-xs font-bold w-full ${latestToss.is_confirmed ? 'bg-emerald-950/50 border-emerald-400/50 text-emerald-200' : 'bg-amber-950/50 border-amber-400/50 text-amber-200'}`}>
+                                            <p className="text-sm font-black mb-1">{latestToss.name}</p>
+                                            <p>{latestToss.description}</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={handleToss}
+                                        disabled={isTossing}
+                                        className="flex-1 py-3 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 active:scale-95 disabled:opacity-50"
+                                    >
+                                        {isTossing ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="rotate-ccw" className="w-4 h-4" />}
+                                        {isTossing ? "擲筊翻轉中..." : (latestToss ? "再次擲筊請示" : "擲筊請示神明")}
+                                    </button>
+                                    <button
+                                        onClick={handleDirectReveal}
+                                        className="px-4 py-3 bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-bold rounded-2xl border border-white/10"
+                                    >
+                                        直接看解籤
+                                    </button>
+                                    <button
+                                        onClick={() => setStep('draw')}
+                                        className="px-4 py-3 bg-white/5 hover:bg-white/10 text-slate-400 text-xs font-medium rounded-2xl"
+                                    >
+                                        重新抽籤
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 步驟三：籤詩詳解 */}
+                        {step === 'result' && currentLot && (
+                            <div className="space-y-5 animate-in fade-in zoom-in duration-300">
+                                <div className="p-6 bg-gradient-to-br from-amber-950/40 via-indigo-950/30 to-slate-900 rounded-3xl border border-amber-400/40 text-center">
+                                    <span className="text-[11px] font-black text-amber-300 tracking-widest">【{currentLot.element}】</span>
+                                    <h4 className="text-2xl md:text-3xl font-black text-amber-100 font-serif my-2">{currentLot.title}</h4>
+                                    <div className="inline-block px-4 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 text-xs font-black">
+                                        {currentLot.level}
+                                    </div>
+
+                                    <div className="my-6 p-4 bg-black/40 border border-amber-500/30 rounded-2xl">
+                                        <p className="text-sm md:text-base font-serif font-black text-amber-200 leading-relaxed whitespace-pre-line">
+                                            {currentLot.poem}
+                                        </p>
+                                    </div>
+
+                                    <div className="text-left space-y-3 text-xs">
+                                        <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                                            <span className="font-black text-amber-300">📜 典故淵源：</span>
+                                            <span className="text-slate-200 ml-1">{currentLot.legend}</span>
+                                        </div>
+                                        <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                                            <span className="font-black text-amber-300">🔍 仙機通釋：</span>
+                                            <span className="text-slate-200 ml-1">{currentLot.meaning}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                    {Object.entries(currentLot.aspects).map(([key, val]) => (
+                                        <div key={key} className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                                            <span className="font-black text-amber-300 mr-1.5">✦ {key}：</span>
+                                            <span className="text-slate-200">{val}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/40">
+                                    <h5 className="text-xs font-black text-amber-300 mb-1 flex items-center gap-1.5">
+                                        <Icon name="sparkles" className="w-3.5 h-3.5" /> 天機道長點撥心法
+                                    </h5>
+                                    <p className="text-xs text-slate-200 leading-relaxed">{currentLot.advice}</p>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setStep('draw'); setCurrentLot(null); setLatestToss(null); }}
+                                        className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-black rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20"
+                                    >
+                                        <Icon name="rotate-ccw" className="w-4 h-4" /> 另求一籤
+                                    </button>
+                                    <button
+                                        onClick={onClose}
+                                        className="px-6 py-3 bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-bold rounded-2xl border border-white/10"
+                                    >
+                                        感悟領受
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 家宅九宮飛星風水與開運日曆匯出 Modal ---
+        const FengShuiModal = ({ userName, onClose }) => {
+            const [facing, setFacing] = React.useState('坐北朝南');
+            const [houseType, setHouseType] = React.useState('住宅公寓');
+            const [loading, setLoading] = React.useState(false);
+            const [fengshuiData, setFengshuiData] = React.useState(null);
+            const [downloadDays, setDownloadDays] = React.useState(30);
+
+            const fetchFengShui = async (f = facing) => {
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/fengshui_analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ facing: f, house_type: houseType })
+                    });
+                    const data = await res.json();
+                    setFengshuiData(data.fengshui);
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            React.useEffect(() => {
+                fetchFengShui();
+            }, []);
+
+            const handleExportICS = () => {
+                const url = `/api/export_calendar_ics?name=${encodeURIComponent(userName || '緣主')}&days=${downloadDays}`;
+                window.open(url, '_blank');
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in" onClick={onClose}>
+                    <div className="bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/40 rounded-[2.5rem] shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto text-white p-6 md:p-8 relative" onClick={e => e.stopPropagation()}>
+                        <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors">
+                            <Icon name="x" className="w-5 h-5" />
+                        </button>
+
+                        <div className="text-center mb-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-xs font-black tracking-widest uppercase mb-2">
+                                <Icon name="compass" className="w-3.5 h-3.5" /> 2026 丙午年 · 紫白九宮飛星與開運日曆
+                            </div>
+                            <h3 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-200 via-sky-100 to-indigo-300 font-serif">
+                                家宅開運風水羅盤 · 流日曆匯出
+                            </h3>
+                            <p className="text-xs text-slate-300 mt-1">洞悉九宮飛星吉凶方位，佈局財位、文昌位與化煞，一鍵匯入個人行事曆</p>
+                        </div>
+
+                        {/* 坐向設定 */}
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs font-bold text-slate-300">房屋坐向：</span>
+                                <select
+                                    value={facing}
+                                    onChange={e => { setFacing(e.target.value); fetchFengShui(e.target.value); }}
+                                    className="bg-slate-800 border border-indigo-400/30 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400"
+                                >
+                                    {["坐北朝南", "坐南朝北", "坐東朝西", "坐西朝東", "坐西北朝東南", "坐東南朝西北", "坐東北朝西南", "坐西南朝東北"].map(d => (
+                                        <option key={d} value={d}>{d}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-300">格局：</span>
+                                {["住宅公寓", "商辦店面", "獨立別墅"].map(t => (
+                                    <button
+                                        key={t}
+                                        onClick={() => setHouseType(t)}
+                                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${houseType === t ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400'}`}
+                                    >
+                                        {t}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 九宮飛星盤 */}
+                        {fengshuiData && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-3 gap-2.5 text-center">
+                                    {[
+                                        { key: 'southeast', name: '東南 · 巽宮', label: '正財位' },
+                                        { key: 'south', name: '正南 · 離宮', label: '偏財武曲' },
+                                        { key: 'southwest', name: '西南 · 坤宮', label: '文昌考運' },
+                                        { key: 'east', name: '正東 · 震宮', label: '九紫大吉' },
+                                        { key: 'center', name: '中宮 · 太極', label: '一白人緣' },
+                                        { key: 'west', name: '正西 · 兌宮', label: '五黃大煞' },
+                                        { key: 'northeast', name: '東北 · 艮宮', label: '三碧是非' },
+                                        { key: 'north', name: '正北 · 坎宮', label: '七赤破耗' },
+                                        { key: 'northwest', name: '西北 · 乾宮', label: '二黑病符' }
+                                    ].map(cell => {
+                                        const star = fengshuiData.stars_grid[cell.key];
+                                        const isGood = star.nature.includes('吉');
+                                        const isBad = star.nature.includes('凶');
+                                        return (
+                                            <div
+                                                key={cell.key}
+                                                className={`p-3.5 rounded-2xl border transition-all ${isGood ? 'bg-emerald-950/30 border-emerald-500/40 hover:border-emerald-400' : isBad ? 'bg-rose-950/30 border-rose-500/40 hover:border-rose-400' : 'bg-white/5 border-white/10'}`}
+                                            >
+                                                <div className="flex justify-between items-center text-[10px] text-slate-400 mb-1">
+                                                    <span>{cell.name}</span>
+                                                    <span className={`px-1.5 py-0.5 rounded font-black ${isGood ? 'bg-emerald-500/20 text-emerald-300' : isBad ? 'bg-rose-500/20 text-rose-300' : 'bg-white/10 text-slate-300'}`}>{star.nature}</span>
+                                                </div>
+                                                <h5 className="text-xs font-black text-white">{star.star}</h5>
+                                                <p className="text-[11px] font-bold text-amber-300 mt-0.5">{star.field}</p>
+                                                <p className="text-[10px] text-slate-300/80 mt-1 line-clamp-2">{star.advice}</p>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* 重點方位化解錦囊 */}
+                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs">
+                                    <h5 className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                                        <Icon name="sparkles" className="w-3.5 h-3.5" /> 2026 丙午年 · 家宅開運重點佈局指南
+                                    </h5>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-200">
+                                        <div>💰 <span className="font-bold text-amber-200">財位佈局：</span>{fengshuiData.key_spots['財位推薦']}</div>
+                                        <div>📚 <span className="font-bold text-indigo-200">文昌利考：</span>{fengshuiData.key_spots['文昌位推薦']}</div>
+                                        <div>🛡️ <span className="font-bold text-rose-300">避煞防範：</span>{fengshuiData.key_spots['避忌煞位']}</div>
+                                        <div>🚪 <span className="font-bold text-sky-200">大門氣場：</span>{fengshuiData.key_spots['大門氣場']}</div>
+                                    </div>
+                                </div>
+
+                                {/* 開運日曆 iCal 匯出區塊 */}
+                                <div className="p-5 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 border border-indigo-400/40 flex flex-col md:flex-row items-center justify-between gap-4">
+                                    <div>
+                                        <h4 className="text-sm font-black text-white flex items-center gap-2">
+                                            <Icon name="calendar-days" className="w-4 h-4 text-indigo-300" />
+                                            專屬流日吉凶開運日曆 (.ics)
+                                        </h4>
+                                        <p className="text-xs text-slate-300 mt-1">
+                                            將每日貴人日、財運日、破財預警日一鍵加入 iPhone / Google 日曆
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-3 w-full md:w-auto">
+                                        <select
+                                            value={downloadDays}
+                                            onChange={e => setDownloadDays(parseInt(e.target.value))}
+                                            className="bg-slate-800 border border-white/20 rounded-xl px-3 py-2 text-xs text-white"
+                                        >
+                                            <option value={30}>未來 30 天</option>
+                                            <option value={90}>未來 90 天</option>
+                                            <option value={365}>整年度 (365天)</option>
+                                        </select>
+                                        <button
+                                            onClick={handleExportICS}
+                                            className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-sky-600 hover:from-indigo-600 hover:to-sky-700 text-white font-black rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-indigo-500/30 active:scale-95 transition-all shrink-0"
+                                        >
+                                            <Icon name="download" className="w-4 h-4" /> 下載開運日曆
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
         const AlmanacWidget = ({ userBirthDate }) => {
             const today = new Date();
             const [queryDate, setQueryDate] = React.useState({
@@ -3180,6 +3603,8 @@
             const [showIChing, setShowIChing] = useState(false);
             const [showSynastry, setShowSynastry] = useState(false);
             const [showFlowYear, setShowFlowYear] = useState(false);
+            const [showTemple, setShowTemple] = useState(false);
+            const [showFengShui, setShowFengShui] = useState(false);
 
             const chatEndRef = useRef(null);
             const baziRef = useRef(null);
@@ -5306,6 +5731,8 @@ ${newsStats}
                         {showDestinyCard && <DestinyShareModal userName={userName} gender={gender} destiny={destiny} chartData={chartData} onClose={() => setShowDestinyCard(false)} />}
                         {showTalisman && <TalismanModal text={talismanText} onClose={() => setShowTalisman(false)} />}
                         {showIChing && <IChingModal onClose={() => setShowIChing(false)} />}
+                        {showTemple && <TempleModal userName={userName} onClose={() => setShowTemple(false)} />}
+                        {showFengShui && <FengShuiModal userName={userName} onClose={() => setShowFengShui(false)} />}
                         {showSynastry && <SynastryModal defaultName={userName} defaultBirth={birthDate} defaultHour={birthHour} defaultGender={gender} onClose={() => setShowSynastry(false)} />}
                         {showFlowYear && <FlowYearModal userBirthDate={birthDate} userBirthHour={birthHour} onClose={() => setShowFlowYear(false)} />}
 
