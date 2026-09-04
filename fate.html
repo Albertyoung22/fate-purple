@@ -133,6 +133,97 @@
             }
         }
 
+        /* --- 真實 3D 擲筊物理拋擲與落地彈跳動畫 --- */
+        @keyframes realPoeTossLeft {
+            0% {
+                transform: translateY(0) scale(1) rotate(0deg) rotateX(0deg);
+                filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+            }
+            20% {
+                transform: translateY(-130px) translateX(-35px) scale(1.3) rotateX(360deg) rotateY(180deg) rotate(-45deg);
+                filter: drop-shadow(0 25px 25px rgba(0,0,0,0.2));
+            }
+            45% {
+                transform: translateY(-90px) translateX(-20px) scale(1.15) rotateX(720deg) rotateY(360deg) rotate(90deg);
+                filter: drop-shadow(0 15px 15px rgba(0,0,0,0.3));
+            }
+            70% {
+                transform: translateY(12px) translateX(-5px) scale(0.92) rotateX(990deg) rotateY(520deg) rotate(160deg);
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+            }
+            85% {
+                transform: translateY(-10px) translateX(-2px) scale(1.03) rotateX(1060deg) rotateY(535deg) rotate(175deg);
+                filter: drop-shadow(0 6px 8px rgba(0,0,0,0.5));
+            }
+            100% {
+                transform: translateY(0) scale(1) rotateX(1080deg) rotateY(540deg) rotate(180deg);
+                filter: drop-shadow(0 4px 8px rgba(0,0,0,0.7));
+            }
+        }
+
+        @keyframes realPoeTossRight {
+            0% {
+                transform: translateY(0) scale(1) rotate(0deg) rotateX(0deg);
+                filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+            }
+            20% {
+                transform: translateY(-140px) translateX(40px) scale(1.35) rotateX(-360deg) rotateY(-200deg) rotate(45deg);
+                filter: drop-shadow(0 25px 25px rgba(0,0,0,0.2));
+            }
+            45% {
+                transform: translateY(-85px) translateX(25px) scale(1.15) rotateX(-720deg) rotateY(-380deg) rotate(-90deg);
+                filter: drop-shadow(0 15px 15px rgba(0,0,0,0.3));
+            }
+            70% {
+                transform: translateY(14px) translateX(8px) scale(0.92) rotateX(-990deg) rotateY(-510deg) rotate(-150deg);
+                filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+            }
+            85% {
+                transform: translateY(-8px) translateX(3px) scale(1.03) rotateX(-1060deg) rotateY(-530deg) rotate(-165deg);
+                filter: drop-shadow(0 6px 8px rgba(0,0,0,0.5));
+            }
+            100% {
+                transform: translateY(0) scale(1) rotateX(-1080deg) rotateY(-540deg) rotate(-170deg);
+                filter: drop-shadow(0 4px 8px rgba(0,0,0,0.7));
+            }
+        }
+
+        .animate-poe-toss-left {
+            animation: realPoeTossLeft 1.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .animate-poe-toss-right {
+            animation: realPoeTossRight 1.15s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        /* --- 籤筒搖動與銅錢翻轉特效 --- */
+        @keyframes bambooContainerShake {
+            0% { transform: rotate(0deg) translateY(0); }
+            15% { transform: rotate(-12deg) translateY(-8px); }
+            30% { transform: rotate(14deg) translateY(4px); }
+            45% { transform: rotate(-10deg) translateY(-6px); }
+            60% { transform: rotate(12deg) translateY(2px); }
+            75% { transform: rotate(-8deg) translateY(-4px); }
+            90% { transform: rotate(6deg) translateY(1px); }
+            100% { transform: rotate(0deg) translateY(0); }
+        }
+
+        @keyframes coinToss3D {
+            0% { transform: translateY(0) rotateY(0deg) rotateX(0deg) scale(1); }
+            30% { transform: translateY(-80px) rotateY(540deg) rotateX(360deg) scale(1.3); }
+            70% { transform: translateY(10px) rotateY(1080deg) rotateX(720deg) scale(0.95); }
+            85% { transform: translateY(-6px) rotateY(1170deg) rotateX(780deg) scale(1.02); }
+            100% { transform: translateY(0) rotateY(1260deg) rotateX(840deg) scale(1); }
+        }
+
+        .animate-lot-shake {
+            animation: bambooContainerShake 0.7s ease-in-out infinite;
+        }
+
+        .animate-coin-spin {
+            animation: coinToss3D 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
         @keyframes flipTickJieQi {
             0% {
                 transform: rotateX(0deg);
@@ -1521,7 +1612,7 @@
                 <div className="mt-8 bg-white/80 backdrop-blur-xl p-4 md:p-8 rounded-[2rem] shadow-xl border border-indigo-50 ring-4 ring-indigo-50/30 print:shadow-none print:border-2 print:border-black print:mt-0 print:ring-0 print:p-4 print:rounded-none">
                     <div className="flex items-center gap-3 mb-6 border-b-2 border-indigo-100 pb-4 print:border-black">
                         <div className="bg-indigo-900 text-white rounded-lg p-2 print:bg-black print:text-white">
-                            <i data-lucide="scroll" className="w-5 h-5"></i>
+                            <Icon name="scroll" className="w-5 h-5" />
                         </div>
                         <h3 className="text-xl font-black text-indigo-900 tracking-widest print:text-black whitespace-nowrap">八字命盤</h3>
                         <span className="hidden sm:inline-block text-xs font-bold text-indigo-400 ml-auto uppercase tracking-wider bg-indigo-50 px-2 py-1 rounded print:hidden">Four Pillars System</span>
@@ -2227,10 +2318,30 @@
             const [isCasting, setIsCasting] = React.useState(false);
             const [result, setResult] = React.useState(null);
 
+            const playCoinSound = () => {
+                try {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioCtx) return;
+                    const ctx = new AudioCtx();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1200, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.6, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.12);
+                } catch (e) {}
+            };
+
             const handleCast = async (qText) => {
                 const q = (qText || question || '心中所求之事').trim();
                 setIsCasting(true);
                 setResult(null);
+                playCoinSound();
                 try {
                     const res = await fetch('/api/iching_divine', {
                         method: 'POST',
@@ -2239,14 +2350,42 @@
                     });
                     const data = await res.json();
                     setTimeout(() => {
+                        playCoinSound();
                         setResult(data);
                         setIsCasting(false);
-                    }, 600);
+                    }, 900);
                 } catch (e) {
                     alert('起卦失敗，請稍後重試：' + e.message);
                     setIsCasting(false);
                 }
             };
+
+            const renderQianlongCoin = (delayStr) => (
+                <div className="relative w-16 h-16 flex items-center justify-center filter drop-shadow-[0_10px_15px_rgba(0,0,0,0.7)] animate-coin-spin" style={{ animationDelay: delayStr }}>
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                        <defs>
+                            <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#fef08a" />
+                                <stop offset="35%" stopColor="#eab308" />
+                                <stop offset="70%" stopColor="#ca8a04" />
+                                <stop offset="100%" stopColor="#854d0e" />
+                            </linearGradient>
+                            <radialGradient id="coinShine" cx="30%" cy="30%" r="70%">
+                                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
+                                <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                            </radialGradient>
+                        </defs>
+                        <circle cx="50" cy="50" r="46" fill="url(#coinGrad)" stroke="#78350f" strokeWidth="2.5" />
+                        <circle cx="50" cy="50" r="41" fill="none" stroke="#fef08a" strokeWidth="1" strokeOpacity="0.6" />
+                        <rect x="36" y="36" width="28" height="28" fill="#451a03" stroke="#eab308" strokeWidth="1.5" />
+                        <text x="50" y="24" fill="#78350f" fontSize="12" fontWeight="900" fontFamily="serif" textAnchor="middle">乾</text>
+                        <text x="50" y="82" fill="#78350f" fontSize="12" fontWeight="900" fontFamily="serif" textAnchor="middle">隆</text>
+                        <text x="23" y="54" fill="#78350f" fontSize="12" fontWeight="900" fontFamily="serif" textAnchor="middle">通</text>
+                        <text x="77" y="54" fill="#78350f" fontSize="12" fontWeight="900" fontFamily="serif" textAnchor="middle">寶</text>
+                        <circle cx="50" cy="50" r="46" fill="url(#coinShine)" pointerEvents="none" />
+                    </svg>
+                </div>
+            );
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in" onClick={onClose}>
@@ -2299,13 +2438,20 @@
                         </div>
 
                         {isCasting && (
-                            <div className="py-12 flex flex-col items-center justify-center gap-4 animate-pulse">
-                                <div className="flex gap-4">
-                                    <span className="w-10 h-10 rounded-full border-2 border-amber-400 flex items-center justify-center font-black text-amber-300 text-xs bg-amber-950/40">通</span>
-                                    <span className="w-10 h-10 rounded-full border-2 border-amber-400 flex items-center justify-center font-black text-amber-300 text-xs bg-amber-950/40">寶</span>
-                                    <span className="w-10 h-10 rounded-full border-2 border-amber-400 flex items-center justify-center font-black text-amber-300 text-xs bg-amber-950/40">乾</span>
+                            <div className="py-10 flex flex-col items-center justify-center gap-5">
+                                <div className="w-full bg-gradient-to-b from-amber-950/80 via-yellow-950/50 to-amber-950/80 border-2 border-amber-500/50 rounded-3xl p-6 shadow-[inset_0_0_20px_rgba(245,158,11,0.2)] text-center relative overflow-hidden">
+                                    <div className="text-[10px] text-amber-300/50 font-black tracking-widest uppercase mb-4">
+                                        ────── 伏羲太極陰陽卦盤 ──────
+                                    </div>
+                                    <div className="flex items-center justify-center gap-6 my-2">
+                                        {renderQianlongCoin("0s")}
+                                        {renderQianlongCoin("0.15s")}
+                                        {renderQianlongCoin("0.3s")}
+                                    </div>
+                                    <p className="text-xs font-black text-amber-200 mt-4 animate-pulse">
+                                        ✨ 正在搖動乾隆古錢，感應天地六爻陰陽奇偶之變...
+                                    </p>
                                 </div>
-                                <p className="text-sm font-bold text-amber-200">正在搖動乾隆古錢，感應天地陰陽六爻之變...</p>
                             </div>
                         )}
 
@@ -2716,8 +2862,32 @@
                 mazu: { name: "鹿港朝天宮 · 媽祖百籤", desc: "海神聖母，慈航普渡，庇佑家宅平安與出行", color: "from-blue-600 to-indigo-700" }
             };
 
+            const playLotRattleSound = () => {
+                try {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioCtx) return;
+                    const ctx = new AudioCtx();
+                    for (let i = 0; i < 6; i++) {
+                        setTimeout(() => {
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'triangle';
+                            osc.frequency.setValueAtTime(500 + Math.random() * 350, ctx.currentTime);
+                            osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.06);
+                            gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.06);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start();
+                            osc.stop(ctx.currentTime + 0.06);
+                        }, i * 120);
+                    }
+                } catch (e) {}
+            };
+
             const handleDraw = async () => {
                 setIsDrawing(true);
+                playLotRattleSound();
                 setCurrentLot(null);
                 setTossHistory([]);
                 setLatestToss(null);
@@ -2732,15 +2902,101 @@
                         setCurrentLot(data.lot);
                         setIsDrawing(false);
                         setStep('toss');
-                    }, 1200);
+                    }, 1400);
                 } catch (e) {
                     alert('抽籤感應未通，請稍後重試：' + e.message);
                     setIsDrawing(false);
                 }
             };
 
+            const renderLotCylinder = (isDrawing) => (
+                <div className="relative w-44 h-56 flex flex-col items-center justify-end my-2">
+                    <div className={`absolute inset-0 rounded-full bg-amber-500/20 blur-xl transition-opacity ${isDrawing ? 'opacity-100 scale-125 animate-pulse' : 'opacity-30'}`}></div>
+                    <div className={`absolute top-2 z-20 transition-all duration-700 flex flex-col items-center ${isDrawing ? 'translate-y-[-50px] scale-110 drop-shadow-[0_0_25px_rgba(251,191,36,0.9)]' : 'translate-y-6 opacity-60'}`}>
+                        <div className="w-4 h-28 bg-gradient-to-b from-red-600 via-amber-200 to-amber-400 border border-amber-300 rounded-t-md flex flex-col items-center justify-between py-1.5 shadow-xl">
+                            <span className="w-2 h-2 rounded-full bg-red-700 border border-amber-200"></span>
+                            <span className="text-[10px] font-black text-amber-950 [writing-mode:vertical-lr] tracking-widest font-serif">頭籤大吉</span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-700"></span>
+                        </div>
+                    </div>
+                    <div className={`w-32 h-40 relative z-10 filter drop-shadow-[0_15px_20px_rgba(0,0,0,0.85)] ${isDrawing ? 'animate-lot-shake' : 'hover:scale-105 transition-transform'}`}>
+                        <svg viewBox="0 0 120 160" className="w-full h-full">
+                            <defs>
+                                <linearGradient id="bambooBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#78350f" />
+                                    <stop offset="25%" stopColor="#451a03" />
+                                    <stop offset="60%" stopColor="#290f02" />
+                                    <stop offset="100%" stopColor="#78350f" />
+                                </linearGradient>
+                                <linearGradient id="goldRimGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stopColor="#fef08a" />
+                                    <stop offset="50%" stopColor="#eab308" />
+                                    <stop offset="100%" stopColor="#ca8a04" />
+                                </linearGradient>
+                                <linearGradient id="stickGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#ef4444" />
+                                    <stop offset="25%" stopColor="#fef08a" />
+                                    <stop offset="100%" stopColor="#d97706" />
+                                </linearGradient>
+                            </defs>
+                            <g className={isDrawing ? 'animate-pulse' : ''}>
+                                <rect x="35" y="10" width="6" height="50" rx="3" fill="url(#stickGrad)" transform="rotate(-15 35 10)" />
+                                <rect x="45" y="5" width="6" height="55" rx="3" fill="url(#stickGrad)" transform="rotate(-8 45 5)" />
+                                <rect x="57" y="2" width="6" height="58" rx="3" fill="url(#stickGrad)" transform="rotate(0 57 2)" />
+                                <rect x="68" y="5" width="6" height="55" rx="3" fill="url(#stickGrad)" transform="rotate(8 68 5)" />
+                                <rect x="78" y="10" width="6" height="50" rx="3" fill="url(#stickGrad)" transform="rotate(15 78 10)" />
+                            </g>
+                            <ellipse cx="60" cy="40" rx="45" ry="12" fill="url(#goldRimGrad)" stroke="#78350f" strokeWidth="2" />
+                            <ellipse cx="60" cy="40" rx="38" ry="8" fill="#1c0a00" />
+                            <path d="M 15 40 Q 20 100 22 145 L 98 145 Q 100 100 105 40 Z" fill="url(#bambooBodyGrad)" stroke="#78350f" strokeWidth="2" />
+                            <path d="M 17 65 Q 60 75 103 65 L 102 73 Q 60 83 18 73 Z" fill="url(#goldRimGrad)" opacity="0.95" />
+                            <path d="M 20 120 Q 60 130 100 120 L 99 127 Q 60 137 21 127 Z" fill="url(#goldRimGrad)" opacity="0.95" />
+                            <rect x="42" y="78" width="36" height="36" rx="4" fill="#7f1d1d" stroke="#eab308" strokeWidth="1.5" />
+                            <text x="60" y="95" fill="#fef08a" fontSize="11" fontWeight="900" fontFamily="serif" textAnchor="middle">天機</text>
+                            <text x="60" y="108" fill="#fef08a" fontSize="11" fontWeight="900" fontFamily="serif" textAnchor="middle">靈籤</text>
+                            <ellipse cx="60" cy="145" rx="38" ry="8" fill="url(#goldRimGrad)" />
+                        </svg>
+                    </div>
+                    <div className="w-36 h-4 bg-black/60 rounded-full blur-md mt-1"></div>
+                </div>
+            );
+
+            const playPoeSound = () => {
+                try {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioCtx) return;
+                    const ctx = new AudioCtx();
+                    const osc1 = ctx.createOscillator();
+                    const gain1 = ctx.createGain();
+                    osc1.type = 'triangle';
+                    osc1.frequency.setValueAtTime(450, ctx.currentTime);
+                    osc1.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.08);
+                    gain1.gain.setValueAtTime(0.8, ctx.currentTime);
+                    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+                    osc1.connect(gain1);
+                    gain1.connect(ctx.destination);
+                    osc1.start();
+                    osc1.stop(ctx.currentTime + 0.08);
+
+                    setTimeout(() => {
+                        const osc2 = ctx.createOscillator();
+                        const gain2 = ctx.createGain();
+                        osc2.type = 'sine';
+                        osc2.frequency.setValueAtTime(320, ctx.currentTime);
+                        osc2.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.06);
+                        gain2.gain.setValueAtTime(0.5, ctx.currentTime);
+                        gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.06);
+                        osc2.connect(gain2);
+                        gain2.connect(ctx.destination);
+                        osc2.start();
+                        osc2.stop(ctx.currentTime + 0.06);
+                    }, 140);
+                } catch (e) {}
+            };
+
             const handleToss = async () => {
                 setIsTossing(true);
+                playPoeSound();
                 try {
                     const res = await fetch('/api/temple_toss', {
                         method: 'POST',
@@ -2749,17 +3005,103 @@
                     });
                     const data = await res.json();
                     setTimeout(() => {
+                        playPoeSound();
                         setLatestToss(data.toss);
                         setTossHistory(prev => [...prev, data.toss]);
                         setIsTossing(false);
                         if (data.toss.is_confirmed) {
-                            setTimeout(() => setStep('result'), 1000);
+                            setTimeout(() => setStep('result'), 1200);
                         }
-                    }, 800);
+                    }, 1100);
                 } catch (e) {
                     alert('擲筊失敗：' + e.message);
                     setIsTossing(false);
                 }
+            };
+
+            const renderSinglePoe = (isFlat, side) => {
+                const isLeft = side === 'left';
+                return (
+                    <div className={`relative w-24 h-28 flex items-center justify-center filter drop-shadow-2xl transition-transform ${isLeft ? 'rotate-[-15deg]' : 'rotate-[15deg]'}`}>
+                        <svg viewBox="0 0 100 120" className="w-full h-full drop-shadow-[0_8px_12px_rgba(0,0,0,0.7)]">
+                            <defs>
+                                <linearGradient id={`woodGrad_${side}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#fef3c7" />
+                                    <stop offset="40%" stopColor="#f59e0b" />
+                                    <stop offset="100%" stopColor="#b45309" />
+                                </linearGradient>
+                                <linearGradient id={`lacquerGrad_${side}`} x1="20%" y1="0%" x2="80%" y2="100%">
+                                    <stop offset="0%" stopColor="#f87171" />
+                                    <stop offset="35%" stopColor="#dc2626" />
+                                    <stop offset="80%" stopColor="#881337" />
+                                    <stop offset="100%" stopColor="#450a0a" />
+                                </linearGradient>
+                                <linearGradient id={`shineGrad_${side}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.75" />
+                                    <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                                </linearGradient>
+                            </defs>
+                            {isFlat ? (
+                                <g>
+                                    <path
+                                        d={isLeft ? "M 65 10 C 20 25 10 80 55 110 C 32 80 35 38 65 10 Z" : "M 35 10 C 80 25 90 80 45 110 C 68 80 65 38 35 10 Z"}
+                                        fill={`url(#woodGrad_${side})`}
+                                        stroke="#92400e"
+                                        strokeWidth="2.5"
+                                    />
+                                    <path
+                                        d={isLeft ? "M 55 25 Q 30 50 48 95" : "M 45 25 Q 70 50 52 95"}
+                                        fill="none"
+                                        stroke="#78350f"
+                                        strokeWidth="1.5"
+                                        strokeOpacity="0.4"
+                                        strokeDasharray="4 2"
+                                    />
+                                    <text
+                                        x={isLeft ? "42" : "54"}
+                                        y="62"
+                                        fill="#991b1b"
+                                        fontSize="17"
+                                        fontWeight="900"
+                                        fontFamily="serif"
+                                        textAnchor="middle"
+                                        opacity="0.9"
+                                    >
+                                        陽
+                                    </text>
+                                </g>
+                            ) : (
+                                <g>
+                                    <path
+                                        d={isLeft ? "M 65 10 C 20 25 10 80 55 110 C 32 80 35 38 65 10 Z" : "M 35 10 C 80 25 90 80 45 110 C 68 80 65 38 35 10 Z"}
+                                        fill={`url(#lacquerGrad_${side})`}
+                                        stroke="#7f1d1d"
+                                        strokeWidth="2.5"
+                                    />
+                                    <path
+                                        d={isLeft ? "M 58 20 C 30 35 25 70 48 98" : "M 42 20 C 70 35 75 70 52 98"}
+                                        fill="none"
+                                        stroke={`url(#shineGrad_${side})`}
+                                        strokeWidth="4"
+                                        strokeLinecap="round"
+                                    />
+                                    <text
+                                        x={isLeft ? "42" : "54"}
+                                        y="62"
+                                        fill="#fef3c7"
+                                        fontSize="17"
+                                        fontWeight="900"
+                                        fontFamily="serif"
+                                        textAnchor="middle"
+                                        opacity="0.9"
+                                    >
+                                        陰
+                                    </text>
+                                </g>
+                            )}
+                        </svg>
+                    </div>
+                );
             };
 
             const handleDirectReveal = () => {
@@ -2800,6 +3142,27 @@
                             ))}
                         </div>
 
+                        {/* 功能模式切換：【籤筒搖籤求籤】 / 【直解聖筊問卜】 */}
+                        <div className="flex gap-2 mb-6 p-1 bg-black/40 rounded-2xl border border-amber-500/30">
+                            <button
+                                onClick={() => setStep('draw')}
+                                className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${step === 'draw' ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 shadow-md ring-1 ring-amber-300' : 'text-slate-300 hover:text-white'}`}
+                            >
+                                <Icon name="sparkles" className="w-3.5 h-3.5" /> 籤筒搖籤求籤
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (!currentLot) {
+                                        setCurrentLot({ title: '誠心向神明請示吉凶判語', poem: '天道酬勤，心誠則靈。', level: '聖聖聖', element: '天地靈氣', legend: '神明親臨指引' });
+                                    }
+                                    setStep('toss');
+                                }}
+                                className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${step === 'toss' ? 'bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 shadow-md ring-1 ring-amber-300' : 'text-slate-300 hover:text-white'}`}
+                            >
+                                <Icon name="rotate-ccw" className="w-3.5 h-3.5" /> 直解聖筊問卜
+                            </button>
+                        </div>
+
                         {/* 步驟一：抽籤 */}
                         {step === 'draw' && (
                             <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-5">
@@ -2814,18 +3177,10 @@
                                     />
                                 </div>
 
-                                <div className="py-6 flex flex-col items-center justify-center">
-                                    <div className={`w-28 h-36 bg-gradient-to-b from-amber-800 to-amber-950 border-2 border-amber-400 rounded-3xl flex flex-col items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)] relative ${isDrawing ? 'animate-bounce' : 'hover:scale-105 transition-transform'}`}>
-                                        <div className="w-20 h-4 bg-amber-600 rounded-full border border-amber-300 mb-2"></div>
-                                        <div className="flex gap-1">
-                                            <div className="w-1.5 h-16 bg-amber-200 rounded-full"></div>
-                                            <div className="w-1.5 h-20 bg-amber-300 rounded-full"></div>
-                                            <div className="w-1.5 h-14 bg-amber-200 rounded-full"></div>
-                                        </div>
-                                        <span className="text-[10px] font-black text-amber-300 mt-2">天機靈籤筒</span>
-                                    </div>
-                                    <p className="text-xs text-slate-300 mt-4">
-                                        {isDrawing ? "✨ 神光感應，正在為緣主搖動籤筒..." : "心誠則靈，點擊下方按鈕誠心抽取神籤"}
+                                <div className="py-4 flex flex-col items-center justify-center">
+                                    {renderLotCylinder(isDrawing)}
+                                    <p className="text-xs text-amber-200 mt-2 font-medium">
+                                        {isDrawing ? "✨ 神光感應，竹籤震響，正在誠心搖動籤筒..." : "心誠則靈，點擊下方「誠心搖籤」按鈕抽取神籤"}
                                     </p>
                                 </div>
 
@@ -2835,7 +3190,7 @@
                                     className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-black rounded-2xl text-sm flex items-center justify-center gap-2 shadow-xl shadow-amber-500/20 active:scale-95 transition-all disabled:opacity-50"
                                 >
                                     {isDrawing ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkles" className="w-4 h-4" />}
-                                    {isDrawing ? "神明搖籤中..." : "誠心抽籤"}
+                                    {isDrawing ? "神明搖籤中..." : "誠心搖籤抽取神籤"}
                                 </button>
                             </div>
                         )}
@@ -2849,21 +3204,42 @@
                                     <p className="text-xs text-slate-300 mt-1">需向神明擲筊請示，獲【聖筊】方能開解籤詩</p>
                                 </div>
 
-                                <div className="py-6 flex flex-col items-center justify-center">
-                                    {/* 筊杯展示 */}
-                                    <div className="flex items-center justify-center gap-8 my-2">
-                                        <div className={`w-16 h-20 rounded-[40px_10px_40px_10px] border-2 border-red-400 flex items-center justify-center font-black text-xs shadow-lg transition-transform ${latestToss?.block1 === '陽' ? 'bg-amber-100 text-red-900 rotate-12' : 'bg-red-800 text-amber-100 -rotate-12'} ${isTossing ? 'animate-spin' : ''}`}>
-                                            {latestToss ? (latestToss.block1 === '陽' ? '陽面 (平)' : '陰面 (凸)') : '筊杯甲'}
+                                <div className="py-4 flex flex-col items-center justify-center">
+                                    {/* 廟宇紅錦絨跪墊（擲筊物理落地區） */}
+                                    <div className="w-full bg-gradient-to-b from-red-950/90 via-red-900/70 to-red-950/90 border-2 border-amber-500/60 rounded-3xl p-6 shadow-[inset_0_0_25px_rgba(245,158,11,0.25)] relative overflow-hidden my-2">
+                                        <div className="absolute top-2 left-2 text-amber-500/40 text-xs font-serif">✦</div>
+                                        <div className="absolute top-2 right-2 text-amber-500/40 text-xs font-serif">✦</div>
+                                        <div className="absolute bottom-2 left-2 text-amber-500/40 text-xs font-serif">✦</div>
+                                        <div className="absolute bottom-2 right-2 text-amber-500/40 text-xs font-serif">✦</div>
+                                        
+                                        <div className="text-center text-[10px] text-amber-400/40 font-black tracking-widest uppercase mb-3">
+                                            ──────── 聖殿神明擲筊專區 ────────
                                         </div>
-                                        <div className={`w-16 h-20 rounded-[10px_40px_10px_40px] border-2 border-red-400 flex items-center justify-center font-black text-xs shadow-lg transition-transform ${latestToss?.block2 === '陽' ? 'bg-amber-100 text-red-900 -rotate-12' : 'bg-red-800 text-amber-100 rotate-12'} ${isTossing ? 'animate-spin' : ''}`}>
-                                            {latestToss ? (latestToss.block2 === '陽' ? '陽面 (平)' : '陰面 (凸)') : '筊杯乙'}
+
+                                        {/* 3D 聖筊雙塊物理拋擲 */}
+                                        <div className="flex items-center justify-center gap-10 min-h-[140px] relative py-2">
+                                            <div className={`transition-all duration-300 ${isTossing ? 'animate-poe-toss-left' : 'hover:scale-105'}`}>
+                                                {renderSinglePoe(latestToss ? (latestToss.block1 === '陽') : false, 'left')}
+                                            </div>
+                                            <div className={`transition-all duration-300 ${isTossing ? 'animate-poe-toss-right' : 'hover:scale-105'}`}>
+                                                {renderSinglePoe(latestToss ? (latestToss.block2 === '陽') : true, 'right')}
+                                            </div>
                                         </div>
+
+                                        <p className="text-[11px] text-amber-200/70 text-center mt-3 font-medium">
+                                            {isTossing ? "✨ 筊杯騰空翻轉，祈求神明賜予旨意..." : (latestToss ? `當前筊相：${latestToss.name}` : "請誠心默念祈求，點擊下方「擲筊請示神明」")}
+                                        </p>
                                     </div>
 
-                                    {latestToss && (
-                                        <div className={`mt-4 p-3 rounded-2xl border text-xs font-bold w-full ${latestToss.is_confirmed ? 'bg-emerald-950/50 border-emerald-400/50 text-emerald-200' : 'bg-amber-950/50 border-amber-400/50 text-amber-200'}`}>
-                                            <p className="text-sm font-black mb-1">{latestToss.name}</p>
-                                            <p>{latestToss.description}</p>
+                                    {latestToss && !isTossing && (
+                                        <div className={`mt-3 p-4 rounded-2xl border text-xs font-bold w-full animate-in fade-in zoom-in duration-300 ${latestToss.is_confirmed ? 'bg-emerald-950/60 border-emerald-400/50 text-emerald-200 shadow-lg shadow-emerald-900/30' : 'bg-amber-950/60 border-amber-400/50 text-amber-200 shadow-lg shadow-amber-900/30'}`}>
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-base font-black font-serif tracking-wide">{latestToss.name}</span>
+                                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${latestToss.is_confirmed ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-400/40' : 'bg-amber-500/30 text-amber-300 border border-amber-400/40'}`}>
+                                                    {latestToss.is_confirmed ? "恭喜！獲得聖筊" : "請繼續擲筊"}
+                                                </span>
+                                            </div>
+                                            <p className="text-slate-200 leading-relaxed font-normal">{latestToss.description}</p>
                                         </div>
                                     )}
                                 </div>
@@ -2872,20 +3248,20 @@
                                     <button
                                         onClick={handleToss}
                                         disabled={isTossing}
-                                        className="flex-1 py-3 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 active:scale-95 disabled:opacity-50"
+                                        className="flex-1 py-3.5 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 active:scale-95 disabled:opacity-50 transition-all"
                                     >
                                         {isTossing ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="rotate-ccw" className="w-4 h-4" />}
                                         {isTossing ? "擲筊翻轉中..." : (latestToss ? "再次擲筊請示" : "擲筊請示神明")}
                                     </button>
                                     <button
                                         onClick={handleDirectReveal}
-                                        className="px-4 py-3 bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-bold rounded-2xl border border-white/10"
+                                        className="px-4 py-3.5 bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-bold rounded-2xl border border-white/10 transition-all"
                                     >
                                         直接看解籤
                                     </button>
                                     <button
                                         onClick={() => setStep('draw')}
-                                        className="px-4 py-3 bg-white/5 hover:bg-white/10 text-slate-400 text-xs font-medium rounded-2xl"
+                                        className="px-4 py-3.5 bg-white/5 hover:bg-white/10 text-slate-400 text-xs font-medium rounded-2xl transition-all"
                                     >
                                         重新抽籤
                                     </button>
@@ -3605,6 +3981,7 @@
             const [showFlowYear, setShowFlowYear] = useState(false);
             const [showTemple, setShowTemple] = useState(false);
             const [showFengShui, setShowFengShui] = useState(false);
+            const [activeFeatureTab, setActiveFeatureTab] = useState('featured');
 
             const chatEndRef = useRef(null);
             const baziRef = useRef(null);
@@ -4963,9 +5340,9 @@ ${newsStats}
                                         <span>{bgmPlaying ? '仙樂播放中 (點擊停止)' : '開啟背景仙樂'}</span>
                                     </button>
                                     <button onClick={() => setShowGuide(true)} className="text-[11px] md:text-xs font-black flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur shadow-md hover:bg-white hover:shadow-lg transition-all border border-indigo-100 text-indigo-600">
-                                        <i data-lucide="help-circle" className="w-4 h-4" /> 使用說明
+                                        <Icon name="help-circle" className="w-4 h-4" /> 使用說明
                                     </button>
-                                    <button onClick={() => setShowDonate(true)} className="text-xs md:text-sm font-black flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 bg-[length:200%_auto] animate-gradient text-white border-2 border-white/60 hover:shadow-xl hover:shadow-orange-500/60 hover:-translate-y-0.5 transition-all shadow-[0_0_15px_rgba(245,158,11,0.5)] active:scale-95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"><i data-lucide="gift" className="w-4 h-4 md:w-5 md:h-5 animate-bounce" /> 隨喜贊助</button>
+                                    <button onClick={() => setShowDonate(true)} className="text-xs md:text-sm font-black flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 bg-[length:200%_auto] animate-gradient text-white border-2 border-white/60 hover:shadow-xl hover:shadow-orange-500/60 hover:-translate-y-0.5 transition-all shadow-[0_0_15px_rgba(245,158,11,0.5)] active:scale-95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]"><Icon name="gift" className="w-4 h-4 md:w-5 md:h-5 animate-bounce" /> 隨喜贊助</button>
                                 </div>
                             </div>
 
@@ -5092,22 +5469,22 @@ ${newsStats}
                                         });
                                     }} disabled={isLoading || isChatLoading} className="group relative bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl shadow-xl shadow-indigo-300 hover:shadow-2xl hover:shadow-indigo-400 active:scale-95 transition-all duration-300 active:translate-y-1 flex items-center gap-3" title="大師即時諮詢">
                                         <div className="absolute top-0 right-0 -mt-1 -mr-1 w-3 h-3 bg-red-400 rounded-full animate-ping"></div>
-                                        <i data-lucide="message-circle-more" className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300"></i>
+                                        <Icon name="message-circle" className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
                                         <span className="font-bold text-lg tracking-widest hidden md:inline">大師即時諮詢</span>
                                         <span className="font-bold text-lg tracking-widest md:hidden">諮詢</span>
                                     </button>
-                                    <button onClick={() => setShowTemple(true)} className="bg-white hover:bg-rose-50 text-rose-600 p-5 rounded-2xl border-2 border-rose-100 hover:border-rose-200 shadow-xl shadow-rose-100 active:scale-95 transition-all duration-300 group" title="天機靈籤 · 擲筊求籤">
-                                        <i data-lucide="flame" className="w-8 h-8 group-hover:scale-110 transition-transform"></i>
+                                    <button onClick={() => setShowTemple(true)} className="bg-white hover:bg-rose-50 text-rose-600 p-5 rounded-2xl border-2 border-rose-100 hover:border-rose-200 shadow-xl shadow-rose-100 active:scale-95 transition-all duration-300 group flex items-center justify-center" title="天機靈籤 · 擲筊求籤">
+                                        <Icon name="flame" className="w-8 h-8 group-hover:scale-110 transition-transform text-rose-600" />
                                     </button>
-                                    <button onClick={() => setShowFengShui(true)} className="bg-white hover:bg-sky-50 text-sky-600 p-5 rounded-2xl border-2 border-sky-100 hover:border-sky-200 shadow-xl shadow-sky-100 active:scale-95 transition-all duration-300 group" title="家宅風水羅盤 · 開運日曆">
-                                        <i data-lucide="compass" className="w-8 h-8 group-hover:scale-110 transition-transform"></i>
+                                    <button onClick={() => setShowFengShui(true)} className="bg-white hover:bg-sky-50 text-sky-600 p-5 rounded-2xl border-2 border-sky-100 hover:border-sky-200 shadow-xl shadow-sky-100 active:scale-95 transition-all duration-300 group flex items-center justify-center" title="家宅風水羅盤 · 開運日曆">
+                                        <Icon name="compass" className="w-8 h-8 group-hover:scale-110 transition-transform text-sky-600" />
                                     </button>
-                                    <button onClick={() => setShowDestinyCard(true)} className="bg-white hover:bg-fuchsia-50 text-fuchsia-600 p-5 rounded-2xl border-2 border-fuchsia-100 hover:border-fuchsia-200 shadow-xl shadow-fuchsia-100 active:scale-95 transition-all duration-300 group" title="分享命宮天機卡">
-                                        <i data-lucide="share-2" className="w-8 h-8 group-hover:scale-110 transition-transform"></i>
+                                    <button onClick={() => setShowDestinyCard(true)} className="bg-white hover:bg-fuchsia-50 text-fuchsia-600 p-5 rounded-2xl border-2 border-fuchsia-100 hover:border-fuchsia-200 shadow-xl shadow-fuchsia-100 active:scale-95 transition-all duration-300 group flex items-center justify-center" title="分享命宮天機卡">
+                                        <Icon name="share-2" className="w-8 h-8 group-hover:scale-110 transition-transform text-fuchsia-600" />
                                     </button>
 
-                                    <button onClick={() => window.print()} className="bg-white hover:bg-slate-50 text-indigo-900 p-5 rounded-2xl border-2 border-indigo-50 hover:border-indigo-100 shadow-xl shadow-slate-200 active:scale-95 transition-all duration-300 group">
-                                        <i data-lucide="printer" className="w-8 h-8 group-hover:text-indigo-600 transition-colors"></i>
+                                    <button onClick={() => window.print()} className="bg-white hover:bg-slate-50 text-indigo-900 p-5 rounded-2xl border-2 border-indigo-50 hover:border-indigo-100 shadow-xl shadow-slate-200 active:scale-95 transition-all duration-300 group flex items-center justify-center" title="列印 / 匯出命盤">
+                                        <Icon name="printer" className="w-8 h-8 group-hover:text-indigo-600 transition-colors text-indigo-900" />
                                     </button>
                                 </div>
                             </div>
@@ -5316,109 +5693,299 @@ ${newsStats}
 
                             <div className="xl:col-span-4 space-y-12 print:w-full print:mt-16">
                                 <MasterPresence isSpeaking={isLoading || isChatLoading} />
-                                <div className="grid grid-cols-3 gap-3">
-                                    <button onClick={() => handleSimpleExec()} disabled={actionLoading === 'simple'} className={`bg-teal-600 text-white p-3 rounded-2xl shadow-lg hover:bg-teal-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-teal-200 ring-offset-2 ${actionLoading === 'simple' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        {actionLoading === 'simple' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="message-circle" className="w-4 h-4" />} 白話精解
-                                    </button>
-                                    <button onClick={() => handleReport()} disabled={actionLoading === 'report'} className={`bg-indigo-900 text-white p-3 rounded-2xl shadow-lg hover:bg-indigo-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'report' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        {actionLoading === 'report' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="feather" className="w-4 h-4" />} 詳盡命盤解析
-                                    </button>
-                                    <button onClick={() => handleStockPrediction()} disabled={actionLoading === 'stock'} className={`bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-3 rounded-2xl shadow-lg hover:from-blue-800 hover:to-indigo-900 transition-all flex items-center justify-center gap-1 font-black text-[11px] border border-blue-400/30 ${actionLoading === 'stock' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        {actionLoading === 'stock' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="trending-up" className="w-4 h-4" />} 天機股市預測分析
-                                    </button>
-                                    <button onClick={handleDailyTip} disabled={actionLoading === 'daily'} className={`bg-gradient-to-tr from-amber-500 to-orange-500 text-white p-3 rounded-2xl shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'daily' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        {actionLoading === 'daily' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="sparkles" className="w-4 h-4" />} 今日錦囊妙計
-                                    </button>
-                                    <button onClick={() => handleGlyph()} disabled={actionLoading === 'glyph'} className={`bg-amber-600 text-white p-3 rounded-2xl shadow-lg hover:bg-amber-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-amber-200 ring-offset-1 ${actionLoading === 'glyph' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        {actionLoading === 'glyph' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="pen-tool" className="w-4 h-4" />} 測字神算
-                                    </button>
-                                    <button onClick={() => handlePastLife()} disabled={actionLoading === 'pastLife'} className={`bg-purple-600 text-white p-3 rounded-2xl shadow-lg hover:bg-purple-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'pastLife' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        {actionLoading === 'pastLife' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="infinity" className="w-4 h-4" />} 前世因果
-                                    </button>
-                                    <button onClick={() => handleRitual()} disabled={actionLoading === 'ritual'} className={`bg-red-600 text-white p-3 rounded-2xl shadow-lg hover:bg-red-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ring-2 ring-red-200 ring-offset-2 ${actionLoading === 'ritual' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        {actionLoading === 'ritual' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="scroll" className="w-4 h-4" />} 求取靈符
-                                    </button>
-                                    <button onClick={() => handleDream()} disabled={actionLoading === 'dream'} className={`bg-blue-600 text-white p-3 rounded-2xl shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'dream' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        {actionLoading === 'dream' ? <Icon name="loader" className="w-4 h-4 animate-spin" /> : <Icon name="moon" className="w-4 h-4" />} 夢境解碼
-                                    </button>
-                                    <button onClick={() => handleLove()} disabled={actionLoading === 'love'} className={`bg-pink-500 text-white p-3 rounded-2xl shadow-lg hover:bg-pink-600 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'love' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        <div className="flex items-center gap-1">
-                                            {actionLoading === 'love' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="heart" className="w-3 h-3" />}
-                                            桃花攻略
-                                        </div>
-                                    </button>
-                                    <button onClick={() => handleFinance()} disabled={actionLoading === 'finance'} className={`bg-amber-600 text-white p-3 rounded-2xl shadow-lg hover:bg-amber-700 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'finance' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        <div className="flex items-center gap-1">
-                                            {actionLoading === 'finance' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="trending-up" className="w-3 h-3" />}
-                                            財運預測
-                                        </div>
-                                    </button>
-                                    <button onClick={() => handleOmens()} disabled={actionLoading === 'omens'} className={`bg-emerald-600 text-white p-3 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ring-2 ring-emerald-200 ring-offset-1 ${actionLoading === 'omens' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        <div className="flex items-center gap-1">
-                                            {actionLoading === 'omens' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="map-pin" className="w-3 h-3" />}
-                                            避諱吉位
-                                        </div>
-                                    </button>
-                                    <button onClick={() => handleLuckyNumbers()} disabled={actionLoading === 'lucky'} className={`bg-amber-500 text-white p-3 rounded-2xl shadow-lg hover:bg-amber-600 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ring-2 ring-amber-200 ring-offset-1 ${actionLoading === 'lucky' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        <div className="flex items-center gap-1">
-                                            {actionLoading === 'lucky' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="clover" className="w-3 h-3" />}
-                                            幸運靈動數
-                                        </div>
-                                    </button>
-                                    <button onClick={() => handleDecadeLimit()} disabled={actionLoading === 'limit'} className={`bg-violet-600 text-white p-3 rounded-2xl shadow-lg hover:bg-violet-700 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ring-2 ring-violet-200 ring-offset-1 ${actionLoading === 'limit' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        <div className="flex items-center gap-1">
-                                            {actionLoading === 'limit' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="hourglass" className="w-3 h-3" />}
-                                            十年運程
-                                        </div>
-                                    </button>
-                                    <button onClick={() => handleYearlyFlow()} disabled={actionLoading === 'yearly'} className={`bg-rose-600 text-white p-3 rounded-2xl shadow-lg hover:bg-rose-700 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ring-2 ring-rose-200 ring-offset-1 ${actionLoading === 'yearly' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        <div className="flex items-center gap-1">
-                                            {actionLoading === 'yearly' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="calendar" className="w-3 h-3" />}
-                                            {targetYear}流年
-                                        </div>
-                                    </button>
-                                    <button onClick={() => handleMonthlyFlow()} disabled={actionLoading === 'monthly'} className={`bg-emerald-600 text-white p-3 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all flex flex-col items-center justify-center gap-1 font-black text-[11px] ring-2 ring-emerald-200 ring-offset-1 ${actionLoading === 'monthly' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        <div className="flex items-center gap-1">
-                                            {actionLoading === 'monthly' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="calendar-days" className="w-3 h-3" />}
-                                            {targetMonth}月運勢
-                                        </div>
-                                    </button>
-                                    <button onClick={() => handleBazi()} disabled={actionLoading === 'bazi'} className={`bg-slate-700 text-white p-3 rounded-2xl shadow-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-1 font-black text-[11px] ${actionLoading === 'bazi' ? 'opacity-75 cursor-not-allowed' : ''} `}>
-                                        <div className="flex items-center gap-1">
-                                            {actionLoading === 'bazi' ? <Icon name="loader" className="w-3 h-3 animate-spin" /> : <Icon name="compass" className="w-3 h-3" />}
-                                            八字論命
-                                        </div>
-                                    </button>
-                                    <button onClick={() => setShowIChing(true)} className="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700 text-white p-3 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-1 font-black text-[11px] border border-amber-300/30">
-                                        <div className="flex items-center gap-1">
-                                            <Icon name="compass" className="w-3 h-3" />
-                                            易經神卦
-                                        </div>
-                                    </button>
-                                    <button onClick={() => setShowTemple(true)} className="bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-700 hover:to-red-800 text-white p-3 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-1 font-black text-[11px] border border-rose-300/30 ring-2 ring-rose-200 ring-offset-1">
-                                        <div className="flex items-center gap-1">
-                                            <Icon name="flame" className="w-3 h-3" />
-                                            靈籤擲筊
-                                        </div>
-                                    </button>
-                                    <button onClick={() => setShowFengShui(true)} className="bg-gradient-to-r from-indigo-700 to-sky-700 hover:from-indigo-800 hover:to-sky-800 text-white p-3 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-1 font-black text-[11px] border border-sky-300/30 ring-2 ring-indigo-200 ring-offset-1">
-                                        <div className="flex items-center gap-1">
-                                            <Icon name="compass" className="w-3 h-3" />
-                                            風水羅盤日曆
-                                        </div>
-                                    </button>
-                                    <button onClick={() => setShowSynastry(true)} className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white p-3 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-1 font-black text-[11px] border border-pink-300/30">
-                                        <div className="flex items-center gap-1">
-                                            <Icon name="heart" className="w-3 h-3" />
-                                            合婚合盤
-                                        </div>
-                                    </button>
-                                    <button onClick={() => setShowFlowYear(true)} className="bg-gradient-to-r from-red-600 to-amber-700 hover:from-red-700 hover:to-amber-800 text-white p-3 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-1 font-black text-[11px] border border-red-300/30 col-span-full">
-                                        <div className="flex items-center gap-1">
-                                            <Icon name="calendar" className="w-3.5 h-3.5" />
-                                            2026 丙午流年與十二流月雷達
-                                        </div>
-                                    </button>
+                                <div className="space-y-4">
+                                    {/* Categorized Tab Bar */}
+                                    <div className="grid grid-cols-5 gap-1.5 p-1.5 bg-slate-950/80 backdrop-blur-md rounded-2xl border border-indigo-500/20 shadow-xl">
+                                        <button
+                                            onClick={() => setActiveFeatureTab('featured')}
+                                            className={`py-2.5 px-1 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+                                                activeFeatureTab === 'featured'
+                                                    ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow-lg shadow-amber-500/30 ring-1 ring-amber-300/40'
+                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                                            }`}
+                                        >
+                                            <Icon name="sparkles" className={`w-3.5 h-3.5 ${activeFeatureTab === 'featured' ? 'text-amber-200' : 'text-amber-400'}`} />
+                                            <span>熱門</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveFeatureTab('career')}
+                                            className={`py-2.5 px-1 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+                                                activeFeatureTab === 'career'
+                                                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 ring-1 ring-blue-300/40'
+                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                                            }`}
+                                        >
+                                            <Icon name="trending-up" className="w-3.5 h-3.5 text-blue-400" />
+                                            <span>運勢</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveFeatureTab('love')}
+                                            className={`py-2.5 px-1 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+                                                activeFeatureTab === 'love'
+                                                    ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-lg shadow-pink-500/30 ring-1 ring-pink-300/40'
+                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                                            }`}
+                                        >
+                                            <Icon name="heart" className="w-3.5 h-3.5 text-pink-400" />
+                                            <span>姻緣</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveFeatureTab('divination')}
+                                            className={`py-2.5 px-1 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+                                                activeFeatureTab === 'divination'
+                                                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 ring-1 ring-purple-300/40'
+                                                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                                            }`}
+                                        >
+                                            <Icon name="compass" className="w-3.5 h-3.5 text-purple-400" />
+                                            <span>占卜</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveFeatureTab('all')}
+                                            className={`py-2.5 px-1 rounded-xl font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+                                                activeFeatureTab === 'all'
+                                                    ? 'bg-slate-800 text-white shadow-md ring-1 ring-slate-600'
+                                                    : 'text-slate-500 hover:text-slate-300'
+                                            }`}
+                                        >
+                                            <Icon name="grid" className="w-3.5 h-3.5 text-slate-400" />
+                                            <span>全部</span>
+                                        </button>
+                                    </div>
+
+                                    {/* Tab Content Buttons Grid */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* --- 1. 🔥 熱門精選 & 全部 --- */}
+                                        {(activeFeatureTab === 'featured' || activeFeatureTab === 'all') && (
+                                            <React.Fragment>
+                                                <button onClick={() => handleSimpleExec()} disabled={actionLoading === 'simple'} className={`group relative overflow-hidden bg-gradient-to-r from-indigo-950/90 via-slate-900/90 to-purple-950/90 text-indigo-100 p-3 rounded-2xl shadow-lg border border-indigo-500/30 hover:border-indigo-400 hover:text-white hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'simple' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'simple' ? <Icon name="loader" className="w-4 h-4 animate-spin text-indigo-400" /> : <Icon name="message-circle" className="w-4 h-4 text-indigo-300 group-hover:text-indigo-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">白話精解</span>
+                                                        <span className="text-[9px] text-indigo-300/80 font-normal mt-0.5 truncate">解開命盤親切開示</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handleReport()} disabled={actionLoading === 'report'} className={`group relative overflow-hidden bg-gradient-to-r from-purple-950/90 via-slate-900/90 to-indigo-950/90 text-purple-100 p-3 rounded-2xl shadow-lg border border-purple-500/30 hover:border-purple-400 hover:text-white hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'report' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'report' ? <Icon name="loader" className="w-4 h-4 animate-spin text-purple-400" /> : <Icon name="feather" className="w-4 h-4 text-purple-300 group-hover:text-purple-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">詳盡命盤解析</span>
+                                                        <span className="text-[9px] text-purple-300/80 font-normal mt-0.5 truncate">十二宮飛化全章詳解</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handleBazi()} disabled={actionLoading === 'bazi'} className={`group relative overflow-hidden bg-gradient-to-r from-slate-900/90 via-slate-800/90 to-slate-900/90 text-slate-100 p-3 rounded-2xl shadow-lg border border-slate-600/40 hover:border-slate-400 hover:text-white hover:shadow-slate-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'bazi' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-slate-700/40 border border-slate-500/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'bazi' ? <Icon name="loader" className="w-4 h-4 animate-spin text-slate-300" /> : <Icon name="compass" className="w-4 h-4 text-slate-300 group-hover:text-slate-100" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">八字論命</span>
+                                                        <span className="text-[9px] text-slate-400 font-normal mt-0.5 truncate">子平八字五行格局</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={handleDailyTip} disabled={actionLoading === 'daily'} className={`group relative overflow-hidden bg-gradient-to-r from-amber-950/90 via-slate-900/90 to-amber-950/90 text-amber-100 p-3 rounded-2xl shadow-lg border border-amber-500/30 hover:border-amber-400 hover:text-white hover:shadow-amber-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'daily' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'daily' ? <Icon name="loader" className="w-4 h-4 animate-spin text-amber-400" /> : <Icon name="sparkles" className="w-4 h-4 text-amber-300 group-hover:text-amber-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">今日錦囊妙計</span>
+                                                        <span className="text-[9px] text-amber-300/80 font-normal mt-0.5 truncate">每日吉凶開運指引</span>
+                                                    </div>
+                                                </button>
+                                            </React.Fragment>
+                                        )}
+
+                                        {/* --- 2. 📈 運勢財富 & 全部 --- */}
+                                        {(activeFeatureTab === 'career' || activeFeatureTab === 'all') && (
+                                            <React.Fragment>
+                                                <button onClick={() => handleStockPrediction()} disabled={actionLoading === 'stock'} className={`group relative overflow-hidden bg-gradient-to-r from-slate-900/90 via-blue-950/90 to-slate-900/90 text-blue-100 p-3 rounded-2xl shadow-lg border border-blue-500/30 hover:border-blue-400 hover:text-white hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'stock' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'stock' ? <Icon name="loader" className="w-4 h-4 animate-spin text-blue-400" /> : <Icon name="trending-up" className="w-4 h-4 text-blue-300 group-hover:text-blue-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">股市預測分析</span>
+                                                        <span className="text-[9px] text-blue-300/80 font-normal mt-0.5 truncate">大盤與個股趨勢推演</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handleFinance()} disabled={actionLoading === 'finance'} className={`group relative overflow-hidden bg-gradient-to-r from-amber-950/90 via-slate-900/90 to-emerald-950/90 text-amber-100 p-3 rounded-2xl shadow-lg border border-amber-500/30 hover:border-amber-400 hover:text-white hover:shadow-amber-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'finance' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'finance' ? <Icon name="loader" className="w-4 h-4 animate-spin text-amber-400" /> : <Icon name="trending-up" className="w-4 h-4 text-amber-300 group-hover:text-amber-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">財運預測</span>
+                                                        <span className="text-[9px] text-amber-300/80 font-normal mt-0.5 truncate">財帛田宅宮財庫剖析</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handleDecadeLimit()} disabled={actionLoading === 'limit'} className={`group relative overflow-hidden bg-gradient-to-r from-purple-950/90 via-slate-900/90 to-violet-950/90 text-purple-100 p-3 rounded-2xl shadow-lg border border-purple-500/30 hover:border-purple-400 hover:text-white hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'limit' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'limit' ? <Icon name="loader" className="w-4 h-4 animate-spin text-purple-400" /> : <Icon name="hourglass" className="w-4 h-4 text-purple-300 group-hover:text-purple-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">十年運程</span>
+                                                        <span className="text-[9px] text-purple-300/80 font-normal mt-0.5 truncate">大限十年運勢起伏</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handleYearlyFlow()} disabled={actionLoading === 'yearly'} className={`group relative overflow-hidden bg-gradient-to-r from-rose-950/90 via-slate-900/90 to-amber-950/90 text-rose-100 p-3 rounded-2xl shadow-lg border border-rose-500/30 hover:border-rose-400 hover:text-white hover:shadow-rose-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'yearly' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'yearly' ? <Icon name="loader" className="w-4 h-4 animate-spin text-rose-400" /> : <Icon name="calendar" className="w-4 h-4 text-rose-300 group-hover:text-rose-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">{targetYear}流年</span>
+                                                        <span className="text-[9px] text-rose-300/80 font-normal mt-0.5 truncate">流年歲運吉凶預警</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handleMonthlyFlow()} disabled={actionLoading === 'monthly'} className={`group relative overflow-hidden bg-gradient-to-r from-emerald-950/90 via-slate-900/90 to-teal-950/90 text-emerald-100 p-3 rounded-2xl shadow-lg border border-emerald-500/30 hover:border-emerald-400 hover:text-white hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'monthly' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'monthly' ? <Icon name="loader" className="w-4 h-4 animate-spin text-emerald-400" /> : <Icon name="calendar-days" className="w-4 h-4 text-emerald-300 group-hover:text-emerald-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">{targetMonth}月運勢</span>
+                                                        <span className="text-[9px] text-emerald-300/80 font-normal mt-0.5 truncate">當月十二宮氣運轉變</span>
+                                                    </div>
+                                                </button>
+                                            </React.Fragment>
+                                        )}
+
+                                        {/* --- 3. 💖 姻緣合盤 & 全部 --- */}
+                                        {(activeFeatureTab === 'love' || activeFeatureTab === 'all') && (
+                                            <React.Fragment>
+                                                <button onClick={() => handleLove()} disabled={actionLoading === 'love'} className={`group relative overflow-hidden bg-gradient-to-r from-pink-950/90 via-slate-900/90 to-rose-950/90 text-pink-100 p-3 rounded-2xl shadow-lg border border-pink-500/30 hover:border-pink-400 hover:text-white hover:shadow-pink-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'love' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-pink-500/20 border border-pink-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'love' ? <Icon name="loader" className="w-4 h-4 animate-spin text-pink-400" /> : <Icon name="heart" className="w-4 h-4 text-pink-300 group-hover:text-pink-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">桃花攻略</span>
+                                                        <span className="text-[9px] text-pink-300/80 font-normal mt-0.5 truncate">夫妻宮與異性緣運勢</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => setShowSynastry(true)} className="group relative overflow-hidden bg-gradient-to-r from-pink-950/90 via-slate-900/90 to-purple-950/90 text-pink-100 p-3 rounded-2xl shadow-lg border border-pink-500/30 hover:border-pink-400 hover:text-white hover:shadow-pink-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left">
+                                                    <div className="w-8 h-8 rounded-xl bg-pink-500/20 border border-pink-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        <Icon name="heart" className="w-4 h-4 text-pink-300 group-hover:text-pink-200" />
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">合婚合盤</span>
+                                                        <span className="text-[9px] text-pink-300/80 font-normal mt-0.5 truncate">雙人命盤契合度解析</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handlePastLife()} disabled={actionLoading === 'pastLife'} className={`group relative overflow-hidden bg-gradient-to-r from-purple-950/90 via-slate-900/90 to-violet-950/90 text-purple-100 p-3 rounded-2xl shadow-lg border border-purple-500/30 hover:border-purple-400 hover:text-white hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'pastLife' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'pastLife' ? <Icon name="loader" className="w-4 h-4 animate-spin text-purple-400" /> : <Icon name="infinity" className="w-4 h-4 text-purple-300 group-hover:text-purple-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">前世因果</span>
+                                                        <span className="text-[9px] text-purple-300/80 font-normal mt-0.5 truncate">夙世因果與修為緣分</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handleDream()} disabled={actionLoading === 'dream'} className={`group relative overflow-hidden bg-gradient-to-r from-indigo-950/90 via-slate-900/90 to-blue-950/90 text-indigo-100 p-3 rounded-2xl shadow-lg border border-indigo-500/30 hover:border-indigo-400 hover:text-white hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'dream' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'dream' ? <Icon name="loader" className="w-4 h-4 animate-spin text-indigo-400" /> : <Icon name="moon" className="w-4 h-4 text-indigo-300 group-hover:text-indigo-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">夢境解碼</span>
+                                                        <span className="text-[9px] text-indigo-300/80 font-normal mt-0.5 truncate">潛意識與夢境吉凶預警</span>
+                                                    </div>
+                                                </button>
+                                            </React.Fragment>
+                                        )}
+
+                                        {/* --- 4. 🏮 靈符占卜 & 全部 --- */}
+                                        {(activeFeatureTab === 'divination' || activeFeatureTab === 'all') && (
+                                            <React.Fragment>
+                                                <button onClick={() => handleGlyph()} disabled={actionLoading === 'glyph'} className={`group relative overflow-hidden bg-gradient-to-r from-amber-950/90 via-slate-900/90 to-yellow-950/90 text-amber-100 p-3 rounded-2xl shadow-lg border border-amber-500/30 hover:border-amber-400 hover:text-white hover:shadow-amber-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'glyph' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'glyph' ? <Icon name="loader" className="w-4 h-4 animate-spin text-amber-400" /> : <Icon name="pen-tool" className="w-4 h-4 text-amber-300 group-hover:text-amber-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">測字神算</span>
+                                                        <span className="text-[9px] text-amber-300/80 font-normal mt-0.5 truncate">一字拆解當前吉凶</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handleRitual()} disabled={actionLoading === 'ritual'} className={`group relative overflow-hidden bg-gradient-to-r from-rose-950/90 via-slate-900/90 to-red-950/90 text-rose-100 p-3 rounded-2xl shadow-lg border border-rose-500/30 hover:border-rose-400 hover:text-white hover:shadow-rose-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'ritual' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'ritual' ? <Icon name="loader" className="w-4 h-4 animate-spin text-rose-400" /> : <Icon name="scroll" className="w-4 h-4 text-rose-300 group-hover:text-rose-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">求取靈符</span>
+                                                        <span className="text-[9px] text-rose-300/80 font-normal mt-0.5 truncate">宗師敕造護身靈符</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handleOmens()} disabled={actionLoading === 'omens'} className={`group relative overflow-hidden bg-gradient-to-r from-emerald-950/90 via-slate-900/90 to-teal-950/90 text-emerald-100 p-3 rounded-2xl shadow-lg border border-emerald-500/30 hover:border-emerald-400 hover:text-white hover:shadow-emerald-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'omens' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'omens' ? <Icon name="loader" className="w-4 h-4 animate-spin text-emerald-400" /> : <Icon name="map-pin" className="w-4 h-4 text-emerald-300 group-hover:text-emerald-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">避諱吉位</span>
+                                                        <span className="text-[9px] text-emerald-300/80 font-normal mt-0.5 truncate">方位吉凶與趨吉避凶</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => handleLuckyNumbers()} disabled={actionLoading === 'lucky'} className={`group relative overflow-hidden bg-gradient-to-r from-amber-950/90 via-slate-900/90 to-amber-950/90 text-amber-100 p-3 rounded-2xl shadow-lg border border-amber-500/30 hover:border-amber-400 hover:text-white hover:shadow-amber-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'lucky' ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        {actionLoading === 'lucky' ? <Icon name="loader" className="w-4 h-4 animate-spin text-amber-400" /> : <Icon name="clover" className="w-4 h-4 text-amber-300 group-hover:text-amber-200" />}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">幸運靈動數</span>
+                                                        <span className="text-[9px] text-amber-300/80 font-normal mt-0.5 truncate">開運幸運數字與色彩</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => setShowIChing(true)} className="group relative overflow-hidden bg-gradient-to-r from-amber-950/90 via-slate-900/90 to-yellow-950/90 text-amber-100 p-3 rounded-2xl shadow-lg border border-amber-500/30 hover:border-amber-400 hover:text-white hover:shadow-amber-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left">
+                                                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        <Icon name="compass" className="w-4 h-4 text-amber-300 group-hover:text-amber-200" />
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">易經神卦</span>
+                                                        <span className="text-[9px] text-amber-300/80 font-normal mt-0.5 truncate">六十四卦金錢占卜</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => setShowTemple(true)} className="group relative overflow-hidden bg-gradient-to-r from-rose-950/90 via-slate-900/90 to-red-950/90 text-rose-100 p-3 rounded-2xl shadow-lg border border-rose-500/30 hover:border-rose-400 hover:text-white hover:shadow-rose-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left">
+                                                    <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        <Icon name="flame" className="w-4 h-4 text-rose-300 group-hover:text-rose-200" />
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">靈籤擲筊</span>
+                                                        <span className="text-[9px] text-rose-300/80 font-normal mt-0.5 truncate">廟宇求籤擲聖筊解惑</span>
+                                                    </div>
+                                                </button>
+
+                                                <button onClick={() => setShowFengShui(true)} className="group relative overflow-hidden bg-gradient-to-r from-indigo-950/90 via-slate-900/90 to-sky-950/90 text-sky-100 p-3 rounded-2xl shadow-lg border border-sky-500/30 hover:border-sky-400 hover:text-white hover:shadow-sky-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left">
+                                                    <div className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        <Icon name="compass" className="w-4 h-4 text-sky-300 group-hover:text-sky-200" />
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="font-bold text-[12px] text-white leading-tight">風水羅盤日曆</span>
+                                                        <span className="text-[9px] text-sky-300/80 font-normal mt-0.5 truncate">黃曆宜忌與風水吉位</span>
+                                                    </div>
+                                                </button>
+                                            </React.Fragment>
+                                        )}
+
+                                        {/* --- 5. 2026 丙午流年與十二流月雷達 (Hero Banner - 恆常呈現) --- */}
+                                        <button onClick={() => setShowFlowYear(true)} className="group relative overflow-hidden bg-gradient-to-r from-amber-950/90 via-purple-950/90 to-indigo-950/90 text-amber-200 p-3.5 rounded-2xl shadow-xl border border-amber-500/40 hover:border-amber-300 hover:text-white hover:shadow-amber-500/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2.5 font-bold text-[12px] col-span-full tracking-wider">
+                                            <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                <Icon name="calendar" className="w-4 h-4 text-amber-400" />
+                                            </div>
+                                            <div className="flex flex-col items-start">
+                                                <span className="font-bold text-[12px] text-amber-200 leading-tight">2026 丙午流年與十二流月雷達</span>
+                                                <span className="text-[9px] text-amber-300/80 font-normal mt-0.5">全方位丙午赤馬年大運動向總覽</span>
+                                            </div>
+                                        </button>
+                                    </div>
                                 </div>
 
 
@@ -5604,7 +6171,7 @@ ${newsStats}
                                                 </div>
                                             )) : (
                                                 <div className="flex flex-col items-center justify-center py-10 opacity-50">
-                                                    <i data-lucide="shield-check" className="w-16 h-16 text-emerald-500 mb-4" />
+                                                    <Icon name="shield-check" className="w-16 h-16 text-emerald-500 mb-4" />
                                                     <p className="text-sm font-black text-slate-400 tracking-widest uppercase">盤面格局中和 · 偵測平安</p>
                                                 </div>
                                             )}

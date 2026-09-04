@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fate-purple-v1';
+const CACHE_NAME = 'fate-purple-v3';
 const urlsToCache = [
   '/',
   '/fate.html',
@@ -7,23 +7,35 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(urlsToCache))
   );
 });
 
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cache => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
 self.addEventListener('fetch', event => {
-  // Never cache API calls
   if (event.request.url.includes('/api/')) {
     return;
   }
-
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Update cache with new version if successful
-        if (response.status === 200) {
+        if (response.status === 200 && event.request.method === 'GET') {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then(cache => {
             cache.put(event.request, responseClone);
@@ -31,6 +43,6 @@ self.addEventListener('fetch', event => {
         }
         return response;
       })
-      .catch(() => caches.match(event.request)) // Fallback to cache if network fails
+      .catch(() => caches.match(event.request))
   );
 });

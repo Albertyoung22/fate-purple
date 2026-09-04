@@ -2043,10 +2043,13 @@ class BackendApp(BaseClass):
 @app.route('/')
 def index():
     try:
-        # Use abs path for safer file transmission in cloud environments
         base_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(base_dir, 'fate.html')
-        return send_file(file_path, mimetype='text/html')
+        res = make_response(send_file(file_path, mimetype='text/html'))
+        res.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        res.headers['Pragma'] = 'no-cache'
+        res.headers['Expires'] = '0'
+        return res
     except Exception as e:
         return f"【天機故障】首頁文件載入失敗: {e}", 500
 
@@ -2801,7 +2804,8 @@ def chat():
             else:
                 yield "無法生成足夠資訊以進行總結。"
             
-            log_chat("Hybrid-Report-Chapter", user_prompt, "Detailed Ziwei report generated.", user_info)
+            full_rep_text = (all_chapter_summaries + "\n" + final_accum) if ('final_accum' in locals() and final_accum) else all_chapter_summaries
+            log_chat("Hybrid-Report-Chapter", user_prompt, full_rep_text if full_rep_text.strip() else "紫微命譜詳評生成完畢", user_info)
         elif is_full and is_bazi_mode:
             # 針對八字的高級詳評模式：不走紫微章節，直接讓 AI 根據八字心法發揮
             yield "【天機分析成功...】宗師正在為您以「正統八字」詳批格局...\n\n"
@@ -2810,9 +2814,9 @@ def chat():
                 if chunk:
                     yield chunk
                     full_response += chunk
-            log_chat("Bazi-Full-Report", user_prompt, "Detailed Bazi report generated.", user_info)
+            log_chat("Bazi-Full-Report", user_prompt, full_response if full_response else "八字詳評報告生成完畢", user_info)
         else:
-            # Standard Streaming Chat
+            # Standard Streaming Chat (緣主手動發問問題)
             full_response = ""
             for chunk in stream_ai(user_prompt, final_system_prompt):
                 if chunk:
