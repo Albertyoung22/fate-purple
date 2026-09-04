@@ -1873,6 +1873,31 @@ class BackendApp(BaseClass):
         self.geometry("1040x800")
         self.configure(bg="#1e1e1e")
         
+        # 設定 Windows 工作列獨立應用程式 ID (確保工作列顯示專屬圖示而非 Python 預設圖示)
+        if os.name == 'nt':
+            try:
+                import ctypes
+                myappid = 'FatePurple.ZiWeiMaster.DesktopConsole.V3'
+                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+            except Exception:
+                pass
+
+        # 設定視窗圖示 (支援 .ico 與 .png)
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        icon_ico = os.path.join(base_dir, 'favicon.ico')
+        icon_png = os.path.join(base_dir, 'icon.png')
+        if os.path.exists(icon_ico):
+            try:
+                self.iconbitmap(icon_ico)
+            except Exception:
+                pass
+        if os.path.exists(icon_png):
+            try:
+                self._app_icon_img = tk.PhotoImage(file=icon_png)
+                self.iconphoto(True, self._app_icon_img)
+            except Exception:
+                pass
+
         self.is_running = False
         self.ngrok_process = None
         self.ngrok_url = None
@@ -2055,6 +2080,23 @@ def index():
 
 @app.route('/admin')
 def admin_page(): return send_file('admin.html')
+
+@app.route('/favicon.ico')
+def favicon():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    for icon_name in ['favicon.ico', 'icon.png', 'logo_v2.png']:
+        icon_file = os.path.join(base_dir, icon_name)
+        if os.path.exists(icon_file):
+            return send_file(icon_file, mimetype='image/x-icon' if icon_name.endswith('.ico') else 'image/png')
+    return "Not Found", 404
+
+@app.route('/icon.png')
+def icon_png():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    icon_file = os.path.join(base_dir, 'icon.png')
+    if os.path.exists(icon_file):
+        return send_file(icon_file, mimetype='image/png')
+    return "Not Found", 404
 
 @app.route('/api/db_check')
 def db_check():
