@@ -647,14 +647,141 @@
             }
         }
 
+        .palace-hover {
+            transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+            will-change: transform, box-shadow;
+        }
+
         .palace-hover:hover {
-            background-color: #f0f9ff;
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 25px -4px rgba(79, 70, 229, 0.18), 0 0 0 1.5px rgba(99, 102, 241, 0.35);
+            background-color: #ffffff;
             cursor: pointer;
+            z-index: 25;
         }
 
         .palace-focused {
-            background-color: #eff6ff;
-            box-shadow: 0 0 0 2px #3b82f6;
+            background-color: #ffffff !important;
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 16px 30px -4px rgba(79, 70, 229, 0.28), 0 0 0 2.5px #4f46e5 !important;
+            z-index: 30;
+            animation: focusedPalaceGlow 2.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes focusedPalaceGlow {
+            0% {
+                box-shadow: 0 12px 24px -4px rgba(79, 70, 229, 0.25), 0 0 0 2.5px #4f46e5;
+            }
+            100% {
+                box-shadow: 0 18px 36px -4px rgba(79, 70, 229, 0.4), 0 0 12px rgba(79, 70, 229, 0.5), 0 0 0 3px #6366f1;
+            }
+        }
+
+        .palace-resonant-opposite {
+            box-shadow: 0 8px 20px -3px rgba(239, 68, 68, 0.25), 0 0 0 2px #ef4444 !important;
+            animation: oppositePulse 2s infinite ease-in-out;
+            z-index: 22;
+        }
+
+        @keyframes oppositePulse {
+            0%, 100% { box-shadow: 0 8px 20px -3px rgba(239, 68, 68, 0.2), 0 0 0 2px #ef4444; }
+            50% { box-shadow: 0 12px 24px -2px rgba(239, 68, 68, 0.35), 0 0 8px rgba(239, 68, 68, 0.4), 0 0 0 2.5px #f87171; }
+        }
+
+        .palace-resonant-triangular {
+            box-shadow: 0 8px 20px -3px rgba(59, 130, 246, 0.25), 0 0 0 2px #3b82f6 !important;
+            animation: triPulse 2.2s infinite ease-in-out;
+            z-index: 22;
+        }
+
+        @keyframes triPulse {
+            0%, 100% { box-shadow: 0 8px 20px -3px rgba(59, 130, 246, 0.2), 0 0 0 2px #3b82f6; }
+            50% { box-shadow: 0 12px 24px -2px rgba(59, 130, 246, 0.35), 0 0 8px rgba(59, 130, 246, 0.4), 0 0 0 2.5px #60a5fa; }
+        }
+
+        .palace-resonant-clamp {
+            box-shadow: 0 6px 16px -3px rgba(245, 158, 11, 0.2), 0 0 0 1.5px #f59e0b !important;
+            z-index: 21;
+        }
+
+        /* --- 宗師大師諮詢動效 (Master Consultation Interactive Ritual) --- */
+        .master-consult-button {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 50%, #6366f1 100%);
+            box-shadow: 0 10px 25px -3px rgba(79, 70, 229, 0.4), 0 0 15px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .master-consult-button::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.3) 50%,
+                transparent 70%
+            );
+            transform: rotate(25deg);
+            animation: shimmerSweep 3.5s infinite;
+        }
+
+        @keyframes shimmerSweep {
+            0% { transform: translateX(-100%) rotate(25deg); }
+            40%, 100% { transform: translateX(100%) rotate(25deg); }
+        }
+
+        .master-consult-button:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 15px 30px -3px rgba(79, 70, 229, 0.55), 0 0 25px rgba(129, 140, 248, 0.5);
+        }
+
+        .master-consult-button:active {
+            transform: translateY(1px) scale(0.97);
+        }
+
+        /* --- 宗師靈光環與太極光暈 (Master Celestial Halo) --- */
+        .master-bagua-ring {
+            position: absolute;
+            inset: -14px;
+            border-radius: 50%;
+            border: 2px dashed rgba(245, 158, 11, 0.5);
+            animation: spinSlow 20s linear infinite;
+            pointer-events: none;
+        }
+
+        .master-aura-glow {
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.3) 0%, rgba(99, 102, 241, 0.2) 60%, transparent 70%);
+            animation: masterAuraPulse 3s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes masterAuraPulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.15); opacity: 0.9; }
+        }
+
+        /* --- 對話氣泡流動光暈 (Chat Stream Ink Elevation) --- */
+        .chat-bubble-stream {
+            animation: bubbleInkRise 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes bubbleInkRise {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .star-self-sihua {
@@ -3997,26 +4124,33 @@
                 };
 
                 return (
-                    <div className="flex flex-col items-center mb-10 no-print animate-in fade-in slide-in-from-top-6 duration-1000 relative">
+                    <div className="flex flex-col items-center mb-10 no-print animate-in fade-in slide-in-from-top-6 duration-1000 relative select-none">
+                        {/* 靈光環與太極星辰氣場 */}
+                        <div className={`master-bagua-ring ${isSpeaking ? 'opacity-90 scale-110 border-amber-400/80' : 'opacity-35'} transition-all duration-700`}></div>
+                        {isSpeaking && <div className="master-aura-glow"></div>}
                         {isSpeaking && <div className="resonance-ring"></div>}
                         {isSpeaking && <div className="resonance-ring" style={{ animationDelay: '0.6s' }}></div>}
-                        <div className={`master-avatar-ring ${isSpeaking ? 'breathing-avatar ring-4 ring-indigo-400/50' : ''} z-10 relative overflow-hidden`}>
-                            {isSpeaking && <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/20 to-transparent animate-pulse pointer-events-none"></div>}
-                            <div className="master-avatar-inner border-[6px] border-indigo-900/10 bg-indigo-950 overflow-hidden">
+                        
+                        <div className={`master-avatar-ring ${isSpeaking ? 'breathing-avatar ring-4 ring-amber-400/60 shadow-[0_0_35px_rgba(251,191,36,0.6)]' : 'hover:scale-105 hover:shadow-xl'} z-10 relative overflow-hidden cursor-pointer transition-transform duration-300`}>
+                            {isSpeaking && <div className="absolute inset-0 bg-gradient-to-t from-amber-500/25 via-indigo-500/20 to-transparent animate-pulse pointer-events-none"></div>}
+                            <div className="master-avatar-inner border-[6px] border-indigo-900/10 bg-indigo-950 overflow-hidden shadow-inner">
                                 <img
                                     src={imgSrc}
-                                    className="w-full h-full object-cover transition-all duration-700"
+                                    className={`w-full h-full object-cover transition-all duration-700 ${isSpeaking ? 'scale-105 brightness-110' : ''}`}
                                     alt="紫微天機道長"
                                     onError={handleImgError}
                                 />
                             </div>
-                            <div className={`absolute bottom-1 right-1 w-5 h-5 rounded-full border-4 border-white ${isSpeaking ? 'bg-amber-400 animate-ping shadow-[0_0_10px_rgba(251,191,36,0.8)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} title={isSpeaking ? "天機推演中" : "入定觀星中"}></div>
+                            <div className={`absolute bottom-1 right-1 w-5 h-5 rounded-full border-4 border-white ${isSpeaking ? 'bg-amber-400 animate-ping shadow-[0_0_12px_rgba(251,191,36,0.9)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} title={isSpeaking ? "天機推演中" : "入定觀星中"}></div>
                         </div>
-                        <div className="text-center mt-3">
-                            <h3 className="text-sm font-black tracking-[0.2em] text-indigo-950 uppercase flex items-center justify-center gap-1.5">
+                        <div className="text-center mt-3 relative z-10">
+                            <h3 className="text-sm font-black tracking-[0.2em] text-indigo-950 uppercase flex items-center justify-center gap-1.5 drop-shadow-sm">
                                 <span>紫微天機道長</span>
+                                {isSpeaking && <span className="text-[10px] text-amber-500 font-extrabold animate-bounce">✦</span>}
                             </h3>
-                            <p className="text-[10px] text-slate-400 font-bold tracking-widest mt-0.5 animate-pulse">觀星悟道中</p>
+                            <p className={`text-[10px] font-bold tracking-widest mt-0.5 transition-colors ${isSpeaking ? 'text-amber-600 font-black animate-pulse' : 'text-slate-400'}`}>
+                                {isSpeaking ? "☯ 神識入定 · 撥動乾坤" : "觀星悟道中"}
+                            </p>
                         </div>
                     </div>
                 );
@@ -5467,11 +5601,12 @@ ${newsStats}
                                             setIsChatLoading(false);
                                             setActionLoading(null);
                                         });
-                                    }} disabled={isLoading || isChatLoading} className="group relative bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl shadow-xl shadow-indigo-300 hover:shadow-2xl hover:shadow-indigo-400 active:scale-95 transition-all duration-300 active:translate-y-1 flex items-center gap-3" title="大師即時諮詢">
-                                        <div className="absolute top-0 right-0 -mt-1 -mr-1 w-3 h-3 bg-red-400 rounded-full animate-ping"></div>
-                                        <Icon name="message-circle" className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
-                                        <span className="font-bold text-lg tracking-widest hidden md:inline">大師即時諮詢</span>
-                                        <span className="font-bold text-lg tracking-widest md:hidden">諮詢</span>
+                                    }} disabled={isLoading || isChatLoading} className="group relative master-consult-button text-white px-6 py-4 rounded-2xl shadow-xl shadow-indigo-400/40 hover:shadow-2xl hover:shadow-indigo-500/60 active:scale-95 transition-all duration-300 active:translate-y-1 flex items-center gap-3 overflow-hidden ring-2 ring-indigo-300/30" title="大師即時諮詢 (AI 心法解析)">
+                                        <div className="absolute top-0 right-0 -mt-1 -mr-1 w-3.5 h-3.5 bg-amber-400 rounded-full animate-ping"></div>
+                                        <Icon name="sparkles" className="w-5 h-5 text-amber-300 group-hover:rotate-45 group-hover:scale-125 transition-transform duration-500" />
+                                        <span className="font-bold text-lg tracking-widest hidden md:inline text-white drop-shadow-sm">大師即時諮詢</span>
+                                        <span className="font-bold text-lg tracking-widest md:hidden text-white drop-shadow-sm">諮詢</span>
+                                        <span className="text-[10px] bg-amber-400/30 text-amber-200 border border-amber-300/40 rounded-full px-2 py-0.5 font-black hidden lg:inline">AI入定</span>
                                     </button>
                                     <button onClick={() => setShowTemple(true)} className="bg-white hover:bg-rose-50 text-rose-600 p-5 rounded-2xl border-2 border-rose-100 hover:border-rose-200 shadow-xl shadow-rose-100 active:scale-95 transition-all duration-300 group flex items-center justify-center" title="天機靈籤 · 擲筊求籤">
                                         <Icon name="flame" className="w-8 h-8 group-hover:scale-110 transition-transform text-rose-600" />
@@ -5565,18 +5700,34 @@ ${newsStats}
 
                                         <div id="chart-grid-container" className="relative z-10 bg-indigo-50/30 border-8 border-white ring-1 ring-indigo-100 p-4 grid grid-cols-4 grid-rows-4 gap-3 aspect-square print:h-[19cm] print:w-[19cm] print:mx-auto shadow-2xl shadow-indigo-200/50 print:shadow-none rounded-[2.5rem]">
 
-                                            {chartData.map((c, i) => (
-                                                c.id !== -1 ? (
+                                            {chartData.map((c, i) => {
+                                                if (c.id === -1) {
+                                                    return (
+                                                        <div key={i} className="flex flex-col items-center justify-center p-4 bg-slate-50/30">
+                                                            {/* Center cells are now placeholders for the absolute overlay */}
+                                                        </div>
+                                                    );
+                                                }
+
+                                                const isFocused = focusedPalace === c.id;
+                                                const isOpposite = showSanFang && focusedPalace !== null && focusedPalace !== -1 && (focusedPalace + 6) % 12 === c.id;
+                                                const isTriangular = showSanFang && focusedPalace !== null && focusedPalace !== -1 && ((focusedPalace + 4) % 12 === c.id || (focusedPalace + 8) % 12 === c.id);
+                                                const isClamped = showSanFang && focusedPalace !== null && focusedPalace !== -1 && ((focusedPalace + 11) % 12 === c.id || (focusedPalace + 1) % 12 === c.id);
+
+                                                return (
                                                     <div
                                                         key={i}
                                                         id={`palace-${c.id}`}
                                                         onClick={() => setFocusedPalace(c.id)}
                                                         className={`grid-palace border border-indigo-50 p-2 flex flex-col justify-between overflow-hidden relative transition-all duration-300 palace-hover rounded-2xl
-                                                ${c.isLife ? 'bg-white shadow-md shadow-indigo-100 ring-2 ring-indigo-50' : 'bg-white/60 hover:bg-white'}
-                                                ${focusedPalace === c.id ? 'palace-focused' : ''}
-                                                ${c.hasFlowDayJi ? 'warning-pulse' : ''}
-                                                ${c.isJiClashed ? 'clash-pulse' : ''}
-        `}
+                                                 ${c.isLife ? 'bg-white shadow-md shadow-indigo-100 ring-2 ring-indigo-50' : 'bg-white/60 hover:bg-white'}
+                                                 ${isFocused ? 'palace-focused' : ''}
+                                                 ${!isFocused && isOpposite ? 'palace-resonant-opposite' : ''}
+                                                 ${!isFocused && isTriangular ? 'palace-resonant-triangular' : ''}
+                                                 ${!isFocused && isClamped ? 'palace-resonant-clamp' : ''}
+                                                 ${c.hasFlowDayJi ? 'warning-pulse' : ''}
+                                                 ${c.isJiClashed ? 'clash-pulse' : ''}
+                                        `}
                                                     >
                                                         {c.hasFlowDayJi && (
                                                             <div className="warning-badge" title="流日化忌坐守">忌坐</div>
@@ -5600,6 +5751,10 @@ ${newsStats}
                                                                 </div>
                                                             </div>
                                                             <div className="flex flex-wrap gap-1 mt-1">
+                                                                {isFocused && <span className="bg-indigo-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm ring-1 ring-white/50 animate-pulse">坐宮</span>}
+                                                                {!isFocused && isOpposite && <span className="bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm animate-pulse">對沖</span>}
+                                                                {!isFocused && isTriangular && <span className="bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">三合</span>}
+                                                                {!isFocused && isClamped && <span className="bg-amber-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">夾宮</span>}
                                                                 {c.isLaiYin && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">來因</span>}
                                                                 {c.isYearlyMing && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流年</span>}
                                                                 {c.isMonthlyMing && <span className="bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流月</span>}
@@ -5629,12 +5784,8 @@ ${newsStats}
                                                             </div>
                                                         </div>
                                                     </div>
-                                                ) : (
-                                                    <div key={i} className="flex flex-col items-center justify-center p-4 bg-slate-50/30">
-                                                        {/* Center cells are now placeholders for the absolute overlay */}
-                                                    </div>
-                                                )
-                                            ))}
+                                                );
+                                            })}
 
                                             {/* Absolute Center Info Overlay */}
                                             {destiny && centerInfo && (
