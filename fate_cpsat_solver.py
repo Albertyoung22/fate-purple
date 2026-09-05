@@ -50,6 +50,21 @@ ELEMENT_COLORS = {
     "water": "玄黑、湛藍、藏青、深黛色"
 }
 
+
+# 十天干四化飛星規則表
+SI_HUA_TABLE = {
+    '甲': {'lu': '廉貞', 'quan': '破軍', 'ke': '武曲', 'ji': '太陽'},
+    '乙': {'lu': '天機', 'quan': '天梁', 'ke': '紫微', 'ji': '太陰'},
+    '丙': {'lu': '天同', 'quan': '天機', 'ke': '文昌', 'ji': '廉貞'},
+    '丁': {'lu': '太陰', 'quan': '天同', 'ke': '天機', 'ji': '巨門'},
+    '戊': {'lu': '貪狼', 'quan': '太陰', 'ke': '右弼', 'ji': '天機'},
+    '己': {'lu': '武曲', 'quan': '貪狼', 'ke': '天梁', 'ji': '文曲'},
+    '庚': {'lu': '太陽', 'quan': '武曲', 'ke': '太陰', 'ji': '天同'},
+    '辛': {'lu': '巨門', 'quan': '太陽', 'ke': '文曲', 'ji': '文昌'},
+    '壬': {'lu': '天梁', 'quan': '紫微', 'ke': '左輔', 'ji': '武曲'},
+    '癸': {'lu': '破軍', 'quan': '巨門', 'ke': '太陰', 'ji': '貪狼'}
+}
+
 PALACE_STANDARD = [
     "命宮", "兄弟宮", "夫妻宮", "子女宮", "財帛宮", "疾厄宮",
     "遷移宮", "奴僕宮", "官祿宮", "田宅宮", "福德宮", "父母宮"
@@ -99,8 +114,14 @@ class FateCPSATSolver:
     Google OR-Tools CP-SAT 命理約束規劃求解器
     """
     def __init__(self, chart_data=None, user_info=None, prompt="", matched_rules=None):
-        self.chart_data = chart_data or []
-        self.user_info = user_info or {}
+        if isinstance(chart_data, dict):
+            self.raw_chart_dict = chart_data
+            self.chart_data = chart_data.get("palaces", chart_data.get("chartData", []))
+            self.user_info = user_info or {k: v for k, v in chart_data.items() if k not in ("palaces", "chartData")}
+        else:
+            self.raw_chart_dict = {}
+            self.chart_data = chart_data or []
+            self.user_info = user_info or {}
         self.prompt = prompt or ""
         self.matched_rules = matched_rules or []
         
@@ -675,6 +696,12 @@ class FateCPSATSolver:
         # =========================================================================
         # 第三優先級：緣主自訂提問 (Chat) 依語義精準匹配專題
         # =========================================================================
+        # 0. 紫微斗數四化飛星術專屬神斷
+        if (target_type == "flying" or 
+            any(kw in clean_q for kw in ["飛星", "四化", "自化", "化祿入", "化忌入", "化權入", "化科入", "飛入", "飛出", "發射宮", "祿入", "忌入", "飛星術"]) or 
+            any(kw in prompt for kw in ["四化飛星", "飛星神斷", "飛星術", "自化分析"])):
+            return self._handle_flying_stars(name, clean_q)
+
         # 1. 測字占卜
         if (target_type == "glyph" or 
             any(kw in clean_q for kw in ["測字", "漢字", "文字占卜", "卜字", "拆字", "解字", "字相", "觀字", "測一字", "幫我測", "請問這個字", "測字：", "測字:"]) or 
@@ -833,6 +860,151 @@ class FateCPSATSolver:
             f"✦ 【今彩539感應五數】：{'、'.join(f'{n:02d}' for n in c539_nums)}\n\n"
             f"💡 **老道慈悲訓誡**：\n"
             f"天機靈數乃隨今日時空磁場而動，借天地之靈氣以作開運助緣。小賭怡情、積善積福，切勿過度沉迷，厚德方能載物，行善自能聚財！"
+        )
+
+
+    def _analyze_flying_stars(self):
+        """解析全盤十二宮四化飛星因果牽引矩陣與自化現象"""
+        results = []
+        palaces_data = self.chart_data if isinstance(self.chart_data, list) else self.chart_data.get('palaces', [])
+        if not palaces_data:
+            return results
+
+        # 建立星曜 -> 宮位名稱映射
+        def find_palace_for_star(star_name):
+            for p in palaces_data:
+                p_name = p.get('name', '')
+                stars = p.get('stars', [])
+                for s in stars:
+                    s_name = s.get('name', '') if isinstance(s, dict) else str(s)
+                    if star_name in s_name:
+                        return p_name
+            return "外宮"
+
+        for p in palaces_data:
+            p_name = p.get('name', '')
+            gan = p.get('gan', '')
+            zhi = p.get('zhi', '')
+            trans = SI_HUA_TABLE.get(gan)
+            if not trans:
+                continue
+
+            target_lu = find_palace_for_star(trans['lu'])
+            target_quan = find_palace_for_star(trans['quan'])
+            target_ke = find_palace_for_star(trans['ke'])
+            target_ji = find_palace_for_star(trans['ji'])
+
+            self_trans = []
+            if target_lu == p_name: self_trans.append("自化祿(" + trans['lu'] + ")")
+            if target_quan == p_name: self_trans.append("自化權(" + trans['quan'] + ")")
+            if target_ke == p_name: self_trans.append("自化科(" + trans['ke'] + ")")
+            if target_ji == p_name: self_trans.append("自化忌(" + trans['ji'] + ")")
+
+            results.append({
+                'source': p_name,
+                'gan': gan,
+                'zhi': zhi,
+                'trans': trans,
+                'target_lu': target_lu,
+                'target_quan': target_quan,
+                'target_ke': target_ke,
+                'target_ji': target_ji,
+                'self_trans': self_trans
+            })
+        return results
+
+    def _handle_flying_stars(self, name, clean_q=""):
+        """專屬宗師四化飛星因果神斷"""
+        flying_matrix = self._analyze_flying_stars()
+        ming = self._extract_palace('命宮')
+        ming_fly = next((f for f in flying_matrix if f['source'] == '命宮'), None)
+
+        all_self_trans = []
+        for f in flying_matrix:
+            if f['self_trans']:
+                joined_st = '、'.join(f['self_trans'])
+                all_self_trans.append(f"{f['source']}【{joined_st}】")
+
+        self_trans_desc = '、'.join(all_self_trans) if all_self_trans else '盤中氣場凝練，少見劇烈自化散氣，能量凝聚度高。'
+
+        # 命宮發射飛星解讀
+        if ming_fly:
+            ming_trans = ming_fly['trans']
+            m_lu_target = ming_fly['target_lu']
+            m_ji_target = ming_fly['target_ji']
+            m_quan_target = ming_fly['target_quan']
+            m_ke_target = ming_fly['target_ke']
+            m_gan = ming_fly['gan']
+        else:
+            m_gan = ming.get('gan', '甲')
+            m_lu_target = '財帛宮'
+            m_ji_target = '遷移宮'
+            m_quan_target = '官祿宮'
+            m_ke_target = '福德宮'
+            ming_trans = {'lu': '化祿星', 'quan': '化權星', 'ke': '化科星', 'ji': '化忌星'}
+
+        # 飛星因果深度解義
+        # 祿之因果
+        if m_lu_target == '財帛宮':
+            lu_cause = '【命宮化祿入財帛】：先天對金錢有敏銳嗅覺，善於憑藉自身才智開闢財源，求財順遂、財緣深厚。'
+        elif m_lu_target in ['官祿宮', '事業宮']:
+            lu_cause = '【命宮化祿入官祿】：對工作與事業滿懷熱情，投入即能見成效，職場容易得人緣與貴人提攜。'
+        elif m_lu_target == '夫妻宮':
+            lu_cause = '【命宮化祿入夫妻】：情深意重，極度疼惜配偶，對婚姻關係具備高度付出精神，樂於照顧伴侶。'
+        elif m_lu_target == '田宅宮':
+            lu_cause = '【命宮化祿入田宅】：心繫家宅與產業，一生重視置產蓄庫，善於將收益沉澱為不動產，福澤澤被家人。'
+        elif m_lu_target == '遷移宮':
+            lu_cause = '【命宮化祿入遷移】：出外人緣極佳，異鄉逢貴人，多往外走動或拓展跨界視野，最能引動四方福祿。'
+        elif m_lu_target == '命宮':
+            lu_cause = '【命宮自化祿】：樂天豁達、心寬體胖，自給自足，但偶有自我滿足或開銷隨興之傾向。'
+        else:
+            lu_cause = f'【命宮化祿入{m_lu_target}】：緣主先天將福澤與善緣投注於【{m_lu_target}】，在此領域最易獲得成就感與順遂機緣。'
+
+        # 忌之因果
+        if m_ji_target == '命宮':
+            ji_cause = '【命宮自化忌】：自我要求極高、易陷精神內耗與鑽牛角尖。需修練「放過自己、活在當下」之豁達心法。'
+        elif m_ji_target == '遷移宮':
+            ji_cause = '【命宮化忌入遷移（沖命宮）】：出外打拼常感辛勞孤獨、壓力沉重；在外言行宜謹慎防小人，凡事謀定而後動。'
+        elif m_ji_target == '財帛宮':
+            ji_cause = '【命宮化忌入財帛（沖福德）】：一生為財務生計殫精竭慮，對金錢有強烈執念與安全感焦慮，易勞心傷神。'
+        elif m_ji_target in ['官祿宮', '事業宮']:
+            ji_cause = '【命宮化忌入官祿（沖夫妻）】：工作狂熱或職場責任重，常因全力撲在事業上而忽略了伴侶感受與私生活平衡。'
+        elif m_ji_target == '夫妻宮':
+            ji_cause = '【命宮化忌入夫妻（沖官祿）】：對感情付出過深反而易生猜疑或情執，感情波折往往牽動事業心境，需學會彼此留白。'
+        elif m_ji_target == '田宅宮':
+            ji_cause = '【命宮化忌入田宅（沖子女）】：極度在乎家庭責任與房產安全感，日常為家事操勞，對家宅環境有較高掌控欲。'
+        else:
+            ji_cause = f'【命宮化忌入{m_ji_target}】：此乃緣主此生「因果執念與修行功課」之所在。對【{m_ji_target}】付出極多卻常感心累，唯有看破得失方能破局。'
+
+        return (
+            f"【紫微天機道長 · 十二宮四化飛星因果神斷】：\n\n"
+            f"老道為緣主 {name} 撥動紫微飛星玄機。所謂「星無四化不靈，宮無飛星不動」，\n"
+            f"飛星術乃紫微斗數中推演「起心動念之因」與「吉凶承負之果」最高深之秘法！\n\n"
+            f"------------------------------------------------------------\n"
+            f"✦ 【一、命宮天干發射 · 四化因果牽引線】\n"
+            f"緣主命宮坐【{ming['zhi']}宮】，宮干為【**{m_gan}干**】，發動四化飛星貫穿周天：\n"
+            f"● 🌸 **化祿入【{m_lu_target}】**（引動【{ming_trans['lu']}】）：\n"
+            f"  - **因果玄機**：{lu_cause}\n"
+            f"● ⚡ **化權入【{m_quan_target}】**（引動【{ming_trans['quan']}】）：\n"
+            f"  - **因果玄機**：你在【{m_quan_target}】展現極強的主導意志與企圖心，行事果斷，勇於扛責。\n"
+            f"● 📜 **化科入【{m_ke_target}】**（引動【{ming_trans['ke']}】）：\n"
+            f"  - **因果玄機**：在【{m_ke_target}】得清譽與貴人庇蔭，逢凶化吉，以文雅智謀見長。\n"
+            f"● 🌀 **化忌入【{m_ji_target}】**（引動【{ming_trans['ji']}】）：\n"
+            f"  - **因果玄機**：{ji_cause}\n\n"
+            f"------------------------------------------------------------\n"
+            f"✦ 【二、全盤自化現象 · 能量流轉與機緣破立】\n"
+            f"● **盤中自化動態**：{self_trans_desc}\n"
+            f"💡 **宗師開示**：\n"
+            f"自化者，乃各宮天干引動本宮星曜產生離心或向心轉變。自化祿主機緣隨性而來、隨緣而去；自化忌主暗中承擔、自我釋懷。知曉自化，便能知曉何時該進、何時該守。\n\n"
+            f"------------------------------------------------------------\n"
+            f"✦ 【三、宗師點撥 · 飛星破局與解厄心法】\n"
+            f"1. **【隨祿而動】**：你命宮化祿直指【{m_lu_target}】，此處乃你今生最大的福報生發點，多將心力投入此處，自能廣納福祿！\n"
+            f"2. **【修忌為智】**：化忌落入【{m_ji_target}】，切記「有執念方成忌，放下執念即為菩提」。面對該領域的考驗，切莫鑽牛角尖，順應天道即是破局之道。\n"
+            f"3. **【開運天時與方位】**：\n"
+            f"   - 調和飛星磁場吉時：每日【**{self.best_timing}**】\n"
+            f"   - 迎納祥和紫氣吉方：面朝【**{self.best_direction}**】靜坐調息。\n\n"
+            f"✦ 【老道定心真言】\n"
+            f"『四化流轉皆為因果，心念一轉天地皆寬。』順應飛星氣脈而行，必能化煞為權、福慧圓滿！"
         )
 
     def _handle_past_life(self, name):

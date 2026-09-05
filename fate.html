@@ -133,6 +133,61 @@
             }
         }
 
+        
+        /* --- 紫微四化飛星高階動態光流與能量脈衝 --- */
+        @keyframes flyingStreamFlow {
+            0% {
+                stroke-dashoffset: 48;
+            }
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes flyingPulseGlow {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 4px currentColor);
+            }
+            50% {
+                transform: scale(1.18);
+                filter: drop-shadow(0 0 14px currentColor);
+            }
+        }
+
+        @keyframes rotateSelfTrans {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .flying-stream-lu {
+            stroke-dasharray: 8, 4;
+            animation: flyingStreamFlow 1.2s linear infinite;
+            filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.8));
+        }
+
+        .flying-stream-quan {
+            stroke-dasharray: 8, 4;
+            animation: flyingStreamFlow 1.2s linear infinite;
+            filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8));
+        }
+
+        .flying-stream-ke {
+            stroke-dasharray: 8, 4;
+            animation: flyingStreamFlow 1.2s linear infinite;
+            filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.8));
+        }
+
+        .flying-stream-ji {
+            stroke-dasharray: 8, 4;
+            animation: flyingStreamFlow 1.2s linear infinite;
+            filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.8));
+        }
+
         /* --- 真實 3D 擲筊物理拋擲與落地彈跳動畫 --- */
         @keyframes realPoeTossLeft {
             0% {
@@ -992,7 +1047,7 @@
             '癸': { lu: '破軍', quan: '巨門', ke: '太陰', ji: '貪狼' }
         };
 
-        const FlyingStarOverlay = ({ focusedId, chartData }) => {
+                const FlyingStarOverlay = ({ focusedId, chartData }) => {
             const [lines, setLines] = React.useState([]);
 
             React.useLayoutEffect(() => {
@@ -1028,8 +1083,6 @@
                     const palaceEl = document.getElementById(`palace-${palaceId}`);
                     if (!palaceEl) return null;
 
-                    // Find the specific star element
-                    // We look for spans that contain the star name
                     const starSpans = Array.from(palaceEl.querySelectorAll('span'));
                     const targetSpan = starSpans.find(s => s.textContent.trim() === starName);
 
@@ -1043,27 +1096,25 @@
                 };
 
                 const newLines = [];
-                const addLine = (type, star, color) => {
+                const addLine = (type, star, color, streamClass, badgeBg) => {
                     const targetId = findPalaceId(star);
                     if (targetId !== undefined && targetId !== -1) {
                         const start = getCenter(focusedId);
-
-                        // Try to get specific star position, fallback to palace center
                         let end = getStarPosition(targetId, star);
                         if (!end) {
                             end = getCenter(targetId);
                         }
 
                         if (start && end) {
-                            newLines.push({ type, star, color, start, end, isSelf: focusedId === targetId });
+                            newLines.push({ type, star, color, streamClass, badgeBg, start, end, isSelf: focusedId === targetId, targetId });
                         }
                     }
                 };
 
-                addLine('祿', trans.lu, '#22c55e');
-                addLine('權', trans.quan, '#ef4444');
-                addLine('科', trans.ke, '#a855f7');
-                addLine('忌', trans.ji, '#3b82f6');
+                addLine('祿', trans.lu, '#10b981', 'flying-stream-lu', 'bg-emerald-500');
+                addLine('權', trans.quan, '#ef4444', 'flying-stream-quan', 'bg-red-500');
+                addLine('科', trans.ke, '#a855f7', 'flying-stream-ke', 'bg-purple-500');
+                addLine('忌', trans.ji, '#3b82f6', 'flying-stream-ji', 'bg-blue-500');
 
                 setLines(newLines);
             }, [focusedId, chartData]);
@@ -1073,42 +1124,54 @@
             return (
                 <svg className="absolute inset-0 w-full h-full pointer-events-none z-50" style={{ overflow: 'visible' }}>
                     <defs>
-                        {['#22c55e', '#ef4444', '#a855f7', '#3b82f6'].map(c => (
-                            <marker key={c} id={`arrow-${c.replace('#', '')}`} markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                                <polygon points="0 0, 10 3.5, 0 7" fill={c} />
+                        {['#10b981', '#ef4444', '#a855f7', '#3b82f6'].map(c => (
+                            <marker key={c} id={`arrow-${c.replace('#', '')}`} markerWidth="12" markerHeight="9" refX="10" refY="4.5" orient="auto">
+                                <polygon points="0 0, 12 4.5, 0 9" fill={c} style={{ filter: `drop-shadow(0 0 3px ${c})` }} />
                             </marker>
                         ))}
+                        <filter id="flyingGlow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="3" result="blur" />
+                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
                     </defs>
                     {lines.map((acc, i) => {
                         if (acc.isSelf) {
                             return (
-                                <g key={i}>
-                                    <circle cx={acc.start.x + 20} cy={acc.start.y - 20} r="12" fill="none" stroke={acc.color} strokeWidth="2" strokeDasharray="3,2" />
-                                    <text x={acc.start.x + 35} y={acc.start.y - 20} fill={acc.color} fontSize="12" fontWeight="900">自{acc.type}</text>
+                                <g key={i} transform={`translate(${acc.start.x}, ${acc.start.y})`}>
+                                    <circle cx="0" cy="0" r="28" fill="none" stroke={acc.color} strokeWidth="2.5" strokeDasharray="5,3" style={{ animation: 'rotateSelfTrans 8s linear infinite' }} />
+                                    <circle cx="0" cy="0" r="8" fill={acc.color} fillOpacity="0.3" />
+                                    <rect x="22" y="-14" width="52" height="24" rx="12" fill={acc.color} />
+                                    <text x="48" y="3" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="900">自化{acc.type}</text>
                                 </g>
                             );
                         }
                         const dx = acc.end.x - acc.start.x;
                         const dy = acc.end.y - acc.start.y;
 
-                        // Midpoint of quadratic Bezier:B(0.5) = 0.25*P0 + 0.5*P1 + 0.25*P2
+                        // Midpoint of quadratic Bezier: B(0.5) = 0.25*P0 + 0.5*P1 + 0.25*P2
                         const midX = (acc.start.x + acc.end.x) / 2;
                         const midY = (acc.start.y + acc.end.y) / 2;
-                        const cpX = midX - dy * 0.2;
-                        const cpY = midY + dx * 0.2;
+                        const cpX = midX - dy * 0.22;
+                        const cpY = midY + dx * 0.22;
 
-                        // Calculate point at t=0.5 on the curve
                         const labelX = 0.25 * acc.start.x + 0.5 * cpX + 0.25 * acc.end.x;
                         const labelY = 0.25 * acc.start.y + 0.5 * cpY + 0.25 * acc.end.y;
 
                         return (
                             <g key={i}>
+                                {/* 底層發光軌跡 */}
                                 <path d={`M ${acc.start.x} ${acc.start.y} Q ${cpX} ${cpY} ${acc.end.x} ${acc.end.y}`}
-                                    stroke={acc.color} strokeWidth="2" strokeDasharray="6,4" fill="none" markerEnd={`url(#arrow-${acc.color.replace('#', '')})`} />
-                                <circle cx={acc.end.x} cy={acc.end.y} r="4" fill={acc.color} />
+                                    stroke={acc.color} strokeWidth="5" strokeOpacity="0.25" fill="none" />
+                                {/* 動態流光虛線 */}
+                                <path d={`M ${acc.start.x} ${acc.start.y} Q ${cpX} ${cpY} ${acc.end.x} ${acc.end.y}`}
+                                    stroke={acc.color} strokeWidth="2.8" className={acc.streamClass} fill="none" markerEnd={`url(#arrow-${acc.color.replace('#', '')})`} />
+                                {/* 目標宮星曜節點 */}
+                                <circle cx={acc.end.x} cy={acc.end.y} r="6" fill={acc.color} stroke="#ffffff" strokeWidth="2" style={{ filter: `drop-shadow(0 0 6px ${acc.color})` }} />
+                                {/* 四化浮動徽章 */}
                                 <g transform={`translate(${labelX}, ${labelY})`}>
-                                    <circle r="11" fill="white" fillOpacity="0.8" stroke={acc.color} strokeWidth="1" />
-                                    <text dy="5" textAnchor="middle" fill={acc.color} fontSize="14" fontWeight="900">{acc.type}</text>
+                                    <circle r="14" fill="#ffffff" stroke={acc.color} strokeWidth="2.5" style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.2))' }} />
+                                    <circle r="11" fill={acc.color} fillOpacity="0.15" />
+                                    <text dy="5" textAnchor="middle" fill={acc.color} fontSize="13" fontWeight="900">{acc.type}</text>
                                 </g>
                             </g>
                         );
@@ -1116,6 +1179,81 @@
                 </svg>
             );
         };
+
+        // --- 四化飛星因果牽引儀面板 ---
+        const FlyingStarResonanceChamber = ({ focusedId, chartData, onConsult }) => {
+            if (focusedId === null || focusedId === -1 || !chartData) return null;
+            const palace = chartData.find(c => c.id === focusedId);
+            if (!palace) return null;
+
+            const gan = palace.gan;
+            const trans = SI_HUA_TABLE[gan];
+            if (!trans) return null;
+
+            const getTargetPalaceName = (starName) => {
+                const target = chartData.find(c => c.stars.some(s => (typeof s === 'string' ? s : s.name).indexOf(starName) > -1));
+                return target ? target.palaceName : '外宮';
+            };
+
+            const items = [
+                { type: '化祿', star: trans.lu, target: getTargetPalaceName(trans.lu), color: 'text-emerald-700 bg-emerald-50 border-emerald-200 ring-emerald-100', dot: 'bg-emerald-500', desc: '主福緣引動、契機萌生、緣起與利益流向' },
+                { type: '化權', star: trans.quan, target: getTargetPalaceName(trans.quan), color: 'text-red-700 bg-red-50 border-red-200 ring-red-100', dot: 'bg-red-500', desc: '主開拓主導、掌控欲、企圖心與競爭突破' },
+                { type: '化科', star: trans.ke, target: getTargetPalaceName(trans.ke), color: 'text-purple-700 bg-purple-50 border-purple-200 ring-purple-100', dot: 'bg-purple-500', desc: '主聲譽清白、逢凶化吉、文采與貴人暗助' },
+                { type: '化忌', star: trans.ji, target: getTargetPalaceName(trans.ji), color: 'text-blue-700 bg-blue-50 border-blue-200 ring-blue-100', dot: 'bg-blue-500', desc: '主執念牽絆、因果承擔、責任破耗與修心關卡' }
+            ];
+
+            return (
+                <div className="mt-4 bg-gradient-to-r from-fuchsia-900/90 via-indigo-950/90 to-purple-950/90 rounded-2xl p-4 text-white shadow-xl border border-fuchsia-500/30 backdrop-blur-md">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-fuchsia-400/20 pb-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xl">🌌</span>
+                            <div>
+                                <h4 className="text-sm font-black tracking-wider text-fuchsia-200">
+                                    四化飛星因果儀 · 【{palace.palaceName} · {palace.gan}{palace.zhi}】
+                                </h4>
+                                <p className="text-[11px] text-fuchsia-300/80">
+                                    以「{palace.gan}干」發動四化，貫穿周天因果牽引鏈
+                                </p>
+                            </div>
+                        </div>
+                        {onConsult && (
+                            <button
+                                onClick={() => onConsult(`請紫微天機道長為我深度解析【${palace.palaceName}】天干【${palace.gan}】發射之四化飛星（化祿入${items[0].target}、化權入${items[1].target}、化科入${items[2].target}、化忌入${items[3].target}）的因果牽引與破局玄機！`)}
+                                className="px-3 py-1.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/30 transition-all flex items-center gap-1.5 transform hover:scale-105"
+                            >
+                                <span>🔮</span> 呼叫宗師詳批此宮飛星
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 mt-3">
+                        {items.map((it, idx) => {
+                            const isSelf = it.target === palace.palaceName;
+                            return (
+                                <div key={idx} className="bg-white/10 rounded-xl p-2.5 border border-white/10 hover:border-white/20 transition-all">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className={`w-2 h-2 rounded-full ${it.dot} animate-pulse`}></span>
+                                            <span className="text-xs font-black text-white">{it.type}【{it.star}】</span>
+                                        </div>
+                                        {isSelf && (
+                                            <span className="px-1.5 py-0.5 bg-fuchsia-500 text-[10px] font-black rounded-full">自化</span>
+                                        )}
+                                    </div>
+                                    <div className="text-xs font-bold text-amber-300">
+                                        ➔ 飛入【{it.target}】
+                                    </div>
+                                    <p className="text-[10px] text-slate-300 mt-1 leading-snug">
+                                        {it.desc}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
 
         // ... (保留 calculateStars 函數) ...
         // --- 三方四正 SVG 連線元件 (動態計算版) ---
@@ -5685,7 +5823,7 @@ ${newsStats}
                                             {showSanFang ? '三方四正' : '隱藏三方'}
                                         </button>
                                         <button
-                                            onClick={() => setShowFlying(!showFlying)}
+                                            onClick={() => { const next = !showFlying; setShowFlying(next); if (next && (focusedPalace === null || focusedPalace === -1)) { const lp = chartData.find(c => c.isLife) || chartData[0]; if (lp) setFocusedPalace(lp.id); } }}
                                             className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest border transition-all ${showFlying ? 'bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'} `}
                                         >
                                             {showFlying ? '四化飛星' : '隱藏飛星'}
@@ -5826,6 +5964,19 @@ ${newsStats}
                                         </div>
                                     </div>
                                 </div>
+
+                                    {/* 四化飛星因果儀互動面板 */}
+                                    {showFlying && focusedPalace !== null && focusedPalace !== -1 && (
+                                        <FlyingStarResonanceChamber
+                                            focusedId={focusedPalace}
+                                            chartData={chartData}
+                                            onConsult={(q) => {
+                                                setUserQuestion(q);
+                                                handleChatSend(q);
+                                            }}
+                                        />
+                                    )}
+
                                 {destiny && (
                                     <div className="print:break-before-page" style={{ pageBreakBefore: 'always' }}>
                                         <BaZiChart
@@ -5909,6 +6060,24 @@ ${newsStats}
                                         {/* --- 1. 🔥 熱門精選 & 全部 --- */}
                                         {(activeFeatureTab === 'featured' || activeFeatureTab === 'all') && (
                                             <React.Fragment>
+                                                <button onClick={() => {
+                                                    setShowFlying(true);
+                                                    const lifePalace = chartData.find(c => c.isLife) || chartData[0];
+                                                    if (lifePalace) setFocusedPalace(lifePalace.id);
+                                                    handleChatSend('請紫微天機道長依十二宮四化飛星術深度開示我的因果牽引與化解之道！');
+                                                }} disabled={isChatLoading} className={`group relative overflow-hidden bg-gradient-to-r from-fuchsia-950/90 via-purple-900/90 to-indigo-950/90 text-fuchsia-100 p-3 rounded-2xl shadow-lg border border-fuchsia-500/40 hover:border-fuchsia-300 hover:text-white hover:shadow-fuchsia-500/40 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left col-span-2 ${isChatLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                                    <div className="w-8 h-8 rounded-xl bg-fuchsia-500/20 border border-fuchsia-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                                        <span className="text-base">🌌</span>
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0 flex-1">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-bold text-[12px] text-white leading-tight">四化飛星因果神斷</span>
+                                                            <span className="px-1.5 py-0.2 bg-fuchsia-500 text-[9px] font-black rounded-full text-white">秘傳</span>
+                                                        </div>
+                                                        <span className="text-[9px] text-fuchsia-300/80 font-normal mt-0.5 truncate">十二宮飛星軌跡 · 祿權科忌因果牽引</span>
+                                                    </div>
+                                                </button>
+
                                                 <button onClick={() => handleSimpleExec()} disabled={actionLoading === 'simple'} className={`group relative overflow-hidden bg-gradient-to-r from-indigo-950/90 via-slate-900/90 to-purple-950/90 text-indigo-100 p-3 rounded-2xl shadow-lg border border-indigo-500/30 hover:border-indigo-400 hover:text-white hover:shadow-indigo-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2.5 text-left ${actionLoading === 'simple' ? 'opacity-60 cursor-not-allowed' : ''}`}>
                                                     <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
                                                         {actionLoading === 'simple' ? <Icon name="loader" className="w-4 h-4 animate-spin text-indigo-400" /> : <Icon name="message-circle" className="w-4 h-4 text-indigo-300 group-hover:text-indigo-200" />}
