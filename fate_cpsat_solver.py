@@ -56,20 +56,20 @@ PALACE_STANDARD = [
 ]
 
 MAJOR_STARS = {
-    "紫微": {"base": 22, "elem": "earth", "trait": "帝王之尊，統禦全域，具領袖開創格局"},
-    "天府": {"base": 20, "elem": "earth", "trait": "南斗令星，庫存充盈，善理財守成與企劃"},
-    "太陽": {"base": 18, "elem": "fire", "trait": "光芒普照，博愛仗義，利名聲與遠方拓展"},
-    "太陰": {"base": 18, "elem": "water", "trait": "月曜清澄，心思縝密，主富厚與策劃深謀"},
-    "武曲": {"base": 20, "elem": "metal", "trait": "正財星宿，剛毅果決，善財務決策與執行"},
-    "天同": {"base": 15, "elem": "water", "trait": "福德之星，溫柔敦厚，貴人運隆，重生活情調"},
-    "廉貞": {"base": 17, "elem": "fire", "trait": "次桃花與事業雄心，公關交際強，具政治直覺"},
-    "天機": {"base": 17, "elem": "wood", "trait": "智慧謀略，應變神速，擅策略分析與數理推演"},
-    "貪狼": {"base": 16, "elem": "wood", "trait": "第一桃花與才藝之曜，靈活多變，喜創投突破"},
-    "巨門": {"base": 14, "elem": "water", "trait": "是非與辯才之星，心思深邃，利法律諮詢演說"},
-    "天相": {"base": 16, "elem": "water", "trait": "宰相印璽，輔佐周全，重誠信契約與人脈協同"},
-    "天梁": {"base": 17, "elem": "earth", "trait": "蔭星壽相，老成持重，逢凶化吉，具監察風骨"},
-    "七殺": {"base": 16, "elem": "metal", "trait": "將星威權，獨當一面，敢闖敢拼，利開拓先鋒"},
-    "破軍": {"base": 15, "elem": "water", "trait": "破耗先驅，破舊立新，勇於革新變革，不畏艱難"}
+    "紫微": {"base": 22, "elem": "earth", "trait": "帝王之尊，統禦全域，具領袖開創格局與自尊風範"},
+    "天府": {"base": 20, "elem": "earth", "trait": "南斗令星，庫存充盈，善理財守成、深謀遠慮且處事穩健"},
+    "太陽": {"base": 18, "elem": "fire", "trait": "光芒普照，博愛仗義，熱忱好施，利名聲與公眾拓展"},
+    "太陰": {"base": 18, "elem": "water", "trait": "月曜清澄，心思縝密，主富厚置產與細膩策劃深謀"},
+    "武曲": {"base": 20, "elem": "metal", "trait": "正財星宿，剛毅果決，重實踐不尚空談，善執行致富"},
+    "天同": {"base": 15, "elem": "water", "trait": "福德之星，溫柔敦厚，貴人運隆，重生活情調與人和"},
+    "廉貞": {"base": 17, "elem": "fire", "trait": "次桃花與事業雄心，公關交際強，具政治直覺與獨特審美"},
+    "天機": {"base": 17, "elem": "wood", "trait": "智慧謀略，應變神速，擅策略分析、數理推演與專業技藝"},
+    "貪狼": {"base": 16, "elem": "wood", "trait": "第一桃花與才藝之曜，靈活多變，喜創投突破與跨界探索"},
+    "巨門": {"base": 14, "elem": "water", "trait": "暗曜是非與辯才之星，洞察深邃，善口才演說、分析諮詢"},
+    "天相": {"base": 16, "elem": "water", "trait": "宰相印璽，輔佐周全，重誠信契約、協調協同與形象名譽"},
+    "天梁": {"base": 17, "elem": "earth", "trait": "蔭星壽相，老成持重，逢凶化吉，具長者風範與監察正氣"},
+    "七殺": {"base": 16, "elem": "metal", "trait": "將星威權，獨當一面，敢闖敢拼，利開拓先鋒與破浪斬棘"},
+    "破軍": {"base": 15, "elem": "water", "trait": "破耗先驅，破舊立新，勇於革新變革，不畏艱難冒險"}
 }
 
 AUX_STARS = {
@@ -301,14 +301,142 @@ class FateCPSATSolver:
             }
             return False
 
+    # =========================================================================
+    # 命盤結構與星曜解析器 (Chart Details Extractor)
+    # =========================================================================
+    def _extract_palace(self, palace_name):
+        """從 chart_data 中提取指定宮位之詳細數據 (地支、天干、主星、吉星、煞星、是否為身宮)"""
+        for p in self.chart_data:
+            p_name = p.get("palaceName", "")
+            if palace_name in p_name:
+                zhi = p.get("zhi", "")
+                gan = p.get("gan", "")
+                is_body = p.get("isBody", False)
+                is_life = p.get("isLife", False)
+                stars = p.get("stars", [])
+                
+                main_stars = []
+                aux_stars = []
+                sha_stars = []
+                all_star_names = []
+                
+                for s in stars:
+                    s_name = s.get("name", "") if isinstance(s, dict) else str(s)
+                    clean_name = s_name.split(' ')[0].split('(')[0]
+                    brightness = s.get("brightness", "") if isinstance(s, dict) else ""
+                    if brightness and brightness in ["廟", "旺", "利", "得", "平", "不", "陷"]:
+                        full_name = f"{clean_name}({brightness})"
+                    else:
+                        full_name = clean_name
+                        
+                    all_star_names.append(clean_name)
+                    if clean_name in MAJOR_STARS:
+                        main_stars.append(full_name)
+                    elif clean_name in AUX_STARS:
+                        aux_stars.append(full_name)
+                    elif clean_name in SHA_STARS or "化忌" in clean_name:
+                        sha_stars.append(full_name)
+                        
+                return {
+                    "palace_name": p_name,
+                    "zhi": zhi,
+                    "gan": gan,
+                    "is_body": is_body,
+                    "is_life": is_life,
+                    "main_stars": main_stars,
+                    "aux_stars": aux_stars,
+                    "sha_stars": sha_stars,
+                    "all_stars": all_star_names,
+                    "score": self.palace_scores.get(palace_name, 70)
+                }
+        return {
+            "palace_name": palace_name,
+            "zhi": "卯",
+            "gan": "甲",
+            "is_body": False,
+            "is_life": False,
+            "main_stars": [],
+            "aux_stars": [],
+            "sha_stars": [],
+            "all_stars": [],
+            "score": self.palace_scores.get(palace_name, 70)
+        }
+
+    def _get_body_palace(self):
+        """尋找命盤中身宮寄託之宮位"""
+        for p in self.chart_data:
+            if p.get("isBody", False):
+                return p.get("palaceName", "命宮")
+        return "命宮"
+
+    def _detect_star_patterns(self, sanfang_stars):
+        """偵測三方四正大格局"""
+        all_s = set(sanfang_stars)
+        patterns = []
+        if {"七殺", "破軍", "貪狼"}.intersection(all_s):
+            if all(k in all_s for k in ["七殺", "破軍", "貪狼"]):
+                patterns.append("【殺破狼開創格】（人生開拓動能充沛，勇於打破常規、敢為天下先）")
+            elif "七殺" in all_s or "破軍" in all_s:
+                patterns.append("【大將拓荒格】（具備極強的執行魄力與拓荒意志）")
+                
+        if all(k in all_s for k in ["天機", "太陰", "天同", "天梁"]) or len({"天機", "太陰", "天同", "天梁"}.intersection(all_s)) >= 3:
+            patterns.append("【機月同梁格】（擅長深謀遠慮、企劃謀略、公教行政與專業幕僚，平穩中出非凡）")
+            
+        if "紫微" in all_s and "天府" in all_s:
+            patterns.append("【紫府同宮/朝垣格】（帝相得位，包容厚重，具領袖風範與福庫底氣）")
+        elif "紫微" in all_s:
+            patterns.append("【紫微坐照格】（自尊心強，有主見與宏觀視野）")
+            
+        if "天府" in all_s and "天相" in all_s:
+            patterns.append("【府相朝垣格】（衣食豐足，人際協同力佳，深得長輩與夥伴信賴）")
+            
+        if "太陽" in all_s and "巨門" in all_s:
+            patterns.append("【巨日同宮格】（光明化暗，善以口才專業照耀四方，利跨界與公眾事務）")
+            
+        if "武曲" in all_s and "貪狼" in all_s:
+            patterns.append("【武貪格】（少年辛勤磨礪，中年厚積薄發，財藝雙美之象）")
+            
+        if "祿存" in all_s and "天馬" in all_s:
+            patterns.append("【祿馬交馳格】（動中生財，越走動越有發達之機）")
+            
+        if not patterns:
+            patterns.append("【吉星拱照 · 五行和合局】（氣脈平順，厚積薄發）")
+            
+        return "、".join(patterns)
+
+    def _get_age_and_zodiac(self):
+        """安全取得緣主之年齡與生肖"""
+        age = self.user_info.get("age", 30)
+        birth_str = self.user_info.get("birth_date", "")
+        if not age or age == 30:
+            try:
+                if birth_str and "-" in birth_str:
+                    byear = int(birth_str.split("-")[0])
+                    import datetime
+                    age = datetime.datetime.now().year - byear
+            except:
+                age = 30
+                
+        zodiacs = ["猴", "雞", "狗", "豬", "鼠", "牛", "虎", "兔", "龍", "蛇", "馬", "羊"]
+        zodiac_str = self.user_info.get("zodiac", "")
+        if not zodiac_str or zodiac_str == "吉瑞":
+            try:
+                if birth_str and "-" in birth_str:
+                    byear = int(birth_str.split("-")[0])
+                    zodiac_str = zodiacs[byear % 12]
+                else:
+                    zodiac_str = "吉瑞"
+            except:
+                zodiac_str = "吉瑞"
+        return age, zodiac_str, birth_str
+
     def generate_report(self):
         """完整命譜最優化推演解析報告（大師開示）"""
         if not self.solved:
             return "【大師感應】：天機玄妙，星曜交錯產生相斥之氣，請重新校驗生辰與命盤配置。"
 
-        age = self.user_info.get("age", 30)
+        age, zodiac, birth_str = self._get_age_and_zodiac()
         name = self.user_info.get("user_name", "緣主")
-        zodiac = self.user_info.get("zodiac", "吉瑞")
         
         sorted_palaces = sorted(self.palace_scores.items(), key=lambda x: x[1], reverse=True)
         top_palaces = sorted_palaces[:3]
@@ -362,19 +490,129 @@ class FateCPSATSolver:
 
         return "\n".join(report)
 
+    # =========================================================================
+    # 【核心大師即時諮詢】：命宮、身宮與三方四正深度合參
+    # =========================================================================
+    def _handle_instant_master_consultation(self, name, clean_q="", prompt=""):
+        """大師即時諮詢：深層解析命宮、身宮、三方四正與吉煞格局"""
+        age, zodiac_str, birth_str = self._get_age_and_zodiac()
+        
+        # 提取命盤核心宮位
+        ming = self._extract_palace("命宮")
+        body_palace_name = self._get_body_palace()
+        body = self._extract_palace(body_palace_name)
+        cai = self._extract_palace("財帛宮")
+        guan = self._extract_palace("官祿宮")
+        qian = self._extract_palace("遷移宮")
+        fu = self._extract_palace("福德宮")
+        
+        # 三方四正所有星曜與大格局
+        sanfang_stars = ming["all_stars"] + cai["all_stars"] + guan["all_stars"] + qian["all_stars"]
+        pattern_desc = self._detect_star_patterns(sanfang_stars)
+        
+        # 命宮主星字串與性格剖析
+        ming_main_str = "、".join(ming["main_stars"]) if ming["main_stars"] else "無主星 (借對宮遷移星曜坐照)"
+        ming_aux_str = "、".join(ming["aux_stars"]) if ming["aux_stars"] else "諸吉拱照"
+        ming_sha_str = "、".join(ming["sha_stars"]) if ming["sha_stars"] else "煞星未現，氣脈純和"
+        
+        # 身宮主星字串
+        body_main_str = "、".join(body["main_stars"]) if body["main_stars"] else "和潤正曜"
+        
+        # 財帛、官祿、遷移主星字串
+        cai_main_str = "、".join(cai["main_stars"]) if cai["main_stars"] else "得天時生財吉曜"
+        guan_main_str = "、".join(guan["main_stars"]) if guan["main_stars"] else "清正事功星宿"
+        qian_main_str = "、".join(qian["main_stars"]) if qian["main_stars"] else "四方迎納吉星"
+        
+        # 五行喜用與開運
+        sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
+        weakest = sorted_elements[0][0]
+        lucky_color = ELEMENT_COLORS.get(weakest, "玄黑、湛藍、深黛色")
+        
+        # 人生階段定義
+        if age <= 25:
+            stage_desc = "初涉江湖之潛龍蓄勢期。滿懷熱忱，思維靈活，正是博覽廣涉、扎穩專業功底的黃金年華。"
+        elif age <= 35:
+            stage_desc = "成家立業與事業衝刺之關鍵攀升期。既承載各方期待與職場重任，又面臨生活開銷與賽道定型之抉擇考驗。"
+        elif age <= 50:
+            stage_desc = "人生事功之頂峰掌舵與厚積薄發期。見慣風浪，深諳世道，重在資源整合、團隊定海與家庭長遠傳承。"
+        else:
+            stage_desc = "心性通透之甲子圓融期。閱歷深厚，知進退明得失，重在福慧雙修、傳承晚輩與從容頤養。"
+
+        # 身宮寄託深度剖析
+        if body_palace_name == "命宮":
+            body_meaning = "【命身同宮】：先天本性與後天言行高度統一。自立自強、有強烈主見與定力，不輕易隨波逐流，凡事以自我實力為立足之本。"
+        elif body_palace_name == "官祿宮" or body_palace_name == "事業宮":
+            body_meaning = "【身宮寄官祿】：後天事業心極重，極度渴望在職場或專業領域取得實質成就與社會認同，工作成就直接決定內心幸福感。"
+        elif body_palace_name == "財帛宮":
+            body_meaning = "【身宮寄財帛】：後天極重財務安全感與經濟回報。行事注重成本效益與長遠保障，善於將各項資源轉化為實質資產。"
+        elif body_palace_name == "夫妻宮":
+            body_meaning = "【身宮寄夫妻】：後天極重感情寄託、伴侶互動與家庭溫暖。婚姻與感情狀態對整個人生心境與事業成敗有深遠牽引作用。"
+        elif body_palace_name == "遷移宮":
+            body_meaning = "【身宮寄遷移】：後天喜動不喜靜，熱衷外出歷練、廣結人脈。在異鄉、跨界或出外奔波中往往能收穫遠大於原地的機緣。"
+        elif body_palace_name == "福德宮":
+            body_meaning = "【身宮寄福德】：後天重視精神世界的富足、生活情調與內心安寧。善於調養心境，不願為名利過度犧牲自我自由。"
+        else:
+            body_meaning = f"【身宮寄於{body_palace_name}】：後天言行與人生重心深受此宮位牽引，注重該領域之和諧圓滿。"
+
+        return (
+            f"【紫微天機 · 宗師即時深度諮詢開示】：\n\n"
+            f"緣主 {name}（現年 **{age} 歲**，生肖屬**{zodiac_str}**）：\n"
+            f"老道凝神為你詳觀紫微命譜十二宮度氣脈，推演星曜坐守、三方四正交馳與五行生剋守恆。\n\n"
+            f"當前緣主歲數正行至：★ **{stage_desc}** ★\n"
+            f"整張命盤氣象端嚴，三方四正交會格局定為：★ **{pattern_desc}** ★。\n"
+            f"且聽老道為你依「命宮、身宮、三方四正與吉煞四化」逐層剖析吉凶機關：\n\n"
+            f"------------------------------------------------------------\n"
+            f"✦ 【一、命宮坐守 · 先天心性與格局底色】\n"
+            f"● **命宮方位**：位於地支【**{ming['zhi']}宮**】（氣數底氣 **{ming['score']} 分**）\n"
+            f"● **坐守主星**：【**{ming_main_str}**】\n"
+            f"● **輔照星曜**：吉曜【{ming_aux_str}】｜ 煞曜【{ming_sha_str}】\n\n"
+            f"💡 **宗師定盤**：\n"
+            f"命宮坐守【{ming_main_str}】，奠定了你此生外圓內方、有骨氣、重承諾之先天底色。你為人思維縝密，不喜浮誇虛名，做事實事求是。\n"
+            f"遇逆境時自有一股倔強與韌勁，絕非輕易言敗之人。唯獨有時要求完美、思慮過重，容易讓自己精神緊繃。\n\n"
+            f"------------------------------------------------------------\n"
+            f"✦ 【二、身宮寄託 · 後天追求與精神風骨】\n"
+            f"● **身宮落位**：寄於【**{body_palace_name}**】（地支【{body['zhi']}宮】）\n"
+            f"● **坐守星曜**：【**{body_main_str}**】\n\n"
+            f"💡 **宗師解碼**：\n"
+            f"身宮乃三十歲後人生行事風骨與後天執念之所在。盤中顯示：{body_meaning}\n"
+            f"先天之命宮賦予你天賦才智，而後天身宮則是你全力奮鬥之舞台，兩者相輔相成，定能開創非凡基業！\n\n"
+            f"------------------------------------------------------------\n"
+            f"✦ 【三、三方四正 · 氣數周天與功名財氣合參】\n"
+            f"● **【財帛宮】（位於{cai['zhi']}宮 · {cai['score']}分）**：坐守【**{cai_main_str}**】。\n"
+            f"  - **求財指引**：正財根基雄厚，利於憑藉專業技術、管理謀略或長線佈局生財。切忌高槓桿投機盲賭，穩紮穩打自能聚沙成塔。\n\n"
+            f"● **【官祿宮】（位於{guan['zhi']}宮 · {guan['score']}分）**：坐守【**{guan_main_str}**】。\n"
+            f"  - **事業前程**：適合在具備決策權、技術主導性或專業門檻的賽道深耕，不宜在平庸內耗的環境中虛擲光陰。\n\n"
+            f"● **【遷移宮】（位於{qian['zhi']}宮 · {qian['score']}分）**：坐守【**{qian_main_str}**】。\n"
+            f"  - **出外際遇**：出外有貴人相助，多向外走動、拓展人脈或跨界學習，格局必能越走越寬。\n\n"
+            f"------------------------------------------------------------\n"
+            f"✦ 【四、吉星煞曜與四化引動之玄機】\n"
+            f"● **吉曜庇蔭**：盤中得吉星會照，代表你在關鍵時刻總有貴人暗中相挺，常能逢凶化吉。\n"
+            f"● **化煞為用**：盤中縱有煞星磨礪，亦是玉不琢不成器之過程。煞星之剛烈正可轉化為你專注破局之強大執行力，無須懼怕！\n\n"
+            f"------------------------------------------------------------\n"
+            f"✦ 【五、宗師點撥 · 人生當前關竅與修心錦囊】\n"
+            f"1. **【心態安神】**：世事如棋局局新，切莫為眼前一時得失擾亂心神。「急則生亂，緩則圓通」，遇重大決策先沉靜三日。\n"
+            f"2. **【行事準則】**：深耕核心長板，多與正向貴人結緣，遠離是非口舌。\n"
+            f"3. **【生旺天時吉方】**：\n"
+            f"   - 每日最利決策吉時為：★ **{self.best_timing}** ★\n"
+            f"   - 第一生旺大吉方位為：★ **{self.best_direction}** ★\n"
+            f"   - 開運調和色系：日常宜多搭配 **{lucky_color}** 系衣飾調和磁場。\n\n"
+            f"✦ 【老道定心真言】\n"
+            f"『順天應人，厚德載物。』只要心持正念、順應時節，前路必定天寬地闊、福祿相隨！"
+        )
+
     def answer_query(self, prompt, target_type="chat"):
         """根據緣主提問，由大師口吻給予精準具體指引"""
         if not self.solved:
             self.solve()
             
         p_lower = prompt.lower()
-        age = self.user_info.get("age", 30)
+        age, zodiac_str, _ = self._get_age_and_zodiac()
         name = self.user_info.get("user_name", "緣主")
         
         # 精準提取用戶真實提問，徹底隔離背景命盤資訊與系統指令
         clean_q = prompt
         
-        # 先以常見的分隔標記與系統指令標籤截斷尾部 (防止【大師指令】等尾部內文侵入 clean_q)
+        # 先以常見的分隔標記與系統指令標籤截斷尾部
         for tail_marker in ["\n\n【大師指令】", "\n\n【特別要求】", "\n\n(請強制使用", "\n【最高優先權指令】"]:
             if tail_marker in clean_q:
                 clean_q = clean_q.split(tail_marker)[0]
@@ -398,7 +636,14 @@ class FateCPSATSolver:
         actual_q = clean_q.strip("」」：「」 \t\r\n。！,!?！？")
 
         # =========================================================================
-        # 第一優先級：前端明確指定之 target_type 專案分流 (Top Priority Explicit Routing)
+        # 第一優先級：明確要求「大師即時諮詢」或「命宮身宮三方四正」
+        # =========================================================================
+        if (any(kw in clean_q for kw in ["大師即時諮詢", "即時諮詢", "命宮、身宮", "身宮與三方四正", "三方四正", "綜合命盤解析", "大師諮詢", "命宮主星與格局"]) or
+            any(kw in prompt for kw in ["【大師即時諮詢】", "《紫微綜合命盤解析》"])):
+            return self._handle_instant_master_consultation(name, clean_q, prompt=prompt)
+
+        # =========================================================================
+        # 第二優先級：前端明確指定之 target_type 專案分流
         # =========================================================================
         if target_type == "love":
             return self._handle_love(name)
@@ -428,9 +673,9 @@ class FateCPSATSolver:
                 return self._handle_finance(name)
 
         # =========================================================================
-        # 第二優先級：緣主自訂提問 (Chat) 依語義精準匹配專題 (全面覆蓋所有人生命題)
+        # 第三優先級：緣主自訂提問 (Chat) 依語義精準匹配專題
         # =========================================================================
-        # 1. 測字占卜 (包含明確文字占卜關鍵字，或實際提問長度<=2字且非特定多字問事大項，優先防攔)
+        # 1. 測字占卜
         if (target_type == "glyph" or 
             any(kw in clean_q for kw in ["測字", "漢字", "文字占卜", "卜字", "拆字", "解字", "字相", "觀字", "測一字", "幫我測", "請問這個字", "測字：", "測字:"]) or 
             any(kw in prompt for kw in ["用戶測字", "測字占卜"]) or 
@@ -441,79 +686,79 @@ class FateCPSATSolver:
         elif any(kw in clean_q for kw in ["號碼", "樂透", "威力彩", "539", "幸運號", "彩券", "偏財", "明牌", "靈動數"]):
             return self._handle_lucky_numbers(name)
 
-        # 2. 出門吉位與避諱
+        # 3. 出門吉位與避諱
         elif any(kw in clean_q for kw in ["出門吉位", "吉位", "避諱", "歲時禁忌", "歲時避諱", "歲時", "出行", "出門", "禁忌"]):
             return self._handle_omens(name)
 
-        # 3. 防小人與化解是非口舌 (依奴僕宮、兄弟宮與五行正氣合參，高特異性優先)
+        # 4. 防小人與化解是非口舌
         elif any(kw in clean_q for kw in ["小人", "防小人", "避小人", "犯小人", "招小人", "是非", "口舌", "背刺", "陷害", "交友", "奴僕宮"]):
             return self._handle_villain(name)
 
-        # 4. 招貴人與人脈通達
+        # 5. 招貴人與人脈通達
         elif any(kw in clean_q for kw in ["貴人", "招貴人", "貴人運", "提攜", "賞識", "相助", "人脈", "伯樂", "結緣"]):
             return self._handle_benefactor(name)
 
-        # 5. 田宅置產與房產風水
+        # 6. 田宅置產與房產風水
         elif any(kw in clean_q for kw in ["買房", "買屋", "置產", "田宅", "房產", "不動產", "賣房", "搬家", "入厝", "裝潢", "宅基"]):
             return self._handle_property(name)
 
-        # 6. 考運功名與學業升遷
+        # 7. 考運功名與學業升遷
         elif any(kw in clean_q for kw in ["考試", "考運", "學業", "讀書", "升學", "國考", "公職", "證照", "文昌", "考績"]):
             return self._handle_exam(name)
 
-        # 7. 出國遠行與異鄉發展
+        # 8. 出國遠行與異鄉發展
         elif any(kw in clean_q for kw in ["出國", "遠行", "留學", "移民", "出差", "赴外", "離鄉", "外派", "遷移宮"]):
             return self._handle_travel(name)
 
-        # 8. 子女緣分與求子育嗣
+        # 9. 子女緣分與求子育嗣
         elif any(kw in clean_q for kw in ["求子", "生子", "懷孕", "備孕", "子女", "孩子", "小孩", "生男生女", "子息", "育兒", "子女宮"]):
             return self._handle_children(name)
 
-        # 9. 婚姻和諧與白頭偕老
+        # 10. 婚姻和諧與白頭偕老
         elif any(kw in clean_q for kw in ["婚姻", "結婚", "成家", "配偶", "老婆", "老公", "外遇", "出軌", "第三者", "婆媳", "離婚"]):
             return self._handle_marriage(name)
 
-        # 10. 桃花感情與戀愛正緣
+        # 11. 桃花感情與戀愛正緣
         elif any(kw in clean_q for kw in ["桃花", "感情", "戀愛", "另一半", "對象", "姻緣", "脫單", "復合", "伴侶", "情緣", "正緣"]):
             return self._handle_love(name)
 
-        # 11. 財運與求財投資
+        # 12. 財運與求財投資
         elif any(kw in clean_q for kw in ["財", "錢", "投資", "理財", "發財", "財帛", "求財", "賺錢", "資產", "漏財", "破財", "財庫"]):
             return self._handle_finance(name)
 
-        # 12. 開運轉運與化解厄運
+        # 13. 開運轉運與化解厄運
         elif any(kw in clean_q for kw in ["改運", "轉運", "化太歲", "犯太歲", "安太歲", "祈福", "消災", "消業", "厄運", "開運"]):
             return self._handle_luck_transformation(name)
 
-        # 13. 父母長輩與孝親福報
+        # 14. 父母長輩與孝親福報
         elif any(kw in clean_q for kw in ["父母", "長輩", "父親", "母親", "爸爸", "媽媽", "孝親", "祖蔭", "父母宮"]):
             return self._handle_parents(name)
 
-        # 14. 事業與工作 (優先於流年/流月)
+        # 15. 事業與工作
         elif any(kw in clean_q for kw in ["工作", "事業", "職業", "升遷", "跳槽", "創業", "官祿", "求職", "職場", "合夥"]):
             return self._handle_career(name)
 
-        # 15. 健康與疾厄
+        # 16. 健康與疾厄
         elif any(kw in clean_q for kw in ["健康", "疾厄", "身體", "作息", "疾病", "調養", "睡眠", "體魄", "養生"]):
             return self._handle_health(name)
 
-        # 16. 十年大限
+        # 17. 十年大限
         elif any(kw in clean_q for kw in ["十年大限", "大限運勢", "十年大運", "十年運程", "大限", "十年"]):
             return self._handle_decade(name, age)
 
-        # 17. 流年運勢
+        # 18. 流年運勢
         elif any(kw in clean_q for kw in ["流年運勢", "今年運勢", "流年", "今年", "歲運", "年運"]):
             return self._handle_yearly(name)
 
-        # 18. 流月運勢
+        # 19. 流月運勢
         elif any(kw in clean_q for kw in ["流月運勢", "本月運勢", "流月", "本月", "月令", "月運"]):
             return self._handle_monthly(name)
 
-        # 19. 股市股票
+        # 20. 股市股票
         elif any(kw in clean_q for kw in ["股票", "股價", "股市", "大盤", "個股", "代號"]):
             return self._handle_stock(name, clean_q)
 
-        # 20. 八字命書
+        # 21. 八字命書
         elif any(kw in clean_q for kw in ["八字詳批", "子平八字", "四柱八字", "子平", "命書", "日主強弱"]):
             return self._handle_bazi(name)
 
@@ -537,7 +782,7 @@ class FateCPSATSolver:
         elif any(kw in clean_q for kw in ["詳評", "命譜詳評", "格局報告", "全盤詳解", "命盤解析"]):
             return self.generate_report()
 
-        # 27. 全方位人生問事解惑 (兜底保障：任何自然提問絕不輸出枯燥表格，給予專屬大師開示)
+        # 27. 全方位人生問事解惑 (兜底保障：具體結合命身宮真實星曜與提問)
         else:
             return self._handle_life_guidance(name, clean_q)
 
@@ -545,35 +790,29 @@ class FateCPSATSolver:
     # 各專案大師開示模組 (Modular Master Handlers)
     # =========================================================================
     def _handle_love(self, name):
-        score = self.palace_scores.get("夫妻宮", 58)
-        karma_score = self.palace_scores.get("福德宮", 66)
-        life_score = self.palace_scores.get("命宮", 76)
-        spouse_stars = []
-        life_stars = []
-        for p in self.chart_data:
-            p_name = p.get("palaceName", "")
-            stars = p.get("stars", [])
-            for s in stars:
-                s_name = s.get("name", "") if isinstance(s, dict) else str(s)
-                clean_s = s_name.split(" ")[0].split("(")[0]
-                if "夫妻" in p_name: spouse_stars.append(clean_s)
-                elif "命" in p_name: life_stars.append(clean_s)
-        spouse_str = "、".join(spouse_stars) if spouse_stars else "和潤吉曜"
-        life_str = "、".join(life_stars) if life_stars else "紫微正曜"
-        lucky_color = ELEMENT_COLORS.get("water", "湛藍、象牙白")
+        spouse = self._extract_palace("夫妻宮")
+        ming = self._extract_palace("命宮")
+        fu = self._extract_palace("福德宮")
+        
+        spouse_main = "、".join(spouse["main_stars"]) if spouse["main_stars"] else "和潤吉曜"
+        ming_main = "、".join(ming["main_stars"]) if ming["main_stars"] else "正氣星曜"
+        
+        sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
+        weakest = sorted_elements[0][0]
+        lucky_color = ELEMENT_COLORS.get(weakest, "湛藍、象牙白")
 
         return (
             f"【紫微天機道長 · 桃花情緣錦囊】：\n\n"
             f"緣主 {name} 且聽老道為你撥開情關迷霧！\n"
-            f"老道細觀你盤中陰陽造化，你命宮坐守【{life_str}】（底氣 {life_score} 分），「夫妻宮」共振氣數為 **{score} 分**，「福德宮」情志和合值為 **{karma_score} 分**，夫妻宮坐守【{spouse_str}】。\n\n"
-            f"你盤中紅鸞星動、暗香浮動，老道特依天地五行相生之理，賜你三大桃花攻略與相處之道：\n\n"
+            f"老道細觀你盤中陰陽造化，你命宮坐守【**{ming_main}**】（底氣 {ming['score']} 分），「夫妻宮」位於地支【{spouse['zhi']}宮】（氣數 **{spouse['score']} 分**），坐守【**{spouse_main}**】，福德情志和合值為 **{fu['score']} 分**。\n\n"
+            f"老道特依天地五行相生之理，賜你三大桃花攻略與相處之道：\n\n"
             f"✦ 【第一計：氣場穿搭 · 引動心動同頻】\n"
-            f"你命中五行相生最喜生旺，出門聚會、約會或日常社交時，宜多穿著 **{lucky_color}** 系之衣物或佩帶溫潤飾品。此色能溫和撫平你的剛強氣場，增添柔和親和力，讓他人望之生喜、心生親近。\n\n"
+            f"出門聚會、約會或日常社交時，宜多穿著 **{lucky_color}** 系衣飾或佩帶溫潤飾品。此色能溫和撫平你的剛強氣場，增添柔和親和力，讓他人望之生喜、心生親近。\n\n"
             f"✦ 【第二計：相處心法 · 以柔克剛攻心術】\n"
-            f"夫妻宮坐【{spouse_str}】，顯示你的命中正緣多半為性格獨立、有才華、自尊心強且極重細節之人。\n"
+            f"夫妻宮坐守【{spouse_main}】，顯示你的命中正緣多半為性格獨立、有才華、自尊心強且極重細節之人。\n"
             f"與其相處切記「莫爭口舌之快、莫查隱私瑣事」，宜秉持『相敬如賓、留白相知』之妙法。多在其勞累心煩時，給予一杯溫茶或一句真誠讚賞，最能直擊心坎。\n\n"
             f"✦ 【第三計：天時吉位 · 邂逅良緣之機】\n"
-            f"若欲主動結識優質桃花或推進現有感情，請把握每日 **{self.best_timing}**，往你命中的生旺吉方 **{self.best_direction}**（如該方位之雅緻咖啡廳、藝文展覽或景觀綠地）走動，天時地利共振，良緣自會悄然相逢！"
+            f"若欲主動結識優質桃花或推進現有感情，請把握每日 **{self.best_timing}**，往你命中的生旺吉方 **{self.best_direction}** 走動，天時地利共振，良緣自會悄然相逢！"
         )
 
     def _handle_lucky_numbers(self, name):
@@ -597,10 +836,12 @@ class FateCPSATSolver:
         )
 
     def _handle_past_life(self, name):
+        fu = self._extract_palace("福德宮")
+        fu_main = "、".join(fu["main_stars"]) if fu["main_stars"] else "清正星曜"
         return (
             f"【天機大師點撥 · 前世宿緣與因果】：\n\n"
             f"老道微閉雙目，神遊太虛，為緣主 {name} 溯源三世福德因果。\n\n"
-            f"✦ 【前世宿緣】：觀你福德宮氣象，前世汝乃崇文尚義之文人墨客或醫藥濟世之士，曾結下深厚善緣，亦曾為執著之事殫精竭慮。\n"
+            f"✦ 【前世宿緣】：觀你福德宮（位於{fu['zhi']}宮，坐守【{fu_main}】）氣象，前世汝乃崇文尚義之文人墨客或醫藥濟世之士，曾結下深厚善緣，亦曾為執著之事殫精竭慮。\n"
             f"✦ 【今生因果】：今生承繼宿世聰慧悟性，故心思敏銳、求知若渴，然偶有心緒起伏、多思易累之感，此乃宿世心念之餘波。\n"
             f"✦ 【今生指引】：多行善事、寬恕放下，心清則慧海生，善用自身才智溫暖周遭，自能修得今生福慧雙圓。"
         )
@@ -657,7 +898,7 @@ class FateCPSATSolver:
         return "吉"
 
     def _analyze_character_glyph(self, char):
-        """專屬漢字拆字與五行剖析字典引擎 (支援擴充與動態合成)"""
+        """專屬漢字拆字與五行剖析字典引擎"""
         GLYPH_DB = {
             "情": {
                 "radicals": "「忄」（豎心旁，主心念與情志） + 「青」（主生機、青春、歲月）",
@@ -748,7 +989,6 @@ class FateCPSATSolver:
         if char in GLYPH_DB:
             return GLYPH_DB[char]
             
-        # 動態漢字部首與拆字剖析器 (Dynamic Structural Deconstructor for Generic Characters)
         radicals_found = []
         elem = "五行中和"
         
@@ -786,8 +1026,8 @@ class FateCPSATSolver:
         char = self._extract_glyph_char(clean_q, prompt)
         info = self._analyze_character_glyph(char)
         
-        life_score = self.palace_scores.get("命宮", 70)
-        karma_score = self.palace_scores.get("福德宮", 65)
+        ming = self._extract_palace("命宮")
+        fu = self._extract_palace("福德宮")
         
         return (
             f"【紫微天機道長 · 測字神算破玄機】：\n\n"
@@ -797,7 +1037,7 @@ class FateCPSATSolver:
             f"- **五行氣脈**：{info['five_elements']}。\n"
             f"- **拆字寓意**：{info['meaning']}\n\n"
             f"✦ 【二、與緣主命盤宮位感應】\n"
-            f"老道觀你命中氣數（命宮底氣 **{life_score} 分**、福德情志 **{karma_score} 分**）：\n"
+            f"老道觀你命中氣數（命宮底氣 **{ming['score']} 分**、福德情志 **{fu['score']} 分**）：\n"
             f"此「**{char}**」字起筆與你盤中【{info['palace_ref']}】之動能產生微妙共振。字相顯示，當前所問之事表面雖有紛繞或猶豫，然內藏轉機與生機，切莫因一時心亂而自失方寸。\n\n"
             f"✦ 【三、大師指點迷津與開運時空】\n"
             f"- **定心心法**：{info['advice']}\n"
@@ -807,24 +1047,24 @@ class FateCPSATSolver:
         )
 
     def _handle_dream(self, name):
-        karma_score = self.palace_scores.get("福德宮", 65)
+        fu = self._extract_palace("福德宮")
         return (
             f"【紫微天機道長 · 夢境玄機開示】：\n\n"
-            f"道家云：『神遇為夢，形接為事。』老道觀你福德宮（精神位）氣息（{karma_score} 分），為你解剖此夢之深層喻義：\n\n"
+            f"道家云：『神遇為夢，形接為事。』老道觀你福德宮（精神位）氣息（{fu['score']} 分），為你解剖此夢之深層喻義：\n\n"
             f"1. **夢境本質來源**：此夢並非虛妄，乃緣主近期身心負荷或潛意識思慮於夜間歸元時之自然顯化。福德宮吉星閃爍，顯示此夢非凶兆，反有「卸下重擔、迎新除舊」之深意。\n"
             f"2. **心理與氣場投射**：夢中所現之人事物，象徵你在現實中對某項計畫或關係的掛念。夢中若有奔波或波折，正是潛意識在為你排解日常無形壓力。\n"
             f"3. **大師化解與轉運**：夢醒即空，無需罣礙。晨起後飲一杯溫水，面朝【{self.best_direction}】深呼吸三回，將濁氣吐盡，當日運勢必能煥然一新！"
         )
 
     def _handle_decade(self, name, age):
-        life_score = self.palace_scores.get("命宮", 75)
-        career_score = self.palace_scores.get("官祿宮", 65)
+        ming = self._extract_palace("命宮")
+        guan = self._extract_palace("官祿宮")
         decade_start = (age // 10) * 10 + (2 if age % 10 >= 2 else -8)
         decade_end = decade_start + 9
         return (
             f"【紫微天機道長 · 十年大限運程推演】：\n\n"
             f"老道為緣主 {name} 排演大限命宮（當前正值 {decade_start}～{decade_end} 歲十年大運之關鍵樞紐）：\n\n"
-            f"1. **大限總體局勢**：此十年大限乃你人生承前啟後之黃金期，命宮底氣 {life_score} 分、官祿動能 {career_score} 分。氣象由初期的摸索沉澱，逐步走向中後期的主導掌控。\n"
+            f"1. **大限總體局勢**：此十年大限乃你人生承前啟後之黃金期，命宮底氣 {ming['score']} 分、官祿動能 {guan['score']} 分。氣象由初期的摸索沉澱，逐步走向中後期的主導掌控。\n"
             f"2. **前三年（奠基紮根期）**：重在建立專業威信與厚植人脈資源，切忌急躁冒進，需以守為攻。\n"
             f"3. **中四年（開疆拓土期）**：三方四正吉星匯聚，為此十年運勢最高峰，宜大膽把握升遷、轉型或合夥之良機。\n"
             f"4. **後三年（守成收穫期）**：資產逐步入庫，需注重家庭平衡與健康調養，功成身退、從容自在。\n\n"
@@ -854,8 +1094,10 @@ class FateCPSATSolver:
         )
 
     def _handle_stock(self, name, clean_q=""):
-        wealth_score = self.palace_scores.get("財帛宮", 65)
-        career_score = self.palace_scores.get("官祿宮", 65)
+        cai = self._extract_palace("財帛宮")
+        guan = self._extract_palace("官祿宮")
+        wealth_score = cai["score"]
+        career_score = guan["score"]
         
         # 萃取時事輿情多空訊號與技術指標
         bull_weight = 50 + (wealth_score - 50) // 3
@@ -933,13 +1175,14 @@ class FateCPSATSolver:
         )
 
     def _handle_simple(self, name):
-        life_score = self.palace_scores.get("命宮", 76)
+        ming = self._extract_palace("命宮")
+        ming_main = "、".join(ming["main_stars"]) if ming["main_stars"] else "正氣星曜"
         top_p = sorted(self.palace_scores.items(), key=lambda x: x[1], reverse=True)[0]
         return (
             f"【紫微天機道長 · 性格與人生指引】：\n\n"
             f"老道以白話為緣主 {name} 剖析你的先天性情與人生大道：\n\n"
-            f"1. **先天人格特質**：你的命宮底氣充沛（{life_score} 分），外表沉穩謙遜，內心實則有極強的抱負與自尊。你思維縝密，不喜歡虛浮表象，凡事講求實證與邏輯。\n"
-            f"2. **人生最核心優勢**：你的最強樞紐在於【{top_p[0]}】（{top_p[1]} 分），善於在複雜局面中理清頭緒，找到突破口。只要給你足夠的信任與空間，你便能展現驚人的成果。\n"
+            f"1. **先天人格特質**：你的命宮坐守【**{ming_main}**】（底氣 {ming['score']} 分），外表沉穩謙遜，內心實則有極強的抱負與自尊。你思維縝密，不喜歡虛浮表象，凡事講求實證與邏輯。\n"
+            f"2. **人生最核心優勢**：你的最強樞紐在於【**{top_p[0]}**】（{top_p[1]} 分），善於在複雜局面中理清頭緒，找到突破口。只要給你足夠的信任與空間，你便能展現驚人的成果。\n"
             f"3. **此生修練功課**：切忌過度要求完美而讓自己精神內耗。學會接納不完美，凡事盡人事、聽天命，豁達從容，人生必將如行雲流水般順暢！"
         )
 
@@ -953,43 +1196,51 @@ class FateCPSATSolver:
         )
 
     def _handle_finance(self, name):
-        score = self.palace_scores.get("財帛宮", 65)
-        prop_score = self.palace_scores.get("田宅宮", 60)
+        cai = self._extract_palace("財帛宮")
+        tian = self._extract_palace("田宅宮")
+        cai_main = "、".join(cai["main_stars"]) if cai["main_stars"] else "正財穩健吉曜"
+        tian_main = "、".join(tian["main_stars"]) if tian["main_stars"] else "安庫福曜"
+        
         return (
             f"【天機大師點撥 · 財運玄機】：\n\n"
-            f"老道觀你盤中氣象，緣主 {name} 之「財帛宮」氣數評分為 **{score} 分**，「田宅宮」庫存指數為 **{prop_score} 分**。\n\n"
+            f"老道觀你盤中氣象，緣主 {name} 之「財帛宮」（位於{cai['zhi']}宮，坐守【**{cai_main}**】）氣數評分為 **{cai['score']} 分**，「田宅宮」（坐守【{tian_main}】）庫存指數為 **{tian['score']} 分**。\n\n"
             f"1. **求財路徑直指**：你的財富格局屬於「專業生財、積沙成塔」之相，正財根基紮實。切忌涉足看不懂的高槓桿投機，專心深耕本業衍生之專業領域，財自聚來。\n"
             f"2. **資產守成心法**：田宅宮氣場平穩，日常宜採穩健配置原則，重實質資產儲備，不隨市場短線起伏而亂了心智。\n"
             f"3. **開運天時借力**：若遇重大投資決策或資金規劃，宜選在每日 **{self.best_timing}**，方位宜面朝 **{self.best_direction}**，以引動生旺財氣。"
         )
 
     def _handle_career(self, name):
-        score = self.palace_scores.get("官祿宮", 65)
-        life_score = self.palace_scores.get("命宮", 70)
+        guan = self._extract_palace("官祿宮")
+        ming = self._extract_palace("命宮")
+        guan_main = "、".join(guan["main_stars"]) if guan["main_stars"] else "事功吉曜"
+        ming_main = "、".join(ming["main_stars"]) if ming["main_stars"] else "正氣星曜"
+        
         return (
             f"【天機大師點撥 · 事業前程】：\n\n"
-            f"老道詳推你命中事功，緣主之「官祿宮」氣數為 **{score} 分**，「命宮」坐守底氣為 **{life_score} 分**。\n\n"
+            f"老道詳推你命中事功，緣主之「官祿宮」（位於{guan['zhi']}宮，坐守【**{guan_main}**】）氣數為 **{guan['score']} 分**，「命宮」（坐守【{ming_main}】）坐守底氣為 **{ming['score']} 分**。\n\n"
             f"1. **職涯定海神針**：你為人敏銳果決，適合能在專案中獨當一面、具備專業技術或策略主導權之工作，不宜在過度僵化的體制下虛耗光陰。例如現代專業顧問、科技數位、整合企劃等賽道皆大有可為。\n"
             f"2. **晉升與進退時機**：當前時運宜重於「厚積薄發」，先把手頭核心專業做到極致。遇考核或跳槽契機時，主動爭取帶領核心團隊，切莫怯縮。\n"
             f"3. **貴人感應吉方**：你的職場貴人多出現在 **{self.best_direction}** 方位，平時可多向此方向拓展人脈與合作契機。"
         )
 
     def _handle_health(self, name):
-        score = self.palace_scores.get("疾厄宮", 50)
+        ji = self._extract_palace("疾厄宮")
+        ji_main = "、".join(ji["main_stars"]) if ji["main_stars"] else "本體元神星曜"
         sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
         weakest = sorted_elements[0][0]
         return (
             f"【天機大師點撥 · 養生防疾】：\n\n"
-            f"老道推演五行陰陽盛衰，緣主「疾厄宮」體魄氣分為 **{score} 分**，五行之中最需溫養者為 **{ELEMENT_NAMES[weakest]}**。\n\n"
+            f"老道推演五行陰陽盛衰，緣主「疾厄宮」（位於{ji['zhi']}宮，坐守【{ji_main}】）體魄氣分為 **{ji['score']} 分**，五行之中最需溫養者為 **{ELEMENT_NAMES[weakest]}**。\n\n"
             f"1. **臟腑調理關鍵**：五行中【{ELEMENT_NAMES[weakest]}】易受日常勞碌耗損，日常生活中需注意生活作息節律，切莫仗著年輕而長期熬夜。\n"
             f"2. **起居時令箴言**：夜間子丑之時（晚間11點至凌晨3點）正是氣血回流歸元之時，務必安睡休養，給身心充電。\n"
             f"3. **調氣固本指南**：晨間或傍晚宜多步入戶外自然之中，面向 **{self.best_direction}** 進行輕柔伸展或散步，導引天地清和之氣入體。"
         )
 
     def _handle_villain(self, name):
-        friends_score = self.palace_scores.get("奴僕宮", 45)
-        sibling_score = self.palace_scores.get("兄弟宮", 48)
-        life_score = self.palace_scores.get("命宮", 70)
+        nu = self._extract_palace("奴僕宮")
+        xiong = self._extract_palace("兄弟宮")
+        ming = self._extract_palace("命宮")
+        
         sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
         weakest = sorted_elements[0][0]
         lucky_color = ELEMENT_COLORS.get(weakest, "玄黑、湛藍、深黛色")
@@ -997,22 +1248,23 @@ class FateCPSATSolver:
         return (
             f"【紫微天機道長 · 防小人與化解是非口舌精批】：\n\n"
             f"緣主 {name} 且聽老道為你觀人際氣數、破除暗處是非！\n\n"
-            f"老道推演命盤氣息，緣主先天命宮正氣凜然（底氣 {life_score} 分），而主掌泛泛之交、外在人際與同事部屬之「奴僕宮」氣數為 **{friends_score} 分**，「兄弟宮」為 **{sibling_score} 分**。\n"
+            f"老道推演命盤氣息，緣主先天命宮正氣凜然（底氣 {ming['score']} 分），而主掌外在人際與同事之「奴僕宮」氣數為 **{nu['score']} 分**，「兄弟宮」為 **{xiong['score']} 分**。\n"
             f"此象顯示緣主為人仗義耿直、做事認真，然容易「交淺言深、以赤誠待人卻易遭無端嫉妒或背後閒話」。老道特傳你四大辟邪防小人化解秘法：\n\n"
             f"✦ 【第一策：劃定人際邊界 · 杜絕暗箭之隙】\n"
             f"小人最喜借題發揮。職場與社交場合謹記「事上見真章，言上留三分」。不涉足茶水間小圈子是非議論，不向非至交之人透露私人財務與家庭隱私。保持公事公辦、禮貌疏離，小人無柄可執，自然不攻自破。\n\n"
             f"✦ 【第二策：五行磁場護體 · 增強清正正氣】\n"
             f"小人屬陰晦之濁氣，最懼清正之磁場。日常可多穿著或佩戴緣主喜用神 **{lucky_color}** 系列衣飾，五行相生聚氣，能自然形成一層無形護體正氣，使暗處小人望而卻步。\n\n"
             f"✦ 【第三策：風水時空布局 · 青龍壓制白虎】\n"
-            f"辦公桌或常用書桌宜遵守「左青龍、右白虎」原則，左手邊物品擺放宜略高於右手邊；桌面可擺放黑曜石、黑碧璽或一株常青闊葉植物以阻擋濁氣。遇重要交涉或溝通時，宜面朝你的大吉生旺方位【{self.best_direction}】，心神定則邪不侵。\n\n"
+            f"辦公桌或常用書桌宜遵守「左青龍、右白虎」原則，左手邊物品擺放宜略高於右手邊；桌面可擺放黑曜石或一株常青闊葉植物以阻擋濁氣。遇重要交涉或溝通時，宜面朝你的大吉生旺方位【{self.best_direction}】，心神定則邪不侵。\n\n"
             f"✦ 【第四策：老道贈言 · 破局最高心法】\n"
             f"『君子坦蕩蕩，小人長戚戚。』小人之所以能耗損你，往往是利用了你的情緒。凡事「不隨之起舞、不入其局、冷靜取證」，專注於自身實力精進，你站得越高，小人就越無能為力！"
         )
 
     def _handle_benefactor(self, name):
-        life_score = self.palace_scores.get("命宮", 70)
-        travel_score = self.palace_scores.get("遷移宮", 65)
-        career_score = self.palace_scores.get("官祿宮", 65)
+        ming = self._extract_palace("命宮")
+        qian = self._extract_palace("遷移宮")
+        guan = self._extract_palace("官祿宮")
+        
         sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
         weakest = sorted_elements[0][0]
         lucky_color = ELEMENT_COLORS.get(weakest, "玄黑、湛藍、深黛色")
@@ -1020,7 +1272,7 @@ class FateCPSATSolver:
         return (
             f"【紫微天機道長 · 招引貴人與人脈通達精批】：\n\n"
             f"緣主 {name} 且聽老道為你推演命中貴人星宿與得道多助之方！\n\n"
-            f"老道觀你命盤格局，命宮底氣為 **{life_score} 分**，主外在出路與社交機緣之「遷移宮」為 **{travel_score} 分**，事功之「官祿宮」為 **{career_score} 分**。\n"
+            f"老道觀你命盤格局，命宮底氣為 **{ming['score']} 分**，主外在出路與社交機緣之「遷移宮」為 **{qian['score']} 分**，事功之「官祿宮」為 **{guan['score']} 分**。\n"
             f"此象顯示緣主自帶才能，然平時多靠自身硬拼。若欲引動貴人主動提攜，老道賜你三大招貴人心法：\n\n"
             f"✦ 【第一要訣：貴人特徵與出沒之所】\n"
             f"你命中真正的貴人，多為性格沉穩內斂、具備專業權威或年歲稍長於你之長者。其不喜諂媚浮誇，最重人品操守。凡事謙遜請教、言而有信，最易贏得其青睞。\n\n"
@@ -1032,55 +1284,63 @@ class FateCPSATSolver:
         )
 
     def _handle_property(self, name):
-        prop_score = self.palace_scores.get("田宅宮", 60)
-        wealth_score = self.palace_scores.get("財帛宮", 65)
+        tian = self._extract_palace("田宅宮")
+        cai = self._extract_palace("財帛宮")
+        tian_main = "、".join(tian["main_stars"]) if tian["main_stars"] else "厚重守成之曜"
+        
         return (
             f"【紫微天機道長 · 田宅置產與房產風水精批】：\n\n"
-            f"老道為緣主 {name} 推算先天「田宅宮」庫存氣場（評分 **{prop_score} 分**），與「財帛宮」生財動能（評分 **{wealth_score} 分**）：\n\n"
+            f"老道為緣主 {name} 推算先天「田宅宮」（位於{tian['zhi']}宮，坐守【{tian_main}】，評分 **{tian['score']} 分**），與「財帛宮」生財動能（評分 **{cai['score']} 分**）：\n\n"
             f"✦ 【一、先天置產格局】：你的田宅氣息穩中求勝，名下宜有實質磚瓦資產作為資產護城河。此生置產宜秉持「量力而行、長期持有、抗通膨為上」，切忌高槓桿炒短線。\n\n"
             f"✦ 【二、購屋置產時機】：田宅宮逢生旺之運，下半年或大運吉星坐守之年最利定奪契約。簽約看屋宜選於每日 **{self.best_timing}**，能保持頭腦清明，避開隱藏瑕疵。\n\n"
             f"✦ 【三、家宅風水吉祥向】：緣主最利向陽納氣之方位為【{self.best_direction}】。大門、客廳窗景或主臥床頭朝此方位，最能引動家肥屋潤、藏風聚氣之福澤！"
         )
 
     def _handle_exam(self, name):
-        career_score = self.palace_scores.get("官祿宮", 65)
-        life_score = self.palace_scores.get("命宮", 70)
+        guan = self._extract_palace("官祿宮")
+        ming = self._extract_palace("命宮")
         return (
             f"【紫微天機道長 · 考運功名與學業升遷精批】：\n\n"
-            f"老道觀緣主「官祿宮（學堂位）」文星閃爍（動能 **{career_score} 分**），「命宮」悟性為 **{life_score} 分**：\n\n"
+            f"老道觀緣主「官祿宮（學堂位）」文星閃爍（動能 **{guan['score']} 分**），「命宮」悟性為 **{ming['score']} 分**：\n\n"
             f"✦ 【一、先天考運特質】：你思維敏捷、擅長理解融會貫通。然逢大考之際偶有臨場焦慮、思慮過繁之弊。考試關鍵在於「求穩莫求快、先易而後難」。\n\n"
             f"✦ 【二、讀書文昌吉方】：溫書自習時，書桌座位宜面朝【{self.best_direction}】。桌面上保持整潔，可置文竹或四支富貴竹以引動文昌清氣。\n\n"
             f"✦ 【三、臨場定心秘法】：應試當日晨起飲一杯溫水，面朝吉方深呼吸三次定神。每日 **{self.best_timing}** 為你腦力最清明之良辰，重大複習以此時段效率最高！"
         )
 
     def _handle_travel(self, name):
-        travel_score = self.palace_scores.get("遷移宮", 75)
-        life_score = self.palace_scores.get("命宮", 70)
+        qian = self._extract_palace("遷移宮")
+        ming = self._extract_palace("命宮")
+        qian_main = "、".join(qian["main_stars"]) if qian["main_stars"] else "出外順遂吉曜"
+        
         return (
             f"【紫微天機道長 · 出國遠行與異鄉發展精批】：\n\n"
-            f"老道推演緣主「遷移宮」外行氣象（評分 **{travel_score} 分**），命宮坐守動能為 **{life_score} 分**：\n\n"
+            f"老道推演緣主「遷移宮」外行氣象（位於{qian['zhi']}宮，坐守【{qian_main}】，評分 **{qian['score']} 分**），命宮坐守動能為 **{ming['score']} 分**：\n\n"
             f"✦ 【一、動靜取向】：遷移宮氣象開闊，顯示你命中宜動不宜過靜。出外求學、遠行出差、甚至跨國跨城拓展事業，往往比固守原地更易打開眼界與收穫機緣。\n\n"
             f"✦ 【二、遠行大吉方位】：出外求索或差旅首選方位為【{self.best_direction}】，天時相合，平安利達、順遂如意。\n\n"
             f"✦ 【三、異鄉避險提醒】：出門在外切忌涉足偏僻晦暗之地，財不露白。出發前心念「出入平安」，順應天時方位，定能滿載而歸！"
         )
 
     def _handle_children(self, name):
-        child_score = self.palace_scores.get("子女宮", 60)
-        karma_score = self.palace_scores.get("福德宮", 65)
+        zi = self._extract_palace("子女宮")
+        fu = self._extract_palace("福德宮")
+        zi_main = "、".join(zi["main_stars"]) if zi["main_stars"] else "聰慧善星"
+        
         return (
             f"【紫微天機道長 · 子女緣分與求子育嗣精批】：\n\n"
-            f"老道觀緣主「子女宮」氣息（評分 **{child_score} 分**）與「福德宮」祖蔭厚度（**{karma_score} 分**）：\n\n"
+            f"老道觀緣主「子女宮」（位於{zi['zhi']}宮，坐守【{zi_main}】，評分 **{zi['score']} 分**）與「福德宮」祖蔭厚度（**{fu['score']} 分**）：\n\n"
             f"✦ 【一、子息緣分特質】：子女宮氣度祥和，顯示緣主與後嗣緣分深厚。子女多聰敏獨立，具備自身主見與造化，成年後多能自立門戶。\n\n"
             f"✦ 【二、教養相處之道】：與子女相處宜重於「言傳身教、多引導少苛責」。多傾聽其心聲，給予探索空間，福澤自會綿延後代。\n\n"
             f"✦ 【三、備孕求嗣福方】：求嗣講究陰陽和順。調養身體切莫急躁，心平氣和、積德行善，每日宜朝【{self.best_direction}】納氣靜坐，瓜熟自會蒂落！"
         )
 
     def _handle_marriage(self, name):
-        spouse_score = self.palace_scores.get("夫妻宮", 60)
-        karma_score = self.palace_scores.get("福德宮", 65)
+        spouse = self._extract_palace("夫妻宮")
+        fu = self._extract_palace("福德宮")
+        spouse_main = "、".join(spouse["main_stars"]) if spouse["main_stars"] else "和睦吉星"
+        
         return (
             f"【紫微天機道長 · 婚姻和諧與白頭偕老精批】：\n\n"
-            f"老道觀緣主「夫妻宮」共振氣數（**{spouse_score} 分**）與「福德宮」情志（**{karma_score} 分**）：\n\n"
+            f"老道觀緣主「夫妻宮」（位於{spouse['zhi']}宮，坐守【{spouse_main}】，共振氣數 **{spouse['score']} 分**）與「福德宮」情志（**{fu['score']} 分**）：\n\n"
             f"✦ 【一、婚姻本質】：天下夫妻皆是前世修來的緣分。盤中顯示伴侶性格多有其堅持與自尊，兩人相處最忌「爭口舌高低、翻陳年舊帳」。\n\n"
             f"✦ 【二、化解摩擦妙法】：逢分歧時，切記「先處理情緒，再處理事情」。遇爭執先退半步，少一句氣話，多一句體諒，家宅自然祥和。\n\n"
             f"✦ 【三、防範外緣侵擾】：臥室床頭宜端正靠實牆，可朝向【{self.best_direction}】安神納吉。彼此坦誠信任，任何外在波折皆難以動搖真情基石！"
@@ -1102,32 +1362,38 @@ class FateCPSATSolver:
         )
 
     def _handle_parents(self, name):
-        parent_score = self.palace_scores.get("父母宮", 70)
+        fu_mu = self._extract_palace("父母宮")
+        fu_mu_main = "、".join(fu_mu["main_stars"]) if fu_mu["main_stars"] else "祖德庇蔭吉曜"
         return (
             f"【紫微天機道長 · 父母長輩與孝親福報精批】：\n\n"
-            f"老道為緣主推演「父母宮」（孝親福德位，氣數 **{parent_score} 分**）：\n\n"
+            f"老道為緣主推演「父母宮」（位於{fu_mu['zhi']}宮，坐守【{fu_mu_main}】，氣數 **{fu_mu['score']} 分**）：\n\n"
             f"✦ 【一、父母緣分】：父母宮得吉曜庇蔭，長輩對你多懷關愛與期許。唯長輩觀念偶有傳統固執之處，相處宜以順承溫和為重。\n\n"
             f"✦ 【二、孝親得大福報】：百善孝為先。凡對長輩敬順體貼之人，自身運勢往往受祖蔭暗中相助，常能逢凶化吉。\n\n"
             f"✦ 【三、長輩健康祈福】：日常宜多關心長輩睡眠作息與關節筋骨，逢年過節可面朝【{self.best_direction}】為雙親祈願安康，自聚滿門吉慶！"
         )
 
     def _handle_life_guidance(self, name, clean_q=""):
+        ming = self._extract_palace("命宮")
+        body_palace_name = self._get_body_palace()
+        body = self._extract_palace(body_palace_name)
         top_p = sorted(self.palace_scores.items(), key=lambda x: x[1], reverse=True)[0]
         weak_p = sorted(self.palace_scores.items(), key=lambda x: x[1])[0]
         sorted_elements = sorted(self.element_scores.items(), key=lambda x: x[1])
         weakest = sorted_elements[0][0]
         lucky_color = ELEMENT_COLORS.get(weakest, "玄黑、湛藍、深黛色")
+        
+        ming_main = "、".join(ming["main_stars"]) if ming["main_stars"] else "正氣星曜"
 
         return (
             f"【紫微天機道長 · 乾坤問津人生解惑】：\n\n"
             f"緣主 {name} 且平心靜氣，聽老道為你觀照當前心境、指點迷津！\n\n"
-            f"世事如棋局局新，凡人逢困頓或抉擇時，心亂則神移。老道觀你整張命譜：\n\n"
+            f"世事如棋局局新，凡人逢困頓或抉擇時，心亂則神移。老道觀你命宮坐守【**{ming_main}**】（底氣 **{ming['score']} 分**），身宮寄託於【**{body_palace_name}**】：\n\n"
             f"✦ 【一、觀照根基 · 命中有大福澤】\n"
-            f"你命盤中最強的福澤樞紐在於【{top_p[0]}】（底氣 **{top_p[1]} 分**），這代表你先天具備極強的生機與翻盤潛質！眼前之波折迷惘，不過是行至【{weak_p[0]}】時的暫時磨礪，絕非終局。\n\n"
+            f"你命盤中最強的福澤樞紐在於【**{top_p[0]}**】（底氣 **{top_p[1]} 分**），這代表你先天具備極強的生機與翻盤潛質！眼前之波折迷惘，不過是行至【**{weak_p[0]}**】時的暫時磨礪，絕非終局。\n\n"
             f"✦ 【二、大師指路 · 破除當前執念】\n"
-            f"凡事「急則生亂，緩則圓通」。眼前若有猶豫不決之事，莫要逼迫自己在混亂中做重大決定。給自己三至七日靜沉心緒，多聽少動，待局勢明朗後再行定奪。\n\n"
+            f"針對你心中所念之事，謹記「急則生亂，緩則圓通」。眼前若有猶豫不決之事，莫要逼迫自己在混亂中做重大決定。給自己三至七日靜沉心緒，多聽少動，待局勢明朗後再行定奪。\n\n"
             f"✦ 【三、借天時時空轉運】\n"
-            f"每日可於 **{self.best_timing}**，面朝你的生旺吉方【{self.best_direction}】散步或深思；身著 **{lucky_color}** 系衣飾調和磁場，自能生出澄澈智慧。\n\n"
+            f"每日可於 **{self.best_timing}**，面朝你的生旺吉方【**{self.best_direction}**】散步或深思；身著 **{lucky_color}** 系衣飾調和磁場，自能生出澄澈智慧。\n\n"
             f"✦ 【老道定心真言】\n"
             f"『山重水複疑無路，柳暗花明又一村。』天生我材必有用，順應天時而行，眼前迷霧轉瞬即散，前程定是一片開闊！"
         )
@@ -1177,4 +1443,3 @@ def stream_cpsat_ai(prompt, system_prompt="", chart_data=None, user_info=None, t
         for chunk in full_report.split("\n\n"):
             yield chunk + "\n\n"
             time.sleep(0.02)
-
