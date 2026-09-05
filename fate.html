@@ -5540,14 +5540,21 @@ ${newsStats}
                 return clean.trim();
             };
 
-            const handleChatSend = async () => {
-                if (!input.trim() || isChatLoading) return;
+            const handleChatSend = async (overrideMsg = null) => {
+                const rawMsg = (typeof overrideMsg === 'string' && overrideMsg.trim()) ? overrideMsg : input;
+                if (!rawMsg.trim() || isChatLoading) return;
                 playRitualSound('start');
-                const userMsg = input.trim();
+                const userMsg = rawMsg.trim();
                 setInput("");
                 setChat(prev => [...prev, { role: 'user', text: userMsg }, { role: 'assistant', text: "" }]);
                 setIsChatLoading(true);
                 setActionLoading('chat');
+
+                // 平滑滾動至大師諮詢窗口
+                setTimeout(() => {
+                    const chatBox = document.getElementById('master-chat-card') || chatEndRef.current;
+                    chatBox?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 80);
 
                 let prompt = `${getFullChartContext()} \n\n【緣主提問】：${userMsg} \n\n【大師指令】：請務必「優先引用」且「深度分析」《紫微心法》中的相關口訣來回答。若心法中有對應的特殊格局（如空劫、羊陀、化忌等組合），請務必點出並詳細解釋，不可僅用通用知識帶過。\n\n【特別要求】：1. 請務必使用「繁體中文」回答。\n2.每個回答必須「分段清晰」，不要全部擠在一起，方便閱讀。\n3.在思考過程中嚴謹地運用心法邏輯。`;
 
@@ -5966,12 +5973,11 @@ ${newsStats}
                                 </div>
 
                                     {/* 四化飛星因果儀互動面板 */}
-                                    {showFlying && focusedPalace !== null && focusedPalace !== -1 && (
+                                    {focusedPalace !== null && focusedPalace !== -1 && (
                                         <FlyingStarResonanceChamber
                                             focusedId={focusedPalace}
                                             chartData={chartData}
                                             onConsult={(q) => {
-                                                setUserQuestion(q);
                                                 handleChatSend(q);
                                             }}
                                         />
@@ -6439,10 +6445,10 @@ ${newsStats}
                                         {/* 問事快選區 */}
                                         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                                             <span className="text-[10px] font-black text-slate-400 shrink-0">💬 諮詢方向：</span>
-                                            {['今日財位', '適合什麼職業', '如何避小人', '桃花在那裡', '今日幸運靈動數'].map(q => (
+                                            {['今日財位', '適合什麼職業', '如何避小人', '桃花在那裡', '🌌 飛星因果神斷', '今日幸運靈動數'].map(q => (
                                                 <button
                                                     key={q}
-                                                    onClick={() => { setInput(q); }}
+                                                    onClick={() => { if (q === '🌌 飛星因果神斷') { handleChatSend('請紫微天機道長依十二宮四化飛星術深度開示我的因果牽引與化解之道！'); } else { setInput(q); } }}
                                                     className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[11px] font-black rounded-full border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm shrink-0 active:scale-95"
                                                 >
                                                     {q}
