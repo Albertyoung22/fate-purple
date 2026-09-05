@@ -1217,6 +1217,13 @@
                             </div>
                         </div>
                         {onConsult && (
+                            <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => window.openAcademyModal && window.openAcademyModal('flying')}
+                                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-fuchsia-200 text-xs font-bold rounded-xl border border-white/10 transition-all flex items-center gap-1"
+                            >
+                                <span>📖</span> 飛星心法
+                            </button>
                             <button
                                 onClick={() => onConsult(`請紫微天機道長為我深度解析【${palace.palaceName}】天干【${palace.gan}】發射之四化飛星（化祿入${items[0].target}、化權入${items[1].target}、化科入${items[2].target}、化忌入${items[3].target}）的因果牽引與破局玄機！`)}
                                 className="px-3 py-1.5 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/30 transition-all flex items-center gap-1.5 transform hover:scale-105"
@@ -2076,6 +2083,324 @@
                 </div>
             </div>
         );
+
+        
+        // =========================================================================
+        // 紫微斗數 · 飛星心法教學道壇 (ZiWei Flying Star Academy Modal)
+        // =========================================================================
+        const AcademyModal = ({ onClose, initialTab = 'flying', onConsult }) => {
+            const [activeTab, setActiveTab] = useState(initialTab);
+            const [selectedStem, setSelectedStem] = useState('甲');
+            const [selectedPalace, setSelectedPalace] = useState(0);
+
+            const STEM_TEACHING = {
+                '甲': { formula: '甲廉破武陽', lu: '廉貞', quan: '破軍', ke: '武曲', ji: '太陽', desc: '【甲干木火相生】：以廉貞之交際創見為祿，破軍之魄力破舊立新為權，武曲之剛毅正財為科，太陽之光芒操勞為忌（注意名聲透支與男性長輩健康）。' },
+                '乙': { formula: '乙機梁紫陰', lu: '天機', quan: '天梁', ke: '紫微', ji: '太陰', desc: '【乙干陰木生發】：以天機之智謀靈動為祿，天梁之庇蔭長者為權，紫微之尊貴名望為科，太陰之細膩心思為忌（注意情緒多思敏感與女性長輩牽絆）。' },
+                '丙': { formula: '丙同機昌廉', lu: '天同', quan: '天機', ke: '文昌', ji: '廉貞', desc: '【丙干陽火光明】：以天同之和氣福德為祿，天機之策劃變通為權，文昌之才華文筆為科，廉貞之慾望波折為忌（注意感情是非與法規合約規範）。' },
+                '丁': { formula: '丁陰同機巨', lu: '太陰', quan: '天同', ke: '天機', ji: '巨門', desc: '【丁干陰火溫潤】：以太陰之財富置產為祿，天同之享樂悠閒為權，天機之靈犀悟性為科，巨門之暗曜是非為忌（注意口舌爭端與暗中疑慮）。' },
+                '戊': { formula: '戊貪陰右機', lu: '貪狼', quan: '太陰', ke: '右弼', ji: '天機', desc: '【戊干陽土厚重】：以貪狼之才藝交際為祿，太陰之財富蓄積為權，右弼之貴人暗助為科，天機之智慮過重為忌（注意精神內耗與鑽牛角尖）。' },
+                '己': { formula: '己武貪梁曲', lu: '武曲', quan: '貪狼', ke: '天梁', ji: '文曲', desc: '【己干陰土承載】：以武曲之正財實幹為祿，貪狼之開拓進取為權，天梁之老練逢凶化吉為科，文曲之情感受挫為忌（注意財務合同漏洞與感情糾紛）。' },
+                '庚': { formula: '庚陽武陰同', lu: '太陽', quan: '武曲', ke: '太陰', ji: '天同', desc: '【庚干陽金剛健】：以太陽之聲名遠播為祿，武曲之執行果敢為權，太陰之理財細密為科，天同之怠惰享樂為忌（注意失去奮鬥動力與福氣消耗）。' },
+                '辛': { formula: '辛巨陽曲昌', lu: '巨門', quan: '太陽', ke: '文曲', ji: '文昌', desc: '【辛干陰金精細】：以巨門之辯才宣傳為祿，太陽之公眾威望為權，文曲之文采風采為科，文昌之文書契約為忌（注意條款陷阱與文書紕漏）。' },
+                '壬': { formula: '壬梁紫輔武', lu: '天梁', quan: '紫微', ke: '左輔', ji: '武曲', desc: '【壬干陽水奔騰】：以天梁之祖蔭壽元為祿，紫微之權威統御為權，左輔之同儕助力為科，武曲之剛愎破耗為忌（注意資金週轉吃緊與過度剛硬）。' },
+                '癸': { formula: '癸破巨陰貪', lu: '破軍', quan: '巨門', ke: '太陰', ji: '貪狼', desc: '【癸干陰水涵養】：以破軍之勇於變革為祿，巨門之深謀辯才為權，太陰之資產蓄庫為科，貪狼之慾望氾濫為忌（注意桃色風波與投機破敗）。' }
+            };
+
+            const PALACES_TEACHING = [
+                { name: '命宮', icon: '👤', core: '先天個性、格局命格、精神核心、人生觀', detail: '命盤的大腦與總樞紐。看一個人的先天氣度、相貌神態、心性底色。其三方四正（財帛、官祿、遷移）共同決定一生行事格局。' },
+                { name: '兄弟宮', icon: '🤝', core: '手足情誼、親密同儕、金錢現金庫位', detail: '除了看兄弟姊妹緣分，在飛星與財運派系中，兄弟宮為「財帛之田宅」，代表實質的現金流與個人金庫厚度。' },
+                { name: '夫妻宮', icon: '💍', core: '婚姻伴侶、情感寄託、理想型特質', detail: '看配偶長相、性情、婚姻相處模式。亦代表自身對愛情的價值觀與投入深度。' },
+                { name: '子女宮', icon: '👶', core: '後嗣晚輩、求子育兒、合夥桃花運', detail: '看子女緣分、晚輩下屬互動。亦為桃花位與向外投資、新興合夥之生發點。' },
+                { name: '財帛宮', icon: '💰', core: '求財方式、財務收支、正財生財動能', detail: '看進財管道是靠專業技術、經商貿易或管理謀略；亦看日常金錢使用觀念。' },
+                { name: '疾厄宮', icon: '🏥', core: '體質健康、潛意識本能、身心機能', detail: '代表肉身載體、五臟六腑強弱。在心性上亦代表內心最深處不欲人知的潛意識。' },
+                { name: '遷移宮', icon: '✈️', core: '出外際遇、社會人脈、出差移民吉凶', detail: '命宮的對宮，代表跨出家門後的外界環境。看在外人緣、出外貴人或意外風險。' },
+                { name: '奴僕宮 (交友宮)', icon: '👥', core: '朋友部屬、人脈網絡、大眾緣分', detail: '看朋友品質、人際關係互動。也是看能否得到團隊、粉絲與群眾支持的重要宮位。' },
+                { name: '官祿宮 (事業宮)', icon: '💼', core: '職場事業、社會地位、學業功名考運', detail: '看適合從事的行業屬性、升遷躍進時機、職場競爭力與社會成就高度。' },
+                { name: '田宅宮', icon: '🏡', core: '不動產、家宅環境、家族祖業庫存', detail: '真正的總資產庫！看能否置產購屋、家宅風水磁場、家族庇蔭與最後財富沉澱。' },
+                { name: '福德宮', icon: '🧘', core: '精神享受、因果福報、心靈安寧、壽元', detail: '夫妻宮的官祿位（看婚姻氣數），亦代表內心精神世界的幸福感、情趣與前世修為。' },
+                { name: '父母宮', icon: '🏛️', core: '父母長輩、師長提攜、政府法規文書', detail: '看與父母長輩的緣分，亦為「相貌宮」與「文書宮」，看能否得長官貴人賞識及文憑考運。' }
+            ];
+
+            const STARS_TEACHING = [
+                { name: '紫微', type: '帝星 (土)', trait: '尊貴穩重、具領袖風範、自尊心強', career: '企業高管、政界領導、品牌主理人' },
+                { name: '天機', type: '謀星 (木)', trait: '聰明敏捷、擅策略策劃、善於變通', career: '軟體研發、顧問策劃、精算分析、設計' },
+                { name: '太陽', type: '貴星 (火)', trait: '博愛仗義、熱忱開朗、光芒普照', career: '大眾傳播、教育公益、外交貿易、公職' },
+                { name: '武曲', type: '正財 (金)', trait: '剛毅果決、執行力極強、重實踐誠信', career: '金融財務、軍警科技、實業製造、工程' },
+                { name: '天同', type: '福星 (水)', trait: '溫柔和善、具生活品味、人緣極佳', career: '文化休閒、餐飲服務、藝術公關、生活美學' },
+                { name: '廉貞', type: '次桃花 (火)', trait: '公關手腕高、政治敏感度強、重原則', career: '公關外交、司法科技、精密技術、演藝' },
+                { name: '天府', type: '令星 (土)', trait: '南斗之首、善守財庫、行事穩健周全', career: '銀行金融、資產管理、大型機構掌舵' },
+                { name: '太陰', type: '富星 (水)', trait: '心思細膩、主富厚置產、具浪漫情懷', career: '不動產投資、財務審計、文創設計、醫護' },
+                { name: '貪狼', type: '第一桃花 (木火)', trait: '才藝兼備、適應力強、善人際社交', career: '公關傳媒、娛樂時尚、創投探索、新創' },
+                { name: '巨門', type: '暗曜辯才 (水)', trait: '觀察入微、善辯論分析、條理分明', career: '律師法務、講師名嘴、心理諮詢、偵探' },
+                { name: '天相', type: '印星 (水)', trait: '宰相印璽、待人厚道、重形象承諾', career: '秘書行政、法規協調、公證合約、管理' },
+                { name: '天梁', type: '蔭星 (土)', trait: '長者風範、逢凶化吉、具俠義心腸', career: '中醫醫藥、法律監察、宗教哲學、顧問' },
+                { name: '七殺', type: '將星 (金火)', trait: '敢衝敢拼、獨立果敢、勇於獨當一面', career: '自主創業、開拓先鋒、技術破局、軍警' },
+                { name: '破軍', type: '革新 (水)', trait: '破舊立新、不畏艱難、求新求變', career: '科技創新、市場開拓、冒險創業、變革者' }
+            ];
+
+            return (
+                <div className="fixed inset-0 z-[2500] flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-lg animate-in fade-in duration-300" onClick={onClose}>
+                    <div className="bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white rounded-[2.5rem] shadow-2xl w-full max-w-5xl h-[90vh] max-h-[850px] overflow-hidden flex flex-col relative border-4 border-indigo-500/30 ring-1 ring-white/10" onClick={e => e.stopPropagation()}>
+                        
+                        {/* Header */}
+                        <div className="p-5 md:p-6 bg-gradient-to-r from-purple-950/90 via-indigo-900/90 to-slate-950/90 border-b border-indigo-500/30 flex justify-between items-center shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-fuchsia-500/30">
+                                    <span className="text-xl">🌌</span>
+                                </div>
+                                <div>
+                                    <h2 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-fuchsia-200 tracking-wider">
+                                        紫微天機 · 飛星心法講堂
+                                    </h2>
+                                    <p className="text-[11px] text-indigo-300/80 font-bold tracking-widest mt-0.5">
+                                        正統四化飛星術 · 十二宮能量場 · 十四主星速成秘傳
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={onClose} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors text-slate-300 hover:text-white">
+                                <Icon name="x" className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Navigation Tabs */}
+                        <div className="flex overflow-x-auto no-scrollbar gap-1.5 p-2 bg-slate-950/90 border-b border-indigo-500/20 shrink-0">
+                            {[
+                                { id: 'flying', label: '🚀 四化飛星核心論', icon: 'sparkles' },
+                                { id: 'stems', label: '🔢 十天干四化速查', icon: 'grid' },
+                                { id: 'palaces', label: '🏰 十二宮位全象', icon: 'compass' },
+                                { id: 'stars', label: '⭐ 十四正曜特質', icon: 'sun' },
+                                { id: 'cases', label: '🧘 實戰斷訣與解厄', icon: 'book-open' }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${
+                                        activeTab === tab.id
+                                            ? 'bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white shadow-lg shadow-fuchsia-500/30 ring-1 ring-white/20'
+                                            : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                                    }`}
+                                >
+                                    <Icon name={tab.icon} className="w-3.5 h-3.5" />
+                                    <span>{tab.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="flex-1 overflow-y-auto p-5 md:p-8 custom-scrollbar space-y-6">
+                            
+                            {/* --- TAB 1: 四化飛星核心論 --- */}
+                            {activeTab === 'flying' && (
+                                <div className="space-y-6 animate-in fade-in duration-300">
+                                    <div className="bg-gradient-to-r from-indigo-900/40 via-purple-900/40 to-slate-900/40 p-5 rounded-3xl border border-indigo-500/30">
+                                        <h3 className="text-lg font-black text-amber-300 flex items-center gap-2">
+                                            <span>⚡</span> 什麼是「四化飛星」？
+                                        </h3>
+                                        <p className="text-slate-200 text-sm leading-relaxed mt-2">
+                                            在紫微斗數中，主星曜是「靜態的肉身與潛力」，而天干引動的<strong className="text-fuchsia-300">「化祿、化權、化科、化忌」</strong>則是「動態的靈魂與因果」！
+                                            當任何一個宮位的天干引動四化星，該能量就會像雷射光束一樣直射目標宮位，這就是<strong>「飛星」</strong>。
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-emerald-950/40 border border-emerald-500/30 p-4 rounded-2xl">
+                                            <div className="flex items-center gap-2 text-emerald-400 font-black text-base">
+                                                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+                                                🌸 化祿（緣起·福澤·機會）
+                                            </div>
+                                            <p className="text-slate-300 text-xs mt-2 leading-relaxed">
+                                                代表機遇萌芽、福祿善緣、心情愉悅、賺錢管道。化祿落入何宮，代表你先天願意把愛與好處分享給該宮，該宮即為你的「福緣生發點」。
+                                            </p>
+                                        </div>
+
+                                        <div className="bg-red-950/40 border border-red-500/30 p-4 rounded-2xl">
+                                            <div className="flex items-center gap-2 text-red-400 font-black text-base">
+                                                <span className="w-3 h-3 rounded-full bg-red-500 animate-ping"></span>
+                                                ⚡ 化權（掌控·企圖·開拓）
+                                            </div>
+                                            <p className="text-slate-300 text-xs mt-2 leading-relaxed">
+                                                代表力量、實權、主導慾望與競爭力。化權落入何宮，代表你在該領域展現強大決斷力與魄力，敢作敢當，亦容易給人強勢之感。
+                                            </p>
+                                        </div>
+
+                                        <div className="bg-purple-950/40 border border-purple-500/30 p-4 rounded-2xl">
+                                            <div className="flex items-center gap-2 text-purple-400 font-black text-base">
+                                                <span className="w-3 h-3 rounded-full bg-purple-500 animate-ping"></span>
+                                                📜 化科（名譽·清貴·解厄）
+                                            </div>
+                                            <p className="text-slate-300 text-xs mt-2 leading-relaxed">
+                                                代表名聲清譽、斯文涵養、貴人相挺與逢凶化吉。化科落入何宮，代表該領域遇難呈祥，有貴人暗中相助，亦主名氣文采。
+                                            </p>
+                                        </div>
+
+                                        <div className="bg-blue-950/40 border border-blue-500/30 p-4 rounded-2xl">
+                                            <div className="flex items-center gap-2 text-blue-400 font-black text-base">
+                                                <span className="w-3 h-3 rounded-full bg-blue-500 animate-ping"></span>
+                                                🌀 化忌（執念·責任·修心）
+                                            </div>
+                                            <p className="text-slate-300 text-xs mt-2 leading-relaxed">
+                                                代表此生最深執念、罣礙、責任與操勞。化忌落入何宮，代表你最放不下該宮事物；化忌之對宮則受「沖」，代表能量的破耗與考驗。
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-900/80 p-5 rounded-3xl border border-white/10 space-y-3">
+                                        <h4 className="text-sm font-black text-amber-200">🔍 飛星三絕技：自化、化入與沖照</h4>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                            <div className="bg-white/5 p-3 rounded-xl">
+                                                <span className="text-amber-400 font-bold">1. 自化現象</span>
+                                                <p className="text-slate-400 mt-1">宮干引動本宮之星，能量不守恆。自化祿主隨緣隨性，自化忌主暗中承擔自我消化。</p>
+                                            </div>
+                                            <div className="bg-white/5 p-3 rounded-xl">
+                                                <span className="text-emerald-400 font-bold">2. 化入 (發射➔落入)</span>
+                                                <p className="text-slate-400 mt-1">發射宮代表「因」，落入宮代表「果」。如命宮化祿入官祿，代表自己熱愛工作、工作回饋好運。</p>
+                                            </div>
+                                            <div className="bg-white/5 p-3 rounded-xl">
+                                                <span className="text-red-400 font-bold">3. 忌入沖對宮</span>
+                                                <p className="text-slate-400 mt-1">忌入之宮為執著處，其對宮則受衝擊。如忌入官祿沖夫妻，工作操勞導致疏忽另一半。</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* --- TAB 2: 十天干四化速查天機盤 --- */}
+                            {activeTab === 'stems' && (
+                                <div className="space-y-6 animate-in fade-in duration-300">
+                                    <div className="flex flex-wrap gap-2 justify-center">
+                                        {Object.keys(STEM_TEACHING).map(stem => (
+                                            <button
+                                                key={stem}
+                                                onClick={() => setSelectedStem(stem)}
+                                                className={`w-11 h-11 rounded-2xl font-black text-base transition-all ${
+                                                    selectedStem === stem
+                                                        ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 shadow-lg shadow-amber-500/40 scale-110 ring-2 ring-white'
+                                                        : 'bg-white/10 text-slate-300 hover:bg-white/20'
+                                                }`}
+                                            >
+                                                {stem}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* 詳情卡片 */}
+                                    {selectedStem && (
+                                        <div className="bg-gradient-to-br from-indigo-950/80 via-slate-900/90 to-purple-950/80 p-6 rounded-3xl border border-amber-400/30 shadow-2xl">
+                                            <div className="flex flex-wrap justify-between items-center gap-3 border-b border-white/10 pb-4">
+                                                <div>
+                                                    <span className="text-2xl font-black text-amber-300">【{selectedStem}干】四化秘訣</span>
+                                                    <span className="ml-3 px-3 py-1 bg-amber-500/20 text-amber-200 border border-amber-400/30 rounded-full text-xs font-black">
+                                                        口訣：{STEM_TEACHING[selectedStem].formula}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-5">
+                                                <div className="bg-emerald-900/30 border border-emerald-500/30 p-3 rounded-2xl text-center">
+                                                    <span className="text-xs font-bold text-emerald-300">🌸 化祿</span>
+                                                    <div className="text-xl font-black text-white mt-1">{STEM_TEACHING[selectedStem].lu}</div>
+                                                </div>
+                                                <div className="bg-red-900/30 border border-red-500/30 p-3 rounded-2xl text-center">
+                                                    <span className="text-xs font-bold text-red-300">⚡ 化權</span>
+                                                    <div className="text-xl font-black text-white mt-1">{STEM_TEACHING[selectedStem].quan}</div>
+                                                </div>
+                                                <div className="bg-purple-900/30 border border-purple-500/30 p-3 rounded-2xl text-center">
+                                                    <span className="text-xs font-bold text-purple-300">📜 化科</span>
+                                                    <div className="text-xl font-black text-white mt-1">{STEM_TEACHING[selectedStem].ke}</div>
+                                                </div>
+                                                <div className="bg-blue-900/30 border border-blue-500/30 p-3 rounded-2xl text-center">
+                                                    <span className="text-xs font-bold text-blue-300">🌀 化忌</span>
+                                                    <div className="text-xl font-black text-white mt-1">{STEM_TEACHING[selectedStem].ji}</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white/5 p-4 rounded-2xl text-xs text-slate-300 leading-relaxed">
+                                                {STEM_TEACHING[selectedStem].desc}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* --- TAB 3: 十二宮位全象 --- */}
+                            {activeTab === 'palaces' && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 animate-in fade-in duration-300">
+                                    {PALACES_TEACHING.map((p, idx) => (
+                                        <div key={idx} className="bg-white/5 hover:bg-white/10 p-4 rounded-2xl border border-white/10 transition-all hover:border-indigo-400/40">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xl">{p.icon}</span>
+                                                <h4 className="text-sm font-black text-indigo-200">{p.name}</h4>
+                                            </div>
+                                            <div className="text-xs font-bold text-amber-300/90 mt-2">
+                                                {p.core}
+                                            </div>
+                                            <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                                                {p.detail}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* --- TAB 4: 十四正曜特質 --- */}
+                            {activeTab === 'stars' && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3.5 animate-in fade-in duration-300">
+                                    {STARS_TEACHING.map((s, idx) => (
+                                        <div key={idx} className="bg-white/5 hover:bg-white/10 p-4 rounded-2xl border border-white/10">
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-base font-black text-amber-300">{s.name}星</span>
+                                                    <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 text-[10px] rounded-full font-bold">{s.type}</span>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-slate-300 mt-2">
+                                                <strong>核心性情：</strong>{s.trait}
+                                            </p>
+                                            <p className="text-[11px] text-indigo-300/80 mt-1">
+                                                <strong>適合賽道：</strong>{s.career}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* --- TAB 5: 實戰斷訣與解厄 --- */}
+                            {activeTab === 'cases' && (
+                                <div className="space-y-4 animate-in fade-in duration-300 text-xs">
+                                    <div className="bg-gradient-to-r from-amber-950/40 to-slate-900/60 p-4 rounded-2xl border border-amber-500/30">
+                                        <h4 className="text-sm font-black text-amber-300">💡 宗師飛星三大解厄真傳</h4>
+                                        <div className="mt-2 space-y-2 text-slate-300 leading-relaxed">
+                                            <p><strong>1. 隨祿而動（知福而順應）：</strong> 化祿是上天賜予你的天然生財與善緣管道。化祿入財帛就專注專業求財，化祿入田宅就量力置產，順應天時必得豐厚回報。</p>
+                                            <p><strong>2. 修忌為智（有執念即有破局）：</strong> 化忌是你此生的「業力功課」。化忌在夫妻不要猜忌，化忌在官祿不要過勞，化忌在疾厄多鍛鍊身心，看破放下即是菩提。</p>
+                                            <p><strong>3. 三方四正合參（不獨論一星）：</strong> 斷盤切忌「見煞即凶，見吉即吉」，吉星聚會可成大器，煞星得用反成破局之利刃！</p>
+                                        </div>
+                                    </div>
+
+                                    {onConsult && (
+                                        <div className="p-4 bg-gradient-to-r from-fuchsia-900/50 to-indigo-900/50 rounded-2xl border border-fuchsia-500/30 flex flex-col sm:flex-row justify-between items-center gap-3">
+                                            <div>
+                                                <h5 className="font-black text-white text-sm">想看道長針對您的專屬命盤進行飛星詳批？</h5>
+                                                <p className="text-indigo-200 text-[11px] mt-0.5">即刻啟動 AI 宗師大腦，推演您的全盤四化因果鏈！</p>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    onClose();
+                                                    onConsult('請紫微天機道長依十二宮四化飛星術深度開示我的因果牽引與化解之道！');
+                                                }}
+                                                className="px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/30 transition-all shrink-0"
+                                            >
+                                                🔮 即刻向道長請益飛星術
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
         const GuideModal = ({ onClose }) => {
             const [step, setStep] = useState(0);
@@ -4240,6 +4565,7 @@
             const [showDestinyCard, setShowDestinyCard] = useState(false); // Destiny Card State
             const [showTalisman, setShowTalisman] = useState(false);
             const [showGuide, setShowGuide] = useState(false);
+            const [showAcademy, setShowAcademy] = useState(false);
             const [talismanText, setTalismanText] = useState("");
             const [showIChing, setShowIChing] = useState(false);
             const [showSynastry, setShowSynastry] = useState(false);
@@ -4654,6 +4980,12 @@
             }, [destiny, stars, targetYear, targetMonth, targetDay, birthHour, bureau, gender]);
 
 
+
+                        useEffect(() => {
+                window.openAcademyModal = (tab = 'flying') => {
+                    setShowAcademy(true);
+                };
+            }, []);
 
             // 預設鎖定命宮
             useEffect(() => {
@@ -5618,6 +5950,9 @@ ${newsStats}
                                         <Icon name="music" className={`w-3.5 h-3.5 ${bgmPlaying ? 'animate-spin-slow text-amber-600' : 'text-slate-400'}`} />
                                         <span>{bgmPlaying ? '仙樂播放中 (點擊停止)' : '開啟背景仙樂'}</span>
                                     </button>
+                                    <button onClick={() => setShowAcademy(true)} className="text-[11px] md:text-xs font-black flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gradient-to-r from-fuchsia-600 via-purple-600 to-indigo-600 text-white shadow-md shadow-fuchsia-500/30 hover:shadow-lg hover:shadow-fuchsia-500/50 hover:scale-105 transition-all border border-fuchsia-400/40" title="開啟紫微斗數與四化飛星心法教學講堂">
+                                        <span className="text-sm">📖</span> 飛星心法教學
+                                    </button>
                                     <button onClick={() => setShowGuide(true)} className="text-[11px] md:text-xs font-black flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur shadow-md hover:bg-white hover:shadow-lg transition-all border border-indigo-100 text-indigo-600">
                                         <Icon name="help-circle" className="w-4 h-4" /> 使用說明
                                     </button>
@@ -5834,6 +6169,13 @@ ${newsStats}
                                             className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest border transition-all ${showFlying ? 'bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'} `}
                                         >
                                             {showFlying ? '四化飛星' : '隱藏飛星'}
+                                        </button>
+                                        <button
+                                            onClick={() => setShowAcademy(true)}
+                                            className="px-2.5 py-0.5 rounded text-[9px] font-black tracking-widest bg-gradient-to-r from-purple-600 to-indigo-600 text-white border border-purple-400/40 shadow-sm hover:scale-105 transition-all flex items-center gap-1"
+                                            title="開啟飛星心法講堂與教學速查"
+                                        >
+                                            <span>📖</span> 心法教學
                                         </button>
                                     </div>
 
@@ -6637,6 +6979,12 @@ ${newsStats}
                         </div>
 
                         {showDonate && <DonateModal onClose={() => setShowDonate(false)} />}
+                        {showAcademy && (
+                            <AcademyModal
+                                onClose={() => setShowAcademy(false)}
+                                onConsult={(q) => handleChatSend(q)}
+                            />
+                        )}
                         {showGuide && <GuideModal onClose={() => setShowGuide(false)} />}
                         {wisdomText && <WisdomCardModal text={wisdomText} onClose={() => setWisdomText("")} />}
                         {showDestinyCard && <DestinyShareModal userName={userName} gender={gender} destiny={destiny} chartData={chartData} onClose={() => setShowDestinyCard(false)} />}
