@@ -147,6 +147,67 @@
             font-family: 'Noto Serif TC', serif;
             letter-spacing: 2px;
         }
+
+        /* AI Digital Avatar Video Player & Stage Styles */
+        @keyframes avatarBreathing {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-4px) scale(1.02); }
+        }
+        .avatar-breathing {
+            animation: avatarBreathing 4.5s ease-in-out infinite;
+        }
+
+        @keyframes mouthTalking {
+            0%, 100% { height: 4px; border-radius: 2px; }
+            25% { height: 10px; border-radius: 6px; }
+            50% { height: 6px; border-radius: 4px; }
+            75% { height: 12px; border-radius: 8px; }
+        }
+        .mouth-talking {
+            animation: mouthTalking 0.3s ease-in-out infinite;
+        }
+
+        @keyframes audioWaveBar {
+            0%, 100% { height: 15%; opacity: 0.4; }
+            50% { height: 95%; opacity: 1; }
+        }
+        .audio-wave-bar {
+            animation: audioWaveBar 1.2s ease-in-out infinite;
+        }
+
+        @keyframes haloPulse {
+            0%, 100% { opacity: 0.45; transform: scale(1); filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.4)); }
+            50% { opacity: 0.85; transform: scale(1.06); filter: drop-shadow(0 0 35px rgba(250, 204, 21, 0.7)); }
+        }
+        .halo-pulse {
+            animation: haloPulse 3s ease-in-out infinite;
+        }
+
+        /* PiP mode */
+        .avatar-pip-container {
+            position: fixed !important;
+            bottom: 24px !important;
+            right: 24px !important;
+            width: 360px !important;
+            z-index: 9999 !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 30px rgba(147, 51, 234, 0.5) !important;
+            border: 2px solid rgba(250, 204, 21, 0.8) !important;
+            animation: fadeInPip 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        @keyframes fadeInPip {
+            from { opacity: 0; transform: translateY(40px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Cinema Fullscreen Mode */
+        .avatar-cinema-container {
+            position: fixed !important;
+            inset: 12px !important;
+            width: calc(100vw - 24px) !important;
+            height: calc(100vh - 24px) !important;
+            z-index: 9999 !important;
+            box-shadow: 0 0 80px rgba(0,0,0,0.95), 0 0 40px rgba(168,85,247,0.4) !important;
+        }
     </style>
 </head>
 
@@ -377,6 +438,247 @@
         <!-- Main Content Lecture Area -->
         <main class="flex-1 space-y-6 min-w-0">
 
+            <!-- ================= AI 數字人道長 · 視訊教學影院 / 講壇 ================= -->
+            <div id="digital-avatar-theater" class="glass-panel p-4 sm:p-6 rounded-3xl border-2 border-purple-500/30 shadow-2xl relative overflow-hidden transition-all duration-500 bg-gradient-to-b from-slate-950/90 via-purple-950/40 to-slate-950/90">
+                <!-- Glowing Ambient Accent -->
+                <div class="absolute -top-24 -right-24 w-72 h-72 bg-purple-600/15 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <!-- Theater Top Bar -->
+                <div class="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-purple-500/20 relative z-10">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-purple-600 to-indigo-600 p-[2px] shadow-lg shadow-purple-500/30 flex items-center justify-center shrink-0">
+                            <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                                <span class="text-lg animate-pulse">🎥</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="font-serif font-black text-sm sm:text-base text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-purple-200 to-indigo-200">
+                                    AI 數字人道長 · 視訊教學講堂
+                                </h2>
+                                <span id="avatar-live-badge" class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/40 text-[10px] font-black flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
+                                    <span>AI 講授中</span>
+                                </span>
+                            </div>
+                            <p id="avatar-video-title" class="text-xs text-slate-300 font-medium mt-0.5">
+                                第 0 講 · 初窺天機 · 像拍電影一樣理解紫微斗數
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Theater Window Action Controls -->
+                    <div class="flex items-center gap-2">
+                        <!-- Mode Switch (Avatar vs Custom Video) -->
+                        <button onclick="toggleVideoMode()" id="btn-video-mode" class="px-2.5 py-1.5 rounded-xl glass-card hover:bg-purple-600/30 text-[11px] font-bold text-slate-300 flex items-center gap-1 border border-purple-500/20 transition-all" title="切換 AI 數字人擬真講壇 / 自訂影片">
+                            <i data-lucide="video" class="w-3.5 h-3.5 text-indigo-400"></i>
+                            <span id="video-mode-text">切換自訂視訊</span>
+                        </button>
+
+                        <!-- Picture-in-Picture Floating Mode -->
+                        <button onclick="toggleAvatarPip()" id="btn-avatar-pip" class="p-2 rounded-xl glass-card hover:bg-slate-700/50 text-slate-300 transition-all border border-slate-700/50" title="懸浮小窗伴讀模式 (PiP)">
+                            <i data-lucide="picture-in-picture-2" class="w-4 h-4 text-amber-300"></i>
+                        </button>
+
+                        <!-- Fullscreen Cinema Mode -->
+                        <button onclick="toggleAvatarCinema()" id="btn-avatar-cinema" class="p-2 rounded-xl glass-card hover:bg-amber-500/20 text-amber-300 transition-all border border-amber-500/30" title="劇院全螢幕播放">
+                            <i data-lucide="tv" class="w-4 h-4"></i>
+                        </button>
+
+                        <!-- Collapse / Expand Theater -->
+                        <button onclick="toggleAvatarCollapse()" id="btn-avatar-collapse" class="p-2 rounded-xl glass-card hover:bg-slate-700/50 text-slate-400 transition-all border border-slate-700/50" title="收合 / 展開視訊講台">
+                            <i id="avatar-collapse-icon" data-lucide="chevron-up" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Theater Body: Digital Human Stage & Smart HUD -->
+                <div id="avatar-stage-body" class="pt-4 grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch relative z-10">
+
+                    <!-- Left: Digital Human Animated Stage (5 Cols) -->
+                    <div class="lg:col-span-5 relative rounded-3xl bg-slate-950/80 border border-purple-500/30 overflow-hidden flex flex-col items-center justify-between p-5 min-h-[300px] sm:min-h-[340px] shadow-inner">
+                        <!-- Mystic Aura & Orbit Background -->
+                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(147,51,234,0.25)_0%,transparent_70%)] pointer-events-none"></div>
+                        <div class="absolute w-64 h-64 border border-amber-400/20 rounded-full spin-orbit pointer-events-none"></div>
+                        <div class="absolute w-48 h-48 border border-purple-400/30 rounded-full spin-orbit pointer-events-none" style="animation-direction: reverse; animation-duration: 15s;"></div>
+
+                        <!-- Top Stage Badge -->
+                        <div class="relative z-10 w-full flex items-center justify-between">
+                            <span class="px-2.5 py-1 rounded-full bg-slate-900/90 text-amber-300 border border-amber-400/40 text-[10px] font-black tracking-wider flex items-center gap-1.5 shadow-md">
+                                <span class="text-xs">☯</span> 紫微天機 · 數字人宗師
+                            </span>
+                            <div class="flex items-center gap-1 bg-purple-950/80 px-2 py-0.5 rounded-full border border-purple-500/30 text-[10px] text-purple-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span id="avatar-emotion-status">專注授道</span>
+                            </div>
+                        </div>
+
+                        <!-- Center: Taoist Master Digital Avatar & Talking Mouth -->
+                        <div class="relative z-10 my-auto py-2 flex flex-col items-center">
+                            <!-- Sacred Glowing Halo -->
+                            <div id="avatar-halo" class="absolute w-40 h-40 rounded-full bg-gradient-to-tr from-amber-500/30 via-purple-600/40 to-indigo-500/30 blur-xl halo-pulse pointer-events-none"></div>
+
+                            <!-- Avatar Portrait Wrapper -->
+                            <div class="relative w-32 h-32 sm:w-36 sm:h-36 rounded-3xl bg-gradient-to-tr from-amber-400 via-purple-600 to-indigo-600 p-[3px] shadow-2xl shadow-purple-600/40 avatar-breathing">
+                                <div class="w-full h-full bg-slate-950 rounded-[21px] overflow-hidden relative">
+                                    <img
+                                        id="avatar-portrait-img"
+                                        src="master_portrait.jpg"
+                                        alt="紫微天機道長數字人"
+                                        class="w-full h-full object-cover transition-all duration-500"
+                                        onerror="this.src='master_avatar.svg'"
+                                    >
+                                    <!-- Dynamic Lip-Sync Mouth Overlay -->
+                                    <div id="avatar-mouth-wrapper" class="absolute bottom-6 left-1/2 -translate-x-1/2 w-7 flex items-center justify-center opacity-0 transition-opacity duration-200 pointer-events-none">
+                                        <div id="avatar-mouth" class="w-5 bg-gradient-to-b from-rose-950 to-red-800 border border-rose-400/60 shadow-md"></div>
+                                    </div>
+                                    <!-- Energy Scanline Overlay -->
+                                    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-purple-400/10 to-transparent opacity-30 pointer-events-none"></div>
+                                </div>
+                            </div>
+
+                            <div class="text-center mt-3">
+                                <h3 class="font-serif font-black text-sm text-slate-100 flex items-center justify-center gap-1.5">
+                                    <span>紫微天機道長</span>
+                                    <span class="text-amber-400 text-xs animate-bounce">✦</span>
+                                </h3>
+                                <p class="text-[10px] text-amber-300/90 font-medium">特聘白話命理導師 · 8講微課主講</p>
+                            </div>
+                        </div>
+
+                        <!-- Bottom: Dynamic Audio Visualizer Wave Spectrum -->
+                        <div class="relative z-10 w-full flex items-center justify-center gap-1 h-7 px-4 bg-slate-900/80 rounded-2xl border border-purple-500/20 shadow-inner">
+                            <span class="text-[9px] font-mono text-slate-400 mr-1.5">LIVE</span>
+                            <div class="flex items-end justify-center gap-1 h-4 flex-1">
+                                <div class="w-1 bg-amber-400 rounded-full audio-wave-bar" style="animation-delay: 0.1s; height: 30%;"></div>
+                                <div class="w-1 bg-purple-400 rounded-full audio-wave-bar" style="animation-delay: 0.3s; height: 70%;"></div>
+                                <div class="w-1 bg-indigo-400 rounded-full audio-wave-bar" style="animation-delay: 0.2s; height: 40%;"></div>
+                                <div class="w-1 bg-amber-300 rounded-full audio-wave-bar" style="animation-delay: 0.5s; height: 85%;"></div>
+                                <div class="w-1 bg-purple-500 rounded-full audio-wave-bar" style="animation-delay: 0.4s; height: 60%;"></div>
+                                <div class="w-1 bg-indigo-300 rounded-full audio-wave-bar" style="animation-delay: 0.15s; height: 90%;"></div>
+                                <div class="w-1 bg-amber-400 rounded-full audio-wave-bar" style="animation-delay: 0.35s; height: 45%;"></div>
+                                <div class="w-1 bg-purple-400 rounded-full audio-wave-bar" style="animation-delay: 0.25s; height: 75%;"></div>
+                                <div class="w-1 bg-indigo-400 rounded-full audio-wave-bar" style="animation-delay: 0.45s; height: 50%;"></div>
+                                <div class="w-1 bg-amber-300 rounded-full audio-wave-bar" style="animation-delay: 0.05s; height: 80%;"></div>
+                                <div class="w-1 bg-purple-500 rounded-full audio-wave-bar" style="animation-delay: 0.55s; height: 35%;"></div>
+                                <div class="w-1 bg-indigo-300 rounded-full audio-wave-bar" style="animation-delay: 0.2s; height: 65%;"></div>
+                            </div>
+                            <span id="avatar-speed-badge" class="text-[9px] font-mono font-bold text-amber-300 ml-1.5">1.0x</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Smart Whiteboard Projection & Live Teleprompter (7 Cols) -->
+                    <div class="lg:col-span-7 flex flex-col justify-between space-y-3">
+                        <!-- Blackboard / Custom Video Frame -->
+                        <div id="avatar-blackboard" class="p-4 sm:p-5 rounded-3xl bg-slate-900/90 border border-purple-500/25 flex-1 flex flex-col justify-between space-y-4 shadow-xl relative overflow-hidden">
+                            <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                                    <span class="text-xs font-black text-amber-300 font-serif">道長精華板書 · 核心要點</span>
+                                </div>
+                                <span id="blackboard-chapter-tag" class="px-2 py-0.5 rounded-md bg-purple-950 text-[10px] text-purple-300 border border-purple-500/30">
+                                    第 0 講
+                                </span>
+                            </div>
+
+                            <!-- Bullet Points HUD -->
+                            <div id="blackboard-bullets" class="space-y-2.5 text-xs text-slate-200">
+                                <div class="p-2.5 rounded-2xl bg-white/5 border border-white/5 flex items-start gap-2.5">
+                                    <span class="text-amber-400 font-mono font-bold shrink-0">01.</span>
+                                    <span class="leading-relaxed"><strong>十二宮位 = 拍攝場景</strong>：12 間生活房間，告訴你事情在哪裡發生。</span>
+                                </div>
+                                <div class="p-2.5 rounded-2xl bg-white/5 border border-white/5 flex items-start gap-2.5">
+                                    <span class="text-purple-400 font-mono font-bold shrink-0">02.</span>
+                                    <span class="leading-relaxed"><strong>十四主星 = 性格演員</strong>：住在房間裡的男女主角，決定做事的性格與脾氣。</span>
+                                </div>
+                                <div class="p-2.5 rounded-2xl bg-white/5 border border-white/5 flex items-start gap-2.5">
+                                    <span class="text-emerald-400 font-mono font-bold shrink-0">03.</span>
+                                    <span class="leading-relaxed"><strong>四化飛星 = 命運包裹</strong>：老天爺寄送的大紅包或牽掛責任，推動劇情的高潮迭起。</span>
+                                </div>
+                            </div>
+
+                            <!-- Synced Live Subtitles Box (Teleprompter) -->
+                            <div class="p-3.5 rounded-2xl bg-purple-950/60 border border-purple-500/40 relative">
+                                <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono mb-1">
+                                    <span class="flex items-center gap-1 text-purple-300">
+                                        <i data-lucide="subtitles" class="w-3 h-3"></i> 實時同步字幕
+                                    </span>
+                                    <span id="subtitle-timecode">00:00 / 02:15</span>
+                                </div>
+                                <p id="avatar-live-subtitle" class="text-xs sm:text-sm font-bold text-amber-200 leading-relaxed min-h-[42px] flex items-center">
+                                    點擊下方「播放視訊」按鈕，AI 數字人道長將為您開講！
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Custom Video Player Container (Hidden by default, used when user switches to external video) -->
+                        <div id="custom-video-frame" class="hidden p-4 rounded-3xl bg-slate-900/95 border border-indigo-500/30 flex-1 flex flex-col justify-between shadow-xl">
+                            <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                                <span class="text-xs font-black text-indigo-300">自訂視訊播映視窗</span>
+                                <button onclick="promptCustomVideoUrl()" class="text-[10px] text-amber-300 hover:underline">輸入自訂影片 URL</button>
+                            </div>
+                            <div class="my-auto py-3">
+                                <video id="native-video-el" controls class="w-full rounded-2xl bg-black max-h-[220px]" poster="master_portrait.jpg">
+                                    <source id="native-video-src" src="" type="video/mp4">
+                                    您的瀏覽器不支援 HTML5 視訊。
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Video Player Controls Bar -->
+                <div class="mt-4 pt-3.5 border-t border-purple-500/20 flex flex-wrap items-center justify-between gap-3 relative z-10">
+                    <!-- Left: Play/Pause & Seeks -->
+                    <div class="flex items-center gap-2">
+                        <button id="btn-avatar-play" onclick="toggleAvatarPlayPause()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-slate-950 font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-lg shadow-amber-500/30 flex items-center gap-1.5">
+                            <i id="avatar-play-icon" data-lucide="play" class="w-4 h-4 fill-slate-950"></i>
+                            <span id="avatar-play-text">播放視訊</span>
+                        </button>
+
+                        <button onclick="seekAvatarVideo(-10)" class="p-2 rounded-xl glass-card hover:bg-slate-700/50 text-slate-300 text-xs transition-all border border-slate-700/50" title="倒退 10 秒">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        </button>
+
+                        <button onclick="seekAvatarVideo(10)" class="p-2 rounded-xl glass-card hover:bg-slate-700/50 text-slate-300 text-xs transition-all border border-slate-700/50" title="快進 10 秒">
+                            <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Center: Timeline Scrubber -->
+                    <div class="flex-1 min-w-[200px] flex items-center gap-3 px-2">
+                        <span id="avatar-curr-time" class="text-[11px] font-mono text-slate-400">00:00</span>
+                        <div class="flex-1 relative group cursor-pointer" onclick="handleTimelineClick(event)">
+                            <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                                <div id="avatar-timeline-bar" class="h-full bg-gradient-to-r from-purple-500 via-indigo-400 to-amber-400 transition-all duration-150" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                        <span id="avatar-total-time" class="text-[11px] font-mono text-slate-400">02:15</span>
+                    </div>
+
+                    <!-- Right: Chapter Switcher & Playback Speed -->
+                    <div class="flex items-center gap-2">
+                        <!-- Chapter Direct Dropdown -->
+                        <select id="avatar-chapter-select" onchange="changeAvatarChapter(parseInt(this.value))" class="px-2.5 py-1.5 rounded-xl bg-slate-900 border border-purple-500/30 text-[11px] font-bold text-amber-300 focus:outline-none focus:border-amber-400">
+                            <option value="0">第 0 講 · 拍電影模型</option>
+                            <option value="1">第 1 講 · 十二宮位大白話</option>
+                            <option value="2">第 2 講 · 掌訣排盤動畫</option>
+                            <option value="3">第 3 講 · 四張超能力卡</option>
+                            <option value="4">第 4 講 · 飛星寄包裹</option>
+                            <option value="5">第 5 講 · 大限流年看運氣</option>
+                            <option value="6">第 6 講 · 動態射線實驗室</option>
+                            <option value="7">第 7 講 · 結業測驗與證書</option>
+                        </select>
+
+                        <!-- Speed Toggle -->
+                        <button onclick="cycleAvatarSpeed()" class="px-2.5 py-1.5 rounded-xl glass-card hover:bg-purple-600/30 text-[11px] font-mono font-bold text-slate-200 border border-purple-500/30 transition-all" title="切換播放倍速">
+                            <span id="avatar-speed-btn-text">1.0x</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- ================= CHAPTER 0: 初窺天機 · 拍電影模型 ================= -->
             <section id="chapter-0" class="tab-content active space-y-6">
                 <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden">
@@ -387,9 +689,14 @@
                                 初窺天機 · 像拍電影一樣理解紫微斗數
                             </h2>
                         </div>
-                        <button onclick="speakText('chapter-0-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
-                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="playDigitalAvatarVideo(0)" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md hover:scale-105 transition-all">
+                                <i data-lucide="play-circle" class="w-4 h-4"></i> 觀看本講數字人視訊
+                            </button>
+                            <button onclick="speakText('chapter-0-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                                <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                            </button>
+                        </div>
                     </div>
 
                     <div id="chapter-0-text" class="space-y-6 pt-6 text-sm leading-relaxed text-slate-200">
@@ -469,9 +776,14 @@
                                 人生十二生活房間 · 點選看懂每個宮位的「大白話」
                             </h2>
                         </div>
-                        <button onclick="speakText('chapter-1-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
-                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="playDigitalAvatarVideo(1)" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-black flex items-center gap-1.5 shadow-md hover:scale-105 transition-all">
+                                <i data-lucide="play-circle" class="w-4 h-4"></i> 觀看本講數字人視訊
+                            </button>
+                            <button onclick="speakText('chapter-1-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                                <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                            </button>
+                        </div>
                     </div>
 
                     <div id="chapter-1-text" class="space-y-6 pt-6 text-sm text-slate-200">
@@ -654,9 +966,14 @@
                                 揭秘天盤 · 五步掌訣排盤與 14 位性格演員人設
                             </h2>
                         </div>
-                        <button onclick="speakText('chapter-2-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
-                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="playDigitalAvatarVideo(2)" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md hover:scale-105 transition-all">
+                                <i data-lucide="play-circle" class="w-4 h-4"></i> 觀看本講數字人視訊
+                            </button>
+                            <button onclick="speakText('chapter-2-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                                <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                            </button>
+                        </div>
                     </div>
 
                     <div id="chapter-2-text" class="space-y-6 pt-6 text-sm text-slate-200">
@@ -826,9 +1143,14 @@
                                 動能核心 · 四張超能力魔法卡（祿、權、科、忌）
                             </h2>
                         </div>
-                        <button onclick="speakText('chapter-3-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
-                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="playDigitalAvatarVideo(3)" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-black flex items-center gap-1.5 shadow-md hover:scale-105 transition-all">
+                                <i data-lucide="play-circle" class="w-4 h-4"></i> 觀看本講數字人視訊
+                            </button>
+                            <button onclick="speakText('chapter-3-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                                <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                            </button>
+                        </div>
                     </div>
 
                     <div id="chapter-3-text" class="space-y-6 pt-6 text-sm text-slate-200">
@@ -930,9 +1252,14 @@
                                 絕學真傳 · 宮位發射「飛星寄包裹」因果穿透力學
                             </h2>
                         </div>
-                        <button onclick="speakText('chapter-4-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
-                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="playDigitalAvatarVideo(4)" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 text-white text-xs font-black flex items-center gap-1.5 shadow-md hover:scale-105 transition-all">
+                                <i data-lucide="play-circle" class="w-4 h-4"></i> 觀看本講數字人視訊
+                            </button>
+                            <button onclick="speakText('chapter-4-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                                <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                            </button>
+                        </div>
                     </div>
 
                     <div id="chapter-4-text" class="space-y-6 pt-6 text-sm text-slate-200">
@@ -1031,9 +1358,14 @@
                                 動態時空 · 十年大運與今年流年運勢重疊
                             </h2>
                         </div>
-                        <button onclick="speakText('chapter-5-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
-                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="playDigitalAvatarVideo(5)" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-black flex items-center gap-1.5 shadow-md hover:scale-105 transition-all">
+                                <i data-lucide="play-circle" class="w-4 h-4"></i> 觀看本講數字人視訊
+                            </button>
+                            <button onclick="speakText('chapter-5-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                                <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                            </button>
+                        </div>
                     </div>
 
                     <div id="chapter-5-text" class="space-y-6 pt-6 text-sm text-slate-200">
@@ -1086,6 +1418,9 @@
                             </h2>
                         </div>
                         <div class="flex items-center gap-2">
+                            <button onclick="playDigitalAvatarVideo(6)" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-black flex items-center gap-1.5 shadow-md hover:scale-105 transition-all">
+                                <i data-lucide="play-circle" class="w-4 h-4"></i> 觀看沙盒微課視訊
+                            </button>
                             <button onclick="fireAllSihua()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs shadow-md hover:scale-105 transition-all flex items-center gap-1.5">
                                 <i data-lucide="sparkles" class="w-4 h-4"></i> 一鍵全發射 (祿權科忌)
                             </button>
@@ -1217,8 +1552,13 @@
                                 趣味檢測 · 天機大會考與頒發研習精通證書
                             </h2>
                         </div>
-                        <div class="text-xs text-amber-300 font-bold flex items-center gap-1.5">
-                            <i data-lucide="award" class="w-4 h-4"></i> 題目超白話 · 通關即獲榮譽證書
+                        <div class="flex items-center gap-2">
+                            <button onclick="playDigitalAvatarVideo(7)" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md hover:scale-105 transition-all">
+                                <i data-lucide="play-circle" class="w-4 h-4"></i> 觀看主考官數字人開示
+                            </button>
+                            <div class="text-xs text-amber-300 font-bold flex items-center gap-1.5">
+                                <i data-lucide="award" class="w-4 h-4"></i> 題目超白話 · 通關即獲榮譽證書
+                            </div>
                         </div>
                     </div>
 
@@ -2245,6 +2585,485 @@
             const ttsBtn = document.getElementById('tts-btn-text');
             if (ttsBtn) ttsBtn.innerText = '天機伴讀';
         }
+
+        // ==========================================
+        // AI 數字人道長 · 視訊教學影院與播報核心引擎
+        // ==========================================
+        const DIGITAL_AVATAR_LECTURES = [
+            {
+                id: 0,
+                title: "第 0 講 · 初窺天機 · 像拍電影一樣理解紫微斗數",
+                duration: 75,
+                bullets: [
+                    "<strong>十二宮位 = 拍攝場景</strong>：12 間生活房間，告訴你事情在哪裡發生。",
+                    "<strong>十四主星 = 性格演員</strong>：住在房間裡的男女主角，決定做事的性格與脾氣。",
+                    "<strong>四化飛星 = 命運包裹</strong>：老天爺寄送的大紅包或牽掛責任，推動劇情的高潮迭起。"
+                ],
+                subtitles: [
+                    { start: 0, text: "各位緣主好！歡迎來到紫微天機大講堂。老道今天不用一句艱澀古文，帶你 3 分鐘看懂紫微斗數。" },
+                    { start: 10, text: "請記住三要素：十二宮位就是十二個生活房間；十四顆主星就是十四位性格演員；" },
+                    { start: 22, text: "而四化飛星，就是老天爺寄給你的人生命運快遞包裹！" },
+                    { start: 32, text: "當我們把人生的劇本攤開，你就是這部自編自導自演電影的主角。" },
+                    { start: 45, text: "不管外面風雨如何，只要掌握星盤與四化能量，就能在命運的航道上知進退、明得失！" },
+                    { start: 60, text: "現在就讓我們點擊下一講，走進十二個生活房間一探究竟吧！" }
+                ],
+                speechText: "各位緣主好！歡迎來到紫微天機大講堂。老道今天不用一句艱澀古文，帶你三分鐘看懂紫微斗數。請記住三要素：十二宮位就是十二個生活房間；十四顆主星就是十四位性格演員；而四化飛星，就是老天爺寄給你的人生命運快遞包裹！當我們把人生的劇本攤開，你就是這部自編自導自演電影的主角。不管外面風雨如何，只要掌握星盤與四化能量，就能在命運的航道上知進退、明得失！現在就讓我們點擊下一講，走進十二個生活房間一探究竟吧！"
+            },
+            {
+                id: 1,
+                title: "第 1 講 · 人生十二生活房間 · 點選看懂每個宮位的大白話",
+                duration: 90,
+                bullets: [
+                    "<strong>核心鐵三角</strong>：命宮(自己)、財帛宮(錢包)、官祿宮(事業)、遷移宮(社交舞台)。",
+                    "<strong>六親互動宮</strong>：父母宮、兄弟宮、夫妻宮、子女宮、交友宮。",
+                    "<strong>身心福報宮</strong>：福德宮(精神靈魂)、田宅宮(不動產金庫)、疾厄宮(身體健康)。"
+                ],
+                subtitles: [
+                    { start: 0, text: "緣主請看，你的一生有十二個專屬房間。命宮是你自己，身宮是你三十歲後的追求。" },
+                    { start: 12, text: "財帛宮是你的錢包，官祿宮是你的辦公室，遷移宮是你在外面的社交舞台。" },
+                    { start: 25, text: "這三間房間加上命宮，就是無比重要的『開公司三方四正鐵三角』！" },
+                    { start: 40, text: "田宅宮是你的大金庫與不動產，福德宮是你的精神享受與靈魂世界。" },
+                    { start: 55, text: "不管做生意、求職還是談戀愛，看懂這十二個房間，你就掌握了人生七成以上的勝率！" },
+                    { start: 75, text: "接下來，老道將親自傳授你古代宗師五步掐指排盤絕技！" }
+                ],
+                speechText: "緣主請看，你的一生有十二個專屬房間。命宮是你自己，身宮是你三十歲後的追求。財帛宮是你的錢包，官祿宮是你的辦公室，遷移宮是你在外面的社交舞台。這三間房間加上命宮，就是無比重要的開公司三方四正鐵三角！田宅宮是你的大金庫與不動產，福德宮是你的精神享受與靈魂世界。不管做生意、求職還是談戀愛，看懂這十二個房間，你就掌握了人生七成以上的勝率！接下來，老道將親自傳授你古代宗師五步掐指排盤絕技！"
+            },
+            {
+                id: 2,
+                title: "第 2 講 · 揭秘天盤 · 五步掌訣排盤與 14 位性格演員人設",
+                duration: 95,
+                bullets: [
+                    "<strong>掌訣五步法</strong>：順數生月倒數生時定命身宮 ➔ 算五行局 ➔ 請紫微帝星 ➔ 安14正曜 ➔ 起大限。",
+                    "<strong>紫微天府兩大星系</strong>：紫微帶領軍師、暖男、財神；天府統率太陰、貪狼、將軍。",
+                    "<strong>現代原型速查</strong>：紫微(董事長)、天機(諸葛亮)、武曲(精算師)、天同(吃貨天使)。"
+                ],
+                subtitles: [
+                    { start: 0, text: "很多初學者以為排盤需要複雜算術，其實只要伸出左手，五步掐指搞定！" },
+                    { start: 12, text: "第一步：從寅宮順數生月、倒數生時，手指停下的地方就是你的命宮本尊！" },
+                    { start: 26, text: "第二步：依據命宮干支推算五行局數，從水二局到火六局；" },
+                    { start: 38, text: "第三步：用生日除以局數請出紫微帝星；第四步：順排逆排入駐十四位正曜主角；" },
+                    { start: 55, text: "第五步：起十年大限！你看，十四顆主星就像十四位性格鮮明的現代原型人物！" },
+                    { start: 75, text: "排好房間與演員後，現在就要給他們賦予超能力了——四化星！" }
+                ],
+                speechText: "很多初學者以為排盤需要複雜算術，其實只要伸出左手，五步掐指搞定！第一步：從寅宮順數生月、倒數生時，手指停下的地方就是你的命宮本尊！第二步：依據命宮干支推算五行局數，從水二局到火六局；第三步：用生日除以局數請出紫微帝星；第四步：順排逆排入駐十四位正曜主角；第五步：起十年大限！你看，十四顆主星就像十四位性格鮮明的現代原型人物！排好房間與演員後，現在就要給他們賦予超能力了，四化星！"
+            },
+            {
+                id: 3,
+                title: "第 3 講 · 動能核心 · 四張超能力魔法卡（祿、權、科、忌）",
+                duration: 90,
+                bullets: [
+                    "<strong>🌸 化祿 (春天的禮物)</strong>：送大紅包、心情愉悅、緣分與財氣主動敲門。",
+                    "<strong>⚡ 化權 (夏天的烈火)</strong>：方向盤與兵符、掌控慾、說話有份量、積極開拓。",
+                    "<strong>📜 化科 (秋天的名聲)</strong>：榮譽金牌、考試過關、貴人提攜、聲譽口碑。",
+                    "<strong>🌀 化忌 (冬天的考驗)</strong>：心頭最在乎的牽掛與責任，用力最深、最放不下。"
+                ],
+                subtitles: [
+                    { start: 0, text: "星曜是演員的性格，但四化才是劇情的靈魂！" },
+                    { start: 10, text: "化祿是老天送你的大紅包，祿去哪裡，哪裡就招財、心情好、機會多！" },
+                    { start: 24, text: "化權是遞給你方向盤與兵符，讓你握有實權、展現領導霸氣！" },
+                    { start: 36, text: "化科是頒給你榮譽證書與護身符，讓你考運亨通、遇難呈祥得貴人！" },
+                    { start: 50, text: "化忌不是災難，而是你心頭最放不下的責任與牽掛，有忌的地方就是你最用心的地方！" },
+                    { start: 70, text: "掌握了四張超能力卡，下一講我們將解鎖飛星穿透力學！" }
+                ],
+                speechText: "星曜是演員的性格，但四化才是劇情的靈魂！化祿是老天送你的大紅包，祿去哪裡，哪裡就招財、心情好、機會多！化權是遞給你方向盤與兵符，讓你握有實權、展現領導霸氣！化科是頒給你榮譽證書與護身符，讓你考運亨通、遇難呈祥得貴人！化忌不是災難，而是你心頭最放不下的責任與牽掛，有忌的地方就是你最用心的地方！掌握了四張超能力卡，下一講我們將解鎖飛星穿透力學！"
+            },
+            {
+                id: 4,
+                title: "第 4 講 · 絕學真傳 · 宮位發射飛星寄包裹因果穿透力學",
+                duration: 95,
+                bullets: [
+                    "<strong>飛星快遞模型</strong>：寄件宮(起因) ➔ 快遞星曜(載體) ➔ 收件宮(結果)。",
+                    "<strong>化祿入財田</strong>：自己愛賺錢、財源滾滾、喜歡置產存房。",
+                    "<strong>化忌入命宮</strong>：對方極度在乎你但容易嘮叨碎念管太寬。",
+                    "<strong>化忌沖對宮</strong>：發射到對宮產生反作用力衝擊，需特別謹慎防範。"
+                ],
+                subtitles: [
+                    { start: 0, text: "現在傳授飛星斗數核心心法——寄包裹穿透力學！" },
+                    { start: 12, text: "每個宮位門口都掛著天干，當宮干引動四化，就像這個房間把包裹快遞給了別的房間。" },
+                    { start: 26, text: "例如：命宮化祿入財帛宮，代表你主動熱愛求財，賺錢非常順手；" },
+                    { start: 40, text: "夫妻宮化忌入命宮，代表另一半把你放在第一位，但管得太緊讓你感到壓力；" },
+                    { start: 56, text: "官祿宮化忌入夫妻沖官祿，代表工作過勞波及家庭，必須學會平衡！" },
+                    { start: 75, text: "搞懂誰寄給誰、誰欠誰人情，人際與命運脈絡一目了然！" }
+                ],
+                speechText: "現在傳授飛星斗數核心心法，寄包裹穿透力學！每個宮位門口都掛著天干，當宮干引動四化，就像這個房間把包裹快遞給了別的房間。例如：命宮化祿入財帛宮，代表你主動熱愛求財，賺錢非常順手；夫妻宮化忌入命宮，代表另一半把你放在第一位，但管得太緊讓你感到壓力；官祿宮化忌入夫妻沖官祿，代表工作過勞波及家庭，必須學會平衡！搞懂誰寄給誰、誰欠誰人情，人際與命運脈絡一目了然！"
+            },
+            {
+                id: 5,
+                title: "第 5 講 · 動態時空 · 十年大運與今年流年運勢重疊",
+                duration: 85,
+                bullets: [
+                    "<strong>三重時空維度</strong>：本命盤(出廠設定) + 大限盤(十年氣候) + 流年盤(今年具體事件)。",
+                    "<strong>能量疊加效應</strong>：吉化疊加如錦上添花，忌星交會需修身養息。",
+                    "<strong>運勢順逆法則</strong>：順境順勢而為揚帆起航，逆境沉澱蓄力厚積薄發。"
+                ],
+                subtitles: [
+                    { start: 0, text: "本命盤是你的出廠設定，而大限與流年就是老天爺的天氣預報！" },
+                    { start: 12, text: "十年一步大限，一年一個流年。當流年生肖走到某個宮位，生活重心就落在該處。" },
+                    { start: 28, text: "當本命、大限、流年三代四化在此重疊碰撞：三吉化吉上加吉，如虎添翼；" },
+                    { start: 45, text: "若遇到雙忌沖照，則宜低調收斂、守成蓄力。" },
+                    { start: 60, text: "看懂時空重疊，你就能在順風時全速衝刺，逆風時修煉內功！" }
+                ],
+                speechText: "本命盤是你的出廠設定，而大限與流年就是老天爺的天氣預報！十年一步大限，一年一個流年。當流年生肖走到某個宮位，生活重心就落在該處。當本命、大限、流年三代四化在此重疊碰撞：三吉化吉上加吉，如虎添翼；若遇到雙忌沖照，則宜低調收斂、守成蓄力。看懂時空重疊，你就能在順風時全速衝刺，逆風時修煉內功！"
+            },
+            {
+                id: 6,
+                title: "第 6 講 · 實戰演練 · 四化飛星動態互動沙盒",
+                duration: 80,
+                bullets: [
+                    "<strong>自由發射基地</strong>：點選任意宮位與天干，四化光束即刻動態穿透。",
+                    "<strong>五大生活預設情境</strong>：發財大吉、深情操心、升官掌權、置產買房、佛系自化。",
+                    "<strong>即時生活翻譯機</strong>：秒出白話因果劇本，親手體驗宗師推盤快感！"
+                ],
+                subtitles: [
+                    { start: 0, text: "歡迎來到飛星動態沙盒實驗室！在這裡，你就是真正的命理宗師。" },
+                    { start: 12, text: "點選上方任意發射宮位與天干，按下發射按鈕，觀察祿權科忌四道光束如何穿透十二宮！" },
+                    { start: 28, text: "下方的大白話翻譯機會立即為你解讀因果劇本。" },
+                    { start: 45, text: "動動手指，親身體會天機運轉的奧妙吧！" }
+                ],
+                speechText: "歡迎來到飛星動態沙盒實驗室！在這裡，你就是真正的命理宗師。點選上方任意發射宮位與天干，按下發射按鈕，觀察祿權科忌四道光束如何穿透十二宮！下方的大白話翻譯機會立即為你解讀因果劇本。動動手指，親身體會天機運轉的奧妙吧！"
+            },
+            {
+                id: 7,
+                title: "第 7 講 · 趣味檢測 · 天機大會考與頒發研習精通證書",
+                duration: 75,
+                bullets: [
+                    "<strong>白話闖關測驗</strong>：5 題生活化題目，檢驗你的斗數功力。",
+                    "<strong>通關合格標準</strong>：得分達 80 分以上，即可解鎖專屬紫微結業證書！",
+                    "<strong>加蓋宗師神印</strong>：榮譽認證，見證你從小白邁向紫微行家的精彩蛻變！"
+                ],
+                subtitles: [
+                    { start: 0, text: "恭喜各位緣主堅持修習完畢！現在由老道親自主持結業考核。" },
+                    { start: 12, text: "題目全部採用日常生活大白話，只要答對 80 分以上，" },
+                    { start: 25, text: "即可領取加蓋『紫微天機宗師印』的專屬精通結業證書！" },
+                    { start: 40, text: "靜下心來，展現你今日所學的深厚功力吧！" }
+                ],
+                speechText: "恭喜各位緣主堅持修習完畢！現在由老道親自主持結業考核。題目全部採用日常生活大白話，只要答對八十分以上，即可領取加蓋紫微天機宗師印的專屬精通結業證書！靜下心來，展現你今日所學的深厚功力吧！"
+            }
+        ];
+
+        // Avatar Video State
+        let avatarVideoState = {
+            isPlaying: false,
+            currentChapter: 0,
+            currentTime: 0,
+            duration: 75,
+            speed: 1.0,
+            isPip: false,
+            isCinema: false,
+            isVideoMode: false,
+            timer: null
+        };
+
+        function initAvatarVideoPlayer() {
+            loadAvatarChapterData(0);
+        }
+
+        function loadAvatarChapterData(chapIdx) {
+            const lecture = DIGITAL_AVATAR_LECTURES[chapIdx] || DIGITAL_AVATAR_LECTURES[0];
+            avatarVideoState.currentChapter = chapIdx;
+            avatarVideoState.currentTime = 0;
+            avatarVideoState.duration = lecture.duration;
+
+            // Update UI elements
+            const titleEl = document.getElementById('avatar-video-title');
+            if (titleEl) titleEl.innerText = lecture.title;
+
+            const selectEl = document.getElementById('avatar-chapter-select');
+            if (selectEl) selectEl.value = chapIdx.toString();
+
+            const tagEl = document.getElementById('blackboard-chapter-tag');
+            if (tagEl) tagEl.innerText = `第 ${chapIdx} 講`;
+
+            // Update blackboard bullet points
+            const bulletsEl = document.getElementById('blackboard-bullets');
+            if (bulletsEl && lecture.bullets) {
+                bulletsEl.innerHTML = lecture.bullets.map((b, idx) => `
+                    <div class="p-2.5 rounded-2xl bg-white/5 border border-white/5 flex items-start gap-2.5">
+                        <span class="text-amber-400 font-mono font-bold shrink-0">0${idx + 1}.</span>
+                        <span class="leading-relaxed text-xs text-slate-200">${b}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Reset Subtitles & Timecode
+            updateAvatarTimeDisplay();
+            const subEl = document.getElementById('avatar-live-subtitle');
+            if (subEl) {
+                subEl.innerText = lecture.subtitles[0] ? lecture.subtitles[0].text : '點擊下方「播放視訊」按鈕，AI 數字人道長將為您開講！';
+            }
+        }
+
+        function playDigitalAvatarVideo(chapIdx) {
+            if (chapIdx !== undefined && chapIdx !== avatarVideoState.currentChapter) {
+                switchChapter(chapIdx);
+                loadAvatarChapterData(chapIdx);
+            }
+
+            // Scroll theater into view smoothly
+            const theater = document.getElementById('digital-avatar-theater');
+            if (theater) {
+                theater.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            // Start Playback
+            startAvatarPlayback();
+        }
+
+        function toggleAvatarPlayPause() {
+            if (avatarVideoState.isPlaying) {
+                pauseAvatarPlayback();
+            } else {
+                startAvatarPlayback();
+            }
+        }
+
+        function startAvatarPlayback() {
+            avatarVideoState.isPlaying = true;
+
+            const btnText = document.getElementById('avatar-play-text');
+            if (btnText) btnText.innerText = '暫停講授';
+
+            const playIcon = document.getElementById('avatar-play-icon');
+            if (playIcon) playIcon.setAttribute('data-lucide', 'pause');
+
+            // Mouth Animation & Glow
+            const mouthWrapper = document.getElementById('avatar-mouth-wrapper');
+            const mouth = document.getElementById('avatar-mouth');
+            if (mouthWrapper && mouth) {
+                mouthWrapper.classList.remove('opacity-0');
+                mouth.classList.add('mouth-talking');
+            }
+
+            const halo = document.getElementById('avatar-halo');
+            if (halo) halo.classList.add('halo-pulse');
+
+            const statusEl = document.getElementById('avatar-emotion-status');
+            if (statusEl) statusEl.innerText = '講授開示中';
+
+            // Start Timer for synchronized playback
+            if (avatarVideoState.timer) clearInterval(avatarVideoState.timer);
+            avatarVideoState.timer = setInterval(() => {
+                avatarVideoState.currentTime += 1 * avatarVideoState.speed;
+                if (avatarVideoState.currentTime >= avatarVideoState.duration) {
+                    avatarVideoState.currentTime = avatarVideoState.duration;
+                    pauseAvatarPlayback();
+                }
+                updateAvatarTimeDisplay();
+                updateAvatarSubtitles();
+            }, 1000);
+
+            // Trigger Voice Narration with Web Speech Synthesis
+            const lecture = DIGITAL_AVATAR_LECTURES[avatarVideoState.currentChapter];
+            if (lecture && lecture.speechText && 'speechSynthesis' in window) {
+                stopAudio();
+                const utter = new SpeechSynthesisUtterance(lecture.speechText);
+                utter.lang = 'zh-TW';
+                utter.rate = avatarVideoState.speed;
+                utter.pitch = 1.0;
+                const voices = synth.getVoices();
+                const zhVoice = voices.find(v => v.lang.includes('zh-TW') || v.lang.includes('cmn-Hant-TW') || v.lang.includes('zh'));
+                if (zhVoice) utter.voice = zhVoice;
+                
+                utter.onend = () => {
+                    pauseAvatarPlayback();
+                };
+                utter.onerror = () => {
+                    // Fail gracefully
+                };
+                synth.speak(utter);
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function pauseAvatarPlayback() {
+            avatarVideoState.isPlaying = false;
+
+            const btnText = document.getElementById('avatar-play-text');
+            if (btnText) btnText.innerText = '播放視訊';
+
+            const playIcon = document.getElementById('avatar-play-icon');
+            if (playIcon) playIcon.setAttribute('data-lucide', 'play');
+
+            // Stop Mouth Animation
+            const mouthWrapper = document.getElementById('avatar-mouth-wrapper');
+            const mouth = document.getElementById('avatar-mouth');
+            if (mouthWrapper && mouth) {
+                mouthWrapper.classList.add('opacity-0');
+                mouth.classList.remove('mouth-talking');
+            }
+
+            const statusEl = document.getElementById('avatar-emotion-status');
+            if (statusEl) statusEl.innerText = '入定觀星中';
+
+            if (avatarVideoState.timer) {
+                clearInterval(avatarVideoState.timer);
+                avatarVideoState.timer = null;
+            }
+
+            if (synth.speaking || synth.pending) {
+                synth.cancel();
+            }
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function seekAvatarVideo(seconds) {
+            avatarVideoState.currentTime = Math.max(0, Math.min(avatarVideoState.duration, avatarVideoState.currentTime + seconds));
+            updateAvatarTimeDisplay();
+            updateAvatarSubtitles();
+        }
+
+        function handleTimelineClick(e) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const clickPos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            avatarVideoState.currentTime = Math.round(clickPos * avatarVideoState.duration);
+            updateAvatarTimeDisplay();
+            updateAvatarSubtitles();
+        }
+
+        function changeAvatarChapter(chapIdx) {
+            const wasPlaying = avatarVideoState.isPlaying;
+            pauseAvatarPlayback();
+            switchChapter(chapIdx);
+            loadAvatarChapterData(chapIdx);
+            if (wasPlaying) {
+                startAvatarPlayback();
+            }
+        }
+
+        function cycleAvatarSpeed() {
+            const speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
+            let nextIdx = (speeds.indexOf(avatarVideoState.speed) + 1) % speeds.length;
+            avatarVideoState.speed = speeds[nextIdx];
+
+            const badge = document.getElementById('avatar-speed-badge');
+            if (badge) badge.innerText = `${avatarVideoState.speed}x`;
+
+            const btnText = document.getElementById('avatar-speed-btn-text');
+            if (btnText) btnText.innerText = `${avatarVideoState.speed}x`;
+
+            if (avatarVideoState.isPlaying) {
+                pauseAvatarPlayback();
+                startAvatarPlayback();
+            }
+        }
+
+        function updateAvatarTimeDisplay() {
+            const curMin = String(Math.floor(avatarVideoState.currentTime / 60)).padStart(2, '0');
+            const curSec = String(Math.floor(avatarVideoState.currentTime % 60)).padStart(2, '0');
+            const durMin = String(Math.floor(avatarVideoState.duration / 60)).padStart(2, '0');
+            const durSec = String(Math.floor(avatarVideoState.duration % 60)).padStart(2, '0');
+
+            const curStr = `${curMin}:${curSec}`;
+            const totalStr = `${durMin}:${durSec}`;
+
+            const curEl = document.getElementById('avatar-curr-time');
+            if (curEl) curEl.innerText = curStr;
+
+            const totEl = document.getElementById('avatar-total-time');
+            if (totEl) totEl.innerText = totalStr;
+
+            const timecodeEl = document.getElementById('subtitle-timecode');
+            if (timecodeEl) timecodeEl.innerText = `${curStr} / ${totalStr}`;
+
+            const percent = (avatarVideoState.currentTime / avatarVideoState.duration) * 100;
+            const bar = document.getElementById('avatar-timeline-bar');
+            if (bar) bar.style.width = `${percent}%`;
+        }
+
+        function updateAvatarSubtitles() {
+            const lecture = DIGITAL_AVATAR_LECTURES[avatarVideoState.currentChapter];
+            if (!lecture || !lecture.subtitles) return;
+
+            let currentSub = lecture.subtitles[0].text;
+            for (let i = 0; i < lecture.subtitles.length; i++) {
+                if (avatarVideoState.currentTime >= lecture.subtitles[i].start) {
+                    currentSub = lecture.subtitles[i].text;
+                }
+            }
+
+            const subEl = document.getElementById('avatar-live-subtitle');
+            if (subEl) {
+                subEl.innerHTML = `<span class="text-amber-300 mr-1.5 animate-pulse">▶</span> ${currentSub}`;
+            }
+        }
+
+        function toggleAvatarPip() {
+            const theater = document.getElementById('digital-avatar-theater');
+            if (!theater) return;
+            avatarVideoState.isPip = !avatarVideoState.isPip;
+
+            if (avatarVideoState.isPip) {
+                theater.classList.add('avatar-pip-container');
+            } else {
+                theater.classList.remove('avatar-pip-container');
+            }
+        }
+
+        function toggleAvatarCinema() {
+            const theater = document.getElementById('digital-avatar-theater');
+            if (!theater) return;
+            avatarVideoState.isCinema = !avatarVideoState.isCinema;
+
+            if (avatarVideoState.isCinema) {
+                theater.classList.add('avatar-cinema-container');
+            } else {
+                theater.classList.remove('avatar-cinema-container');
+            }
+        }
+
+        function toggleAvatarCollapse() {
+            const body = document.getElementById('avatar-stage-body');
+            const icon = document.getElementById('avatar-collapse-icon');
+            if (!body) return;
+
+            if (body.classList.contains('hidden')) {
+                body.classList.remove('hidden');
+                if (icon) icon.setAttribute('data-lucide', 'chevron-up');
+            } else {
+                body.classList.add('hidden');
+                if (icon) icon.setAttribute('data-lucide', 'chevron-down');
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function toggleVideoMode() {
+            const board = document.getElementById('avatar-blackboard');
+            const customFrame = document.getElementById('custom-video-frame');
+            const btnText = document.getElementById('video-mode-text');
+            if (!board || !customFrame) return;
+
+            avatarVideoState.isVideoMode = !avatarVideoState.isVideoMode;
+
+            if (avatarVideoState.isVideoMode) {
+                board.classList.add('hidden');
+                customFrame.classList.remove('hidden');
+                if (btnText) btnText.innerText = '切換數字人講壇';
+            } else {
+                board.classList.remove('hidden');
+                customFrame.classList.add('hidden');
+                if (btnText) btnText.innerText = '切換自訂視訊';
+            }
+        }
+
+        function promptCustomVideoUrl() {
+            const url = prompt('請輸入教學視訊 MP4 檔案網址或影片直鏈：', 'https://www.w3schools.com/html/mov_bbb.mp4');
+            if (url) {
+                const videoEl = document.getElementById('native-video-el');
+                const videoSrc = document.getElementById('native-video-src');
+                if (videoEl && videoSrc) {
+                    videoSrc.src = url;
+                    videoEl.load();
+                    videoEl.play();
+                }
+            }
+        }
+
+        // Initialize avatar player on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initAvatarVideoPlayer();
+        });
     </script>
 </body>
 
