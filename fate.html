@@ -5596,11 +5596,11 @@ ${chartContext}
                 playRitualSound('start');
                 await saveUserProfile(true);
                 try {
-                    const msg = "請大師為我詳批命譜格局";
+                    const msg = "請大師為我詳批命譜格局與未來運程";
                     setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
                     setIsChatLoading(true);
                     setActionLoading('report');
-                    await callAiApi(`${getFullChartContext()} \n\n【請求】：請為緣主撰寫一份深度的【命譜詳評】。`, 'report', (chunk) => {
+                    await callAiApi(`${getFullChartContext()} \n\n【請求】：請為緣主撰寫一份深度的【命譜詳評全章報告】。請包含：1. 緣主真實性格與內心世界深度剖析（像真正算命師之摸骨神斷） 2. 命身福德格局與人生優勢盲點 3. 未來十年大限與近數年歲運走勢大預測 4. 未來事業、財運、感情之關鍵節點與趨吉避凶指引。`, 'report', (chunk) => {
                         setChat(prev => {
                             const n = [...prev];
                             n[n.length - 1].text += chunk;
@@ -5764,11 +5764,11 @@ ${chartContext}
                 if (!checkName() || !checkDate()) return;
                 playRitualSound('start');
                 await saveUserProfile(true);
-                const msg = "請大師用白話文精解我的命盤";
+                const msg = "請大師為我深度剖析個性性格與未來人生預測";
                 setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
                 setIsChatLoading(true);
                 setActionLoading('simple');
-                await callAiApi(`${getFullChartContext()} \n\n請以現代白話文，針對上述命盤進行【性格與人生發展】的精簡分析。\n不需引用古文口訣，直接給予緣主具體建議與人格特質描述。\n\n【特別要求】：請使用「繁體中文」回答。`, 'simple', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
+                await callAiApi(`${getFullChartContext()} \n\n請以現代白話文，像真正資深算命大師一樣，為緣主進行【深度性格剖析、表裡心靈世界與未來運途預測】。\n深入點出緣主骨子裡的真實個性、思維模式、表裡反差、性格盲點，並對未來十年大限與近數年歲運轉折給予具體清晰的預測。\n\n【特別要求】：請使用「繁體中文」回答。`, 'simple', (c) => setChat(prev => { const n = [...prev]; n[n.length - 1].text += c; return n; }));
                 playRitualSound('end');
                 setIsChatLoading(false);
                 setActionLoading(null);
@@ -6224,13 +6224,13 @@ ${newsStats}
                                     <button onClick={() => {
                                         if (!checkName() || !checkDate()) return;
                                         playRitualSound('start');
-                                        const msg = "請大師慈悲，為我進行【大師即時諮詢】，詳細解析我的命宮、身宮與三方四正之格局。";
+                                        const msg = "請大師慈悲，為我進行【大師即時諮詢】，深入剖析我的真實性格、內心世界與未來運勢預測。";
                                         setChat(prev => [...prev, { role: 'user', text: msg }, { role: 'assistant', text: "" }]);
                                         setIsChatLoading(true);
                                         setActionLoading('chat');
                                         setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 
-                                        callAiApi(`${getFullChartContext()} \n\n【緣主祈求】：${msg} \n\n【大師指令】：請進行《紫微綜合命盤解析》。\n請條列式解析：1. 命宮主星與格局 2. 身宮與三方四正 3. 六吉六煞影響 4. 針對緣主當下最需注意之處給予提點。\n請用「繁體中文」與「道長語氣」詳盡論述。`, 'chat', (chunk) => setChat(prev => {
+                                        callAiApi(`${getFullChartContext()} \n\n【緣主祈求】：${msg} \n\n【大師指令】：請進行《紫微綜合命盤解析》。\n請深入條列解析：\n1. 【先天個性與內心世界深度剖析】：結合命宮、身宮、福德宮，像真正資深算命師般剖析緣主的思維模式、表裡反差、心靈深處與性格盲點。\n2. 【命身三方四正與大格局】：三方四正吉星煞曜影響與事業財帛特質。\n3. 【未來運途深度預測】：包含當前十年大限走勢階段、未來數年流年歲運吉凶、事業財運與感情關鍵節點預測。\n4. 【大師開運提點】：針對緣主當下最需注意之處與未來趨吉避凶給予具體指引。\n請用「繁體中文」與「道長語氣」詳盡論述。`, 'chat', (chunk) => setChat(prev => {
                                             const newChat = [...prev];
                                             if (newChat.length > 0) newChat[newChat.length - 1].text += chunk;
                                             return newChat;
