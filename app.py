@@ -2931,11 +2931,27 @@ def tts_handler():
     text = data.get('text', '')
     if not text: return jsonify({"error": "No text"}), 400
     
-    clean_text = text.replace("*", "").replace("#", "").strip()[:4000]
+    clean_text = text.replace("*", "").replace("#", "").replace("☯", "").replace("✦", "").strip()[:4000]
     if not clean_text: return jsonify({"error": "Empty text"}), 400
 
+    # 語音音色：預設為雲揚 (zh-CN-YunyangNeural 渾厚仙風宗師聲)，亦支援台灣語音
+    voice = data.get('voice', 'zh-CN-YunyangNeural')
+    
+    # 播放速率處理 (支援 "+20%", "-10%" 或倍速浮點數 1.25)
+    rate_val = data.get('rate', '+0%')
+    if isinstance(rate_val, (int, float)):
+        diff = int(round((rate_val - 1.0) * 100))
+        rate_str = f"{'+' if diff >= 0 else ''}{diff}%"
+    elif isinstance(rate_val, str):
+        rate_str = rate_val if ('%' in rate_val) else '+0%'
+    else:
+        rate_str = '+0%'
+
+    pitch_str = data.get('pitch', '+0Hz')
+
     import hashlib
-    text_hash = hashlib.md5(clean_text.encode('utf-8')).hexdigest()
+    cache_str = f"{clean_text}__{voice}__{rate_str}__{pitch_str}"
+    text_hash = hashlib.md5(cache_str.encode('utf-8')).hexdigest()
 
     # 檢查記憶體 LRU 音訊快取 (若命中則 0 毫秒即時回傳)
     with TTS_CACHE_LOCK:
@@ -2944,8 +2960,7 @@ def tts_handler():
             return Response(cached_audio, mimetype="audio/mpeg")
 
     async def get_audio():
-        # Using zh-CN-YunyangNeural for a more professional/master-like male voice
-        communicate = edge_tts.Communicate(clean_text, "zh-CN-YunyangNeural")
+        communicate = edge_tts.Communicate(clean_text, voice, rate=rate_str, pitch=pitch_str)
         audio = b""
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
@@ -2970,6 +2985,7 @@ def tts_handler():
                 
         return Response(audio_data, mimetype="audio/mpeg")
     except Exception as e:
+        print(f"⚠️ [Edge-TTS 轉換異常]: {e}")
         return jsonify({"error": str(e)}), 500
 
 # --- Keep-Alive 保持連線機制 (針對 Render 免費版) ---

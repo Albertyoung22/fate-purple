@@ -2526,6 +2526,40 @@
             }
         }
 
+        // ==========================================
+        // Edge-TTS 音訊核心引擎與通訊管理
+        // ==========================================
+        let currentEdgeAudio = null;
+        let currentEdgeAudioUrl = null;
+        let edgeTtsAbortCtrl = null;
+        let avatarAudio = null;
+        let avatarAudioUrl = null;
+
+        const BACKEND_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+            ? (window.location.port ? `${window.location.protocol}//${window.location.hostname}:${window.location.port}` : "http://localhost:5000")
+            : window.location.origin;
+
+        async function fetchEdgeTTSBlob(text, speed = 1.0, voice = "zh-CN-YunyangNeural") {
+            const cleanText = text.replace(/[*#☯🌌🏛️⭐⚡📜🌀🌸🎁🎤🛡️❤️✦]/g, '').trim().substring(0, 4000);
+            if (!cleanText) return null;
+
+            const rateStr = `${speed >= 1.0 ? '+' : ''}${Math.round((speed - 1.0) * 100)}%`;
+
+            const res = await fetch(`${BACKEND_URL}/api/tts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: cleanText,
+                    voice: voice,
+                    rate: rateStr
+                })
+            });
+
+            if (!res.ok) throw new Error(`Edge-TTS API failed with status ${res.status}`);
+            const blob = await res.blob();
+            return URL.createObjectURL(blob);
+        }
+
         function speakText(elementId) {
             const el = document.getElementById(elementId);
             if (el) {
@@ -2533,47 +2567,82 @@
             }
         }
 
-        function speakRawText(text, trackTitle) {
-            if (!('speechSynthesis' in window)) {
-                alert('您的瀏覽器暫不支援語音朗讀。');
-                return;
-            }
-
+        async function speakRawText(text, trackTitle) {
             stopAudio();
 
-            const cleanText = text.replace(/[*#☯🌌🏛️⭐⚡📜🌀🌸🎁🎤🛡️❤️]/g, '').trim().substring(0, 3000);
+            const cleanText = text.replace(/[*#☯🌌🏛️⭐⚡📜🌀🌸🎁🎤🛡️❤️✦]/g, '').trim().substring(0, 3000);
+            if (!cleanText) return;
+
+            const bar = document.getElementById('audio-floating-bar');
+            const nameEl = document.getElementById('audio-track-name');
+            const ttsBtn = document.getElementById('tts-btn-text');
+
+            if (bar) bar.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+            if (nameEl) nameEl.innerText = `[Edge-TTS 雲端加載中...] ${trackTitle || ''}`;
+            if (ttsBtn) ttsBtn.innerText = '載入中...';
+
+            try {
+                const audioUrl = await fetchEdgeTTSBlob(cleanText, 1.0, "zh-CN-YunyangNeural");
+                if (!audioUrl) throw new Error("No audio url returned");
+
+                currentEdgeAudioUrl = audioUrl;
+                currentEdgeAudio = new Audio(audioUrl);
+                isPlayingAudio = true;
+
+                if (nameEl) nameEl.innerText = `[Edge-TTS 宗師原聲] ${trackTitle || '正在伴讀...'}`;
+                if (ttsBtn) ttsBtn.innerText = '停止伴讀';
+
+                currentEdgeAudio.onended = () => {
+                    stopAudio();
+                };
+
+                currentEdgeAudio.onerror = (e) => {
+                    console.warn("Edge-TTS Audio play error, falling back to local TTS", e);
+                    fallbackLocalTTS(cleanText, trackTitle);
+                };
+
+                await currentEdgeAudio.play();
+
+            } catch (err) {
+                console.warn("Edge-TTS request failed, using Web Speech API fallback:", err);
+                fallbackLocalTTS(cleanText, trackTitle);
+            }
+        }
+
+        function fallbackLocalTTS(cleanText, trackTitle) {
+            if (!('speechSynthesis' in window)) {
+                alert('語音連線失敗且瀏覽器不支援本機語音。');
+                stopAudio();
+                return;
+            }
             currentUtterance = new SpeechSynthesisUtterance(cleanText);
             currentUtterance.lang = 'zh-TW';
             currentUtterance.rate = 1.0;
-            currentUtterance.pitch = 1.0;
-
             const voices = synth.getVoices();
-            const zhVoice = voices.find(v => v.lang.includes('zh-TW') || v.lang.includes('cmn-Hant-TW') || v.lang.includes('zh'));
+            const zhVoice = voices.find(v => v.lang.includes('zh-TW') || v.lang.includes('zh'));
             if (zhVoice) currentUtterance.voice = zhVoice;
 
             currentUtterance.onstart = () => {
                 isPlayingAudio = true;
-                const bar = document.getElementById('audio-floating-bar');
-                if (bar) {
-                    bar.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
-                }
                 const nameEl = document.getElementById('audio-track-name');
-                if (nameEl) nameEl.innerText = trackTitle || '正在朗讀...';
-                document.getElementById('tts-btn-text').innerText = '停止伴讀';
+                if (nameEl) nameEl.innerText = `[本機伴讀] ${trackTitle || '正在朗讀...'}`;
+                const ttsBtn = document.getElementById('tts-btn-text');
+                if (ttsBtn) ttsBtn.innerText = '停止伴讀';
             };
-
-            currentUtterance.onend = () => {
-                stopAudio();
-            };
-
-            currentUtterance.onerror = () => {
-                stopAudio();
-            };
-
+            currentUtterance.onend = () => stopAudio();
+            currentUtterance.onerror = () => stopAudio();
             synth.speak(currentUtterance);
         }
 
         function stopAudio() {
+            if (currentEdgeAudio) {
+                currentEdgeAudio.pause();
+                currentEdgeAudio = null;
+            }
+            if (currentEdgeAudioUrl) {
+                URL.revokeObjectURL(currentEdgeAudioUrl);
+                currentEdgeAudioUrl = null;
+            }
             if (synth.speaking || synth.pending) {
                 synth.cancel();
             }
@@ -2587,7 +2656,7 @@
         }
 
         // ==========================================
-        // AI 數字人道長 · 視訊教學影院與播報核心引擎
+        // AI 數字人道長 · 視訊教學影院與播報核心引擎 (Edge-TTS 驅動)
         // ==========================================
         const DIGITAL_AVATAR_LECTURES = [
             {
@@ -2817,14 +2886,17 @@
             }
         }
 
-        function startAvatarPlayback() {
+        async function startAvatarPlayback() {
+            // Stop any other audio
+            stopAudio();
+
             avatarVideoState.isPlaying = true;
 
             const btnText = document.getElementById('avatar-play-text');
-            if (btnText) btnText.innerText = '暫停講授';
+            if (btnText) btnText.innerText = '載入音訊中...';
 
             const playIcon = document.getElementById('avatar-play-icon');
-            if (playIcon) playIcon.setAttribute('data-lucide', 'pause');
+            if (playIcon) playIcon.setAttribute('data-lucide', 'loader-2');
 
             // Mouth Animation & Glow
             const mouthWrapper = document.getElementById('avatar-mouth-wrapper');
@@ -2838,39 +2910,75 @@
             if (halo) halo.classList.add('halo-pulse');
 
             const statusEl = document.getElementById('avatar-emotion-status');
-            if (statusEl) statusEl.innerText = '講授開示中';
+            if (statusEl) statusEl.innerText = '道長講授中';
 
-            // Start Timer for synchronized playback
-            if (avatarVideoState.timer) clearInterval(avatarVideoState.timer);
-            avatarVideoState.timer = setInterval(() => {
-                avatarVideoState.currentTime += 1 * avatarVideoState.speed;
-                if (avatarVideoState.currentTime >= avatarVideoState.duration) {
-                    avatarVideoState.currentTime = avatarVideoState.duration;
-                    pauseAvatarPlayback();
-                }
-                updateAvatarTimeDisplay();
-                updateAvatarSubtitles();
-            }, 1000);
-
-            // Trigger Voice Narration with Web Speech Synthesis
             const lecture = DIGITAL_AVATAR_LECTURES[avatarVideoState.currentChapter];
-            if (lecture && lecture.speechText && 'speechSynthesis' in window) {
-                stopAudio();
-                const utter = new SpeechSynthesisUtterance(lecture.speechText);
-                utter.lang = 'zh-TW';
-                utter.rate = avatarVideoState.speed;
-                utter.pitch = 1.0;
-                const voices = synth.getVoices();
-                const zhVoice = voices.find(v => v.lang.includes('zh-TW') || v.lang.includes('cmn-Hant-TW') || v.lang.includes('zh'));
-                if (zhVoice) utter.voice = zhVoice;
-                
-                utter.onend = () => {
+
+            try {
+                // Fetch Edge-TTS cloud audio stream
+                const audioUrl = await fetchEdgeTTSBlob(lecture.speechText, avatarVideoState.speed, "zh-CN-YunyangNeural");
+                if (!audioUrl) throw new Error("Audio URL is empty");
+
+                if (!avatarVideoState.isPlaying) {
+                    URL.revokeObjectURL(audioUrl);
+                    return;
+                }
+
+                if (avatarAudioUrl) URL.revokeObjectURL(avatarAudioUrl);
+                avatarAudioUrl = audioUrl;
+                avatarAudio = new Audio(audioUrl);
+
+                avatarAudio.onloadedmetadata = () => {
+                    if (avatarAudio && avatarAudio.duration && !isNaN(avatarAudio.duration)) {
+                        avatarVideoState.duration = avatarAudio.duration;
+                        updateAvatarTimeDisplay();
+                    }
+                };
+
+                avatarAudio.ontimeupdate = () => {
+                    if (avatarAudio) {
+                        avatarVideoState.currentTime = avatarAudio.currentTime;
+                        updateAvatarTimeDisplay();
+                        updateAvatarSubtitles();
+                    }
+                };
+
+                avatarAudio.onended = () => {
                     pauseAvatarPlayback();
                 };
-                utter.onerror = () => {
-                    // Fail gracefully
+
+                avatarAudio.onerror = (e) => {
+                    console.warn("Avatar Edge-TTS error, falling back to local timer/synth", e);
                 };
-                synth.speak(utter);
+
+                await avatarAudio.play();
+
+                if (btnText) btnText.innerText = '暫停講授';
+                if (playIcon) playIcon.setAttribute('data-lucide', 'pause');
+
+            } catch (err) {
+                console.warn("Edge-TTS load failed for avatar, using timer fallback:", err);
+                if (btnText) btnText.innerText = '暫停講授';
+                if (playIcon) playIcon.setAttribute('data-lucide', 'pause');
+
+                // Timer Fallback with Web Speech API
+                if (avatarVideoState.timer) clearInterval(avatarVideoState.timer);
+                avatarVideoState.timer = setInterval(() => {
+                    avatarVideoState.currentTime += 1 * avatarVideoState.speed;
+                    if (avatarVideoState.currentTime >= avatarVideoState.duration) {
+                        avatarVideoState.currentTime = avatarVideoState.duration;
+                        pauseAvatarPlayback();
+                    }
+                    updateAvatarTimeDisplay();
+                    updateAvatarSubtitles();
+                }, 1000);
+
+                if ('speechSynthesis' in window) {
+                    const utter = new SpeechSynthesisUtterance(lecture.speechText);
+                    utter.lang = 'zh-TW';
+                    utter.rate = avatarVideoState.speed;
+                    synth.speak(utter);
+                }
             }
 
             if (window.lucide) lucide.createIcons();
@@ -2884,6 +2992,16 @@
 
             const playIcon = document.getElementById('avatar-play-icon');
             if (playIcon) playIcon.setAttribute('data-lucide', 'play');
+
+            // Stop Edge-TTS audio
+            if (avatarAudio) {
+                avatarAudio.pause();
+                avatarAudio = null;
+            }
+            if (avatarAudioUrl) {
+                URL.revokeObjectURL(avatarAudioUrl);
+                avatarAudioUrl = null;
+            }
 
             // Stop Mouth Animation
             const mouthWrapper = document.getElementById('avatar-mouth-wrapper');
@@ -2910,6 +3028,9 @@
 
         function seekAvatarVideo(seconds) {
             avatarVideoState.currentTime = Math.max(0, Math.min(avatarVideoState.duration, avatarVideoState.currentTime + seconds));
+            if (avatarAudio && !isNaN(avatarAudio.duration)) {
+                avatarAudio.currentTime = avatarVideoState.currentTime;
+            }
             updateAvatarTimeDisplay();
             updateAvatarSubtitles();
         }
@@ -2918,6 +3039,9 @@
             const rect = e.currentTarget.getBoundingClientRect();
             const clickPos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
             avatarVideoState.currentTime = Math.round(clickPos * avatarVideoState.duration);
+            if (avatarAudio && !isNaN(avatarAudio.duration)) {
+                avatarAudio.currentTime = avatarVideoState.currentTime;
+            }
             updateAvatarTimeDisplay();
             updateAvatarSubtitles();
         }
