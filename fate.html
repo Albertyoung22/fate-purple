@@ -1638,11 +1638,45 @@
         const stripMarkdown = (t) => t ? t.replace(/[*#_~`>]/g, '').replace(/[-]{2,}/g, '').trim() : "";
 
         // --- 八字命盤元件 ---
-        const BaZiChart = ({ lunarDate, birthHour, gender, solarDateStr }) => {
+        const BaZiChart = ({ lunarDate, birthHour, gender, solarDateStr, callAiApi, playTTS, isTTSActive, stopGlobalAudio, getFullChartContext, onConsult }) => {
             if (!lunarDate) return null;
 
             const [baziData, setBaziData] = useState(null);
             const [error, setError] = useState(null);
+            const [activeTopic, setActiveTopic] = useState(null);
+            const [inlineLoading, setInlineLoading] = useState(false);
+            const [inlineResponse, setInlineResponse] = useState("");
+            const [followUpText, setFollowUpText] = useState("");
+            const [copySuccess, setCopySuccess] = useState(false);
+
+            const handleConsultTopic = async (topicTitle, promptQuestion) => {
+                setActiveTopic(topicTitle);
+                setInlineLoading(true);
+                setInlineResponse("");
+                
+                setTimeout(() => {
+                    document.getElementById('bazi-inline-chamber')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 60);
+
+                const fullContext = typeof getFullChartContext === 'function' ? getFullChartContext() : '';
+                const finalPrompt = `${fullContext}\n\n【緣主八字專屬請益 - ${topicTitle}】：${promptQuestion}\n\n【大師指令】：請作為精通《淵海子平》、《三命通會》、《滴天髓》與《窮通寶鑑》的子平八字宗師。深入剖析緣主的四柱干支、日主強弱、五行得令衰旺、喜忌用神、十神心性及大運歲運吉凶。論斷需精確犀利、白話生動，切中現代生活場景並給予具體開運指引。\n\n【特別要求】：1. 請務必使用「繁體中文」回答。\n2. 每個回答必須「分段清晰」，條理分明。\n3. 直擊痛點，生活化演繹，禁止生硬背誦課本定義。`;
+
+                if (typeof callAiApi === 'function') {
+                    try {
+                        await callAiApi(finalPrompt, 'chat', (chunk) => {
+                            setInlineResponse(prev => prev + chunk);
+                        });
+                    } catch (e) {
+                        setInlineResponse("道長推演時天地氣場微動，請稍後重試：" + e.message);
+                    } finally {
+                        setInlineLoading(false);
+                    }
+                } else if (typeof onConsult === 'function') {
+                    onConsult(promptQuestion);
+                } else if (typeof window._triggerBaziConsult === 'function') {
+                    window._triggerBaziConsult(promptQuestion);
+                }
+            };
 
             useEffect(() => {
                 setError(null);
@@ -1894,6 +1928,17 @@
             }, [lunarDate, birthHour, gender]);
 
             if (error) return <div className="p-8 text-center text-red-500 font-bold bg-white/80 rounded-[2rem] mt-8 border border-red-200">八字排盤發生錯誤：{error}</div>;
+            
+            const triggerConsult = (question) => {
+                if (typeof onConsult === 'function') {
+                    onConsult(question);
+                } else if (typeof window._triggerBaziConsult === 'function') {
+                    window._triggerBaziConsult(question);
+                } else {
+                    console.warn("BaZi consult trigger not found");
+                }
+            };
+
             if (!baziData) return <div className="p-4 text-center text-slate-400 font-bold">八字排盤中...</div>;
 
             return (
@@ -1921,10 +1966,8 @@
 
                         <div className="flex items-center gap-2">
                             <button
-                                onClick={() => {
-                                    if (window._triggerBaziFull) window._triggerBaziFull();
-                                }}
-                                className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-slate-950 font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-lg shadow-amber-500/30 flex items-center gap-1.5 border border-amber-300 print:hidden"
+                                onClick={() => handleConsultTopic("子平八字命書詳批", "請道長為我出具一份【子平八字命書詳批】，針對我的四柱八字、日主強弱、五行生剋調候、喜忌用神、十神心性格局、以及一生大運起伏走勢進行全方位推演！")}
+                                className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-slate-950 font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-lg shadow-amber-500/30 flex items-center gap-1.5 border border-amber-300 print:hidden cursor-pointer"
                             >
                                 <Icon name="scroll" className="w-4 h-4 text-slate-950" />
                                 <span>一鍵生成【八字命書詳批】</span>
@@ -2111,12 +2154,8 @@
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs font-bold">
                             <button
-                                onClick={() => {
-                                    if (window._triggerBaziConsult) {
-                                        window._triggerBaziConsult("請道長深入剖析我的【八字全盤格局與喜忌用神】，論述日主強弱、五行生剋調候，並指點日常如何透過色彩、方位與生活習慣補足喜用能量。");
-                                    }
-                                }}
-                                className="p-3 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-amber-200 text-left text-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm"
+                                onClick={() => handleConsultTopic("全盤格局與喜用神", "請道長深入剖析我的【八字全盤格局與喜忌用神】，論述日主強弱、五行生剋調候，並指點日常如何透過色彩、方位與生活習慣補足喜用能量。")}
+                                className={`p-3 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border text-left text-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm cursor-pointer ${activeTopic === '全盤格局與喜用神' ? 'border-amber-500 ring-2 ring-amber-300 shadow-md' : 'border-amber-200'}`}
                             >
                                 <div className="space-y-0.5">
                                     <div className="text-amber-900 font-black flex items-center gap-1">
@@ -2129,12 +2168,8 @@
                             </button>
 
                             <button
-                                onClick={() => {
-                                    if (window._triggerBaziConsult) {
-                                        window._triggerBaziConsult("請道長解析我的【十神心性與六親緣法】，詳述我的天賦優勢、性格盲區，以及與父母、長輩、配偶、子女之間的因果緣分與相處之道。");
-                                    }
-                                }}
-                                className="p-3 rounded-2xl bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 border border-orange-200 text-left text-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm"
+                                onClick={() => handleConsultTopic("十神心性與六親緣法", "請道長解析我的【十神心性與六親緣法】，詳述我的天賦優勢、性格盲區，以及與父母、長輩、配偶、子女之間的因果緣分與相處之道。")}
+                                className={`p-3 rounded-2xl bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 border text-left text-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm cursor-pointer ${activeTopic === '十神心性與六親緣法' ? 'border-orange-500 ring-2 ring-orange-300 shadow-md' : 'border-orange-200'}`}
                             >
                                 <div className="space-y-0.5">
                                     <div className="text-orange-950 font-black flex items-center gap-1">
@@ -2147,12 +2182,8 @@
                             </button>
 
                             <button
-                                onClick={() => {
-                                    if (window._triggerBaziConsult) {
-                                        window._triggerBaziConsult("請道長從八字十神與大運走勢，詳解我的【一生財運、正偏財庫與事業官運】，說明我適合何種行業賽道，以及何時是發家致富的黃金大運。");
-                                    }
-                                }}
-                                className="p-3 rounded-2xl bg-gradient-to-r from-yellow-50 to-amber-50 hover:from-yellow-100 hover:to-amber-100 border border-yellow-200 text-left text-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm"
+                                onClick={() => handleConsultTopic("十步大運與財官事業", "請道長從八字十神與大運走勢，詳解我的【一生財運、正偏財庫與事業官運】，說明我適合何種行業賽道，以及何時是發家致富的黃金大運。")}
+                                className={`p-3 rounded-2xl bg-gradient-to-r from-yellow-50 to-amber-50 hover:from-yellow-100 hover:to-amber-100 border text-left text-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm cursor-pointer ${activeTopic === '十步大運與財官事業' ? 'border-yellow-500 ring-2 ring-yellow-300 shadow-md' : 'border-yellow-200'}`}
                             >
                                 <div className="space-y-0.5">
                                     <div className="text-amber-950 font-black flex items-center gap-1">
@@ -2165,12 +2196,8 @@
                             </button>
 
                             <button
-                                onClick={() => {
-                                    if (window._triggerBaziConsult) {
-                                        window._triggerBaziConsult("請道長依據我的八字日柱、夫妻宮與配偶星，深度透析我的【正緣特質、感情婚姻波折與良緣契機】，並給予防範婚戀煞氣的化解指引。");
-                                    }
-                                }}
-                                className="p-3 rounded-2xl bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 border border-rose-200 text-left text-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm"
+                                onClick={() => handleConsultTopic("八字夫妻宮與婚姻姻緣", "請道長依據我的八字日柱、夫妻宮與配偶星，深度透析我的【正緣特質、感情婚姻波折與良緣契機】，並給予防範婚戀煞氣的化解指引。")}
+                                className={`p-3 rounded-2xl bg-gradient-to-r from-rose-50 to-pink-50 hover:from-rose-100 hover:to-pink-100 border text-left text-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm cursor-pointer ${activeTopic === '八字夫妻宮與婚姻姻緣' ? 'border-rose-500 ring-2 ring-rose-300 shadow-md' : 'border-rose-200'}`}
                             >
                                 <div className="space-y-0.5">
                                     <div className="text-rose-950 font-black flex items-center gap-1">
@@ -2183,12 +2210,8 @@
                             </button>
 
                             <button
-                                onClick={() => {
-                                    if (window._triggerBaziConsult) {
-                                        window._triggerBaziConsult("請道長推演我【近五年的八字流年歲運與大運交接吉凶】，指出關鍵轉折年份、需要防範的刑沖剋害與應把握的天降良機。");
-                                    }
-                                }}
-                                className="p-3 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 text-left text-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm sm:col-span-2 lg:col-span-2"
+                                onClick={() => handleConsultTopic("近五年流年歲運吉凶承負", "請道長推演我【近五年的八字流年歲運與大運交接吉凶】，指出關鍵轉折年份、需要防範的刑沖剋害與應把握的天降良機。")}
+                                className={`p-3 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border text-left text-slate-800 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm sm:col-span-2 lg:col-span-2 cursor-pointer ${activeTopic === '近五年流年歲運吉凶承負' ? 'border-blue-500 ring-2 ring-blue-300 shadow-md' : 'border-blue-200'}`}
                             >
                                 <div className="space-y-0.5">
                                     <div className="text-blue-950 font-black flex items-center gap-1">
@@ -2200,6 +2223,137 @@
                                 <span className="text-blue-500 group-hover:translate-x-0.5 transition-transform">→</span>
                             </button>
                         </div>
+
+                        {/* 🌟 八字宗師即時批命天機閣 (Inline Chamber) 🌟 */}
+                        {activeTopic && (
+                            <div id="bazi-inline-chamber" className="mt-6 p-5 sm:p-7 rounded-[2.5rem] bg-gradient-to-br from-slate-950 via-amber-950/40 to-slate-950 border-2 border-amber-400/60 shadow-2xl text-white relative overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                                <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                                <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-amber-400/20 pb-4 mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 via-orange-500 to-red-500 p-[2px] shadow-lg shadow-amber-500/30 flex items-center justify-center shrink-0">
+                                            <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                                                <span className="text-xl">📜</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="text-base sm:text-lg font-black text-amber-300 font-serif">
+                                                    八字宗師親批 · 【{activeTopic}】
+                                                </h4>
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-400/40 animate-pulse">
+                                                    即時批解
+                                                </span>
+                                            </div>
+                                            <p className="text-[11px] text-amber-200/70 font-medium mt-0.5">
+                                                合參四柱干支、十神生剋、五行得令衰旺與大運歲運
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        {inlineResponse && (
+                                            <>
+                                                <button
+                                                    onClick={() => {
+                                                        const audioId = `bazi-inline-${activeTopic}`;
+                                                        if (isTTSActive && isTTSActive(audioId)) {
+                                                            if (stopGlobalAudio) stopGlobalAudio();
+                                                        } else if (playTTS) {
+                                                            playTTS(inlineResponse, audioId);
+                                                        }
+                                                    }}
+                                                    className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md ${
+                                                        isTTSActive && isTTSActive(`bazi-inline-${activeTopic}`)
+                                                            ? 'bg-rose-600 text-white animate-pulse ring-2 ring-rose-400'
+                                                            : 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 hover:brightness-110'
+                                                    }`}
+                                                    title="聆聽道長語音親批"
+                                                >
+                                                    <Icon name={isTTSActive && isTTSActive(`bazi-inline-${activeTopic}`) ? "square" : "volume-2"} className="w-3.5 h-3.5" />
+                                                    <span>{isTTSActive && isTTSActive(`bazi-inline-${activeTopic}`) ? '停止語音' : '🔊 聆聽道長親批'}</span>
+                                                </button>
+
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(inlineResponse);
+                                                        setCopySuccess(true);
+                                                        setTimeout(() => setCopySuccess(false), 2000);
+                                                    }}
+                                                    className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-slate-200 border border-white/10 transition-all flex items-center gap-1"
+                                                    title="複製命批文本"
+                                                >
+                                                    <Icon name={copySuccess ? "check" : "copy"} className="w-3.5 h-3.5 text-amber-300" />
+                                                    <span>{copySuccess ? '已複製！' : '複製命批'}</span>
+                                                </button>
+                                            </>
+                                        )}
+
+                                        <button
+                                            onClick={() => {
+                                                setActiveTopic(null);
+                                                setInlineResponse("");
+                                                setInlineLoading(false);
+                                                if (stopGlobalAudio) stopGlobalAudio();
+                                            }}
+                                            className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-400 hover:text-white transition-all text-xs"
+                                            title="收合批命閣"
+                                        >
+                                            <Icon name="x" className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="relative z-10 space-y-4">
+                                    {inlineLoading && !inlineResponse && (
+                                        <div className="p-8 flex flex-col items-center justify-center text-center space-y-3 bg-black/40 rounded-2xl border border-amber-500/20">
+                                            <div className="bagua-spinner w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                                            <div className="space-y-1">
+                                                <div className="text-sm font-black text-amber-300 tracking-widest animate-pulse">道長正入神推演八字天機...</div>
+                                                <div className="text-xs text-slate-400">推演四柱干支五行衰旺、十神心性及大運走勢</div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {inlineResponse && (
+                                        <div className="p-5 sm:p-6 bg-black/40 backdrop-blur-md rounded-2xl border border-amber-400/30 text-amber-50/95 leading-loose text-sm sm:text-[15px] font-bold whitespace-pre-wrap selection:bg-amber-500 selection:text-black max-h-[500px] overflow-y-auto custom-scrollbar shadow-inner">
+                                            {inlineResponse}
+                                        </div>
+                                    )}
+
+                                    {!inlineLoading && inlineResponse && (
+                                        <div className="pt-3 border-t border-amber-400/20 flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={followUpText}
+                                                onChange={e => setFollowUpText(e.target.value)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter' && followUpText.trim()) {
+                                                        handleConsultTopic(`追問 · ${activeTopic}`, followUpText.trim());
+                                                        setFollowUpText("");
+                                                    }
+                                                }}
+                                                placeholder={`針對【${activeTopic}】繼續向道長請益... (按 Enter 送出)`}
+                                                className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900/80 border border-amber-400/30 text-xs text-white placeholder-slate-400 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all font-bold"
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    if (followUpText.trim()) {
+                                                        handleConsultTopic(`追問 · ${activeTopic}`, followUpText.trim());
+                                                        setFollowUpText("");
+                                                    }
+                                                }}
+                                                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-md flex items-center gap-1 shrink-0 cursor-pointer"
+                                            >
+                                                <span>請益</span>
+                                                <span>➔</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
@@ -5796,6 +5950,20 @@ ${chartContext}
                 setActionLoading(null);
             };
 
+            useEffect(() => {
+                window._triggerBaziFull = () => {
+                    handleChatSend("請道長為我出具一份【子平八字命書詳批】，針對我的四柱八字、日主強弱、五行生剋調候、喜忌用神、十神心性格局、以及一生大運起伏走勢進行全方位推演！");
+                };
+                window._triggerBaziConsult = (q) => {
+                    handleChatSend(q);
+                };
+                return () => {
+                    delete window._triggerBaziFull;
+                    delete window._triggerBaziConsult;
+                };
+            }, [handleChatSend]);
+
+
             const handleDailyTip = async () => {
                 if (!checkName() || !checkDate()) return;
                 playRitualSound('start');
@@ -6226,12 +6394,14 @@ ${newsStats}
                 // 平滑滾動至大師諮詢窗口
                 setTimeout(() => {
                     const chatBox = document.getElementById('master-chat-card') || chatEndRef.current;
-                    chatBox?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    chatBox?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 80);
 
                 let prompt = `${getFullChartContext()} \n\n【緣主提問】：${userMsg} \n\n【大師指令】：請務必「優先引用」且「深度分析」《紫微斗數全書》中的相關口訣來回答。若心法中有對應的特殊格局（如空劫、羊陀、化忌等組合），請務必點出並詳細解釋，不可僅用通用知識帶過。\n\n【特別要求】：1. 請務必使用「繁體中文」回答。\n2.每個回答必須「分段清晰」，不要全部擠在一起，方便閱讀。\n3.在思考過程中嚴謹地運用心法邏輯。`;
 
-                if (userMsg.includes('靈動數') || userMsg.includes('幸運號碼') || userMsg.includes('明牌')) {
+                if (userMsg.includes('八字') || userMsg.includes('子平') || userMsg.includes('十神') || userMsg.includes('用神') || userMsg.includes('喜忌') || userMsg.includes('大運')) {
+                    prompt = `${getFullChartContext()} \n\n【緣主八字請益】：${userMsg} \n\n【大師指令】：請作為精通《淵海子平》、《三命通會》、《滴天髓》與《窮通寶鑑》的子平八字宗師。深入剖析緣主的四柱干支、日主強弱、五行得令衰旺、喜忌用神、十神心性及大運歲運吉凶。論斷需精確犀利、白話生動，切中現代生活場景並給予具體開運指引。\n\n【特別要求】：1. 請務必使用「繁體中文」回答。\n2. 每個回答必須「分段清晰」，條理分明。\n3. 直擊痛點，生活化演繹，禁止生硬背誦課本定義。`;
+                } else if (userMsg.includes('靈動數') || userMsg.includes('幸運號碼') || userMsg.includes('明牌')) {
                     prompt = `${getFullChartContext()} \n\n【緣主祈求】：${userMsg} \n\n【大師指令】：請直接給出今日幸運號碼（大樂透 / 威力彩 / 今彩539），並以「天機乍現」的語氣，神祕地透露這組號碼，並提醒切勿沉迷，僅供結緣參考。`;
                 }
 
@@ -6446,7 +6616,7 @@ ${newsStats}
                         <AlmanacWidget userBirthDate={birthDate} />
 
                         <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 print:block">
-                            <div className="xl:col-span-8 print:w-full relative">
+                                                        <div className="xl:col-span-8 print:w-full relative">
                                 {/* 三大命理模式切換導航 */}
                                 <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-slate-900/90 backdrop-blur-xl p-2.5 rounded-2xl border border-purple-500/30 shadow-xl print:hidden">
                                     <div className="flex items-center gap-1.5 p-1 bg-black/40 rounded-xl border border-white/10">
@@ -6495,144 +6665,226 @@ ${newsStats}
                                 {/* 模式 1：純紫微星盤 (ziwei) */}
                                 {mainChartTab === 'ziwei' && (
                                     <div className="space-y-6">
-                                        {/* 流年流月流日切換控制 */}
-                                        <div className="flex flex-wrap items-center justify-between gap-3 bg-white/80 backdrop-blur-md p-3 rounded-2xl border border-indigo-100 shadow-sm print:hidden">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-black text-indigo-950">切換盤類：</span>
-                                                <div className="flex gap-1">
-                                                    {[
-                                                        { id: 'natal', label: '本命盤' },
-                                                        { id: 'yearly', label: '流年盤' },
-                                                        { id: 'monthly', label: '流月盤' },
-                                                        { id: 'daily', label: '流日盤' },
-                                                    ].map(tab => (
-                                                        <button
-                                                            key={tab.id}
-                                                            onClick={() => setViewMode(tab.id)}
-                                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                                                viewMode === tab.id
-                                                                    ? 'bg-indigo-600 text-white shadow-sm'
-                                                                    : 'text-slate-600 hover:bg-slate-100'
-                                                            }`}
-                                                        >
-                                                            {tab.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                {/* Scrollable Container specifically for mobile chart view */}
+                                <div className="overflow-x-auto pb-6 custom-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
 
-                                            {viewMode !== 'natal' && (
-                                                <div className="flex items-center gap-2 text-xs">
-                                                    <span className="text-slate-500 font-bold">推演時間：</span>
-                                                    <input
-                                                        type="number"
-                                                        value={targetYear}
-                                                        onChange={e => setTargetYear(parseInt(e.target.value) || targetYear)}
-                                                        className="w-16 px-2 py-1 rounded bg-white border border-slate-200 text-center font-bold"
-                                                    />
-                                                    <span>年</span>
-                                                    {(viewMode === 'monthly' || viewMode === 'daily') && (
-                                                        <>
-                                                            <input
-                                                                type="number"
-                                                                value={targetMonth}
-                                                                min="1"
-                                                                max="12"
-                                                                onChange={e => setTargetMonth(parseInt(e.target.value) || targetMonth)}
-                                                                className="w-12 px-2 py-1 rounded bg-white border border-slate-200 text-center font-bold"
-                                                            />
-                                                            <span>月</span>
-                                                        </>
-                                                    )}
-                                                    {viewMode === 'daily' && (
-                                                        <>
-                                                            <input
-                                                                type="number"
-                                                                value={targetDay}
-                                                                min="1"
-                                                                max="31"
-                                                                onChange={e => setTargetDay(parseInt(e.target.value) || targetDay)}
-                                                                className="w-12 px-2 py-1 rounded bg-white border border-slate-200 text-center font-bold"
-                                                            />
-                                                            <span>日</span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
+                                    <div className="flex justify-center flex-wrap gap-3 mb-4 text-[10px] font-bold tracking-widest bg-white/50 py-2 border border-slate-100 rounded-full w-fit mx-auto px-6 shadow-sm print:hidden">
+
+                                        {/* 流年流月流日 Controls-Compact */}
+                                        <div className="flex items-center gap-2 border-r border-slate-200 pr-3 mr-1">
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                                <select value={targetYear} onChange={e => setTargetYear(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
+                                                    {Array.from({ length: 100 }, (_, i) => 2024 - 50 + i).map(y => <option key={y} value={y}>{y}年</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                <select value={targetMonth} onChange={e => setTargetMonth(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
+                                                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}月</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                <select value={targetDay} onChange={e => setTargetDay(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
+                                                    {Array.from({ length: 30 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}日</option>)}
+                                                </select>
+                                            </div>
+                                            <button onClick={() => { const n = new Date(); setTargetYear(n.getFullYear()); setTargetMonth(n.getMonth() + 1); setTargetDay(n.getDate()); }} className="text-[9px] text-slate-400 hover:text-indigo-500 bg-slate-100 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors" title="回到今日">歸位</button>
                                         </div>
 
-                                        {/* 紫微 12 宮格 */}
-                                        <div id="ziwei-chart-container" className="bg-slate-900/60 p-2 sm:p-4 rounded-[2.5rem] border border-white/10 shadow-2xl relative">
-                                            <div className="relative aspect-square w-full">
-                                                {/* 飛星連線 SVG */}
-                                                <svg className="absolute inset-0 w-full h-full pointer-events-none z-20 overflow-visible" viewBox="0 0 400 400">
-                                                    <defs>
-                                                        <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                                                            <polygon points="0 0, 6 3, 0 6" fill="currentColor" />
-                                                        </marker>
-                                                    </defs>
-                                                    {flyingStarLines}
-                                                    {sanFangLines}
-                                                </svg>
+                                        {/* Chart View Modes */}
+                                        <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                                            {[
+                                                { id: 'natal', label: '本命', color: 'indigo' },
+                                                { id: 'yearly', label: '流年', color: 'red' },
+                                                { id: 'monthly', label: '流月', color: 'emerald' }
+                                            ].map(mode => (
+                                                <button
+                                                    key={mode.id}
+                                                    onClick={() => setViewMode(mode.id)}
+                                                    className={`px-3 py-0.5 rounded-md text-[9px] font-black transition-all ${viewMode === mode.id
+                                                        ? `bg-white text-${mode.color}-600 shadow-sm ring-1 ring-black/5`
+                                                        : 'text-slate-400 hover:text-slate-600'
+                                                        }`}
+                                                >
+                                                    {mode.label}
+                                                </button>
+                                            ))}
+                                        </div>
 
-                                                {/* 12 宮格 */}
-                                                <div className="grid grid-cols-4 grid-rows-4 w-full h-full gap-1 sm:gap-2">
-                                                    {chartData.map((c, i) => (
-                                                        <PalaceCell
-                                                            key={c.id}
-                                                            cell={c}
-                                                            gridPos={GRID_LAYOUT_4X4[c.id]}
-                                                            isSelected={focusedPalace === c.id}
-                                                            onClick={() => setFocusedPalace(c.id)}
-                                                            viewMode={viewMode}
-                                                        />
-                                                    ))}
-                                                </div>
+                                        {/* Toggle Buttons */}
+                                        <button
+                                            onClick={() => setShowSanFang(!showSanFang)}
+                                            className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest border transition-all ${showSanFang ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'} `}
+                                        >
+                                            {showSanFang ? '三方四正' : '隱藏三方'}
+                                        </button>
+                                        <button
+                                            onClick={() => { const next = !showFlying; setShowFlying(next); if (next && (focusedPalace === null || focusedPalace === -1)) { const lp = chartData.find(c => c.isLife) || chartData[0]; if (lp) setFocusedPalace(lp.id); } }}
+                                            className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest border transition-all ${showFlying ? 'bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'} `}
+                                        >
+                                            {showFlying ? '四化飛星' : '隱藏飛星'}
+                                        </button>
+                                        <button
+                                            onClick={() => setShowAcademy(true)}
+                                            className="px-2.5 py-0.5 rounded text-[9px] font-black tracking-widest bg-gradient-to-r from-purple-600 to-indigo-600 text-white border border-purple-400/40 shadow-sm hover:scale-105 transition-all flex items-center gap-1"
+                                            title="開啟紫微斗數排盤與四化飛星講堂"
+                                        >
+                                            <span>📖</span> 排盤與飛星講堂
+                                        </button>
+                                    </div>
 
-                                                {/* 中宮天地盤資訊 */}
-                                                {destiny && centerInfo && (
-                                                    <div className="absolute top-[25%] left-[25%] w-[50%] h-[50%] pointer-events-none flex flex-col items-center justify-center z-30 p-2">
-                                                        <div className="text-center w-full h-full space-y-1 pointer-events-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-[2rem] shadow-xl border border-white/40 p-3 flex flex-col justify-around overflow-hidden relative">
-                                                            <div className="border-b border-indigo-100 dark:border-slate-800 pb-1 shrink-0">
-                                                                <h2 className="text-lg md:text-xl font-black text-indigo-950 dark:text-indigo-200 tracking-[0.2em] uppercase truncate">命盤中宮</h2>
-                                                                <p className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 tracking-wider">{destiny.lunar}</p>
-                                                                <p className="text-[9px] font-bold text-slate-400">西曆：{destiny.solarDate} ({centerInfo.virtualAge}歲 {centerInfo.zodiac})</p>
+                                    <div className="relative min-w-[700px]">
+                                        <div className="absolute inset-0 z-20 pointer-events-none">
+                                            {showSanFang && <SanFangSiZhengLines focusedId={focusedPalace} />}
+                                            {showFlying && <FlyingStarOverlay focusedId={focusedPalace} chartData={chartData} />}
+                                        </div>
+
+                                        <div id="chart-grid-container" className="relative z-10 bg-indigo-50/30 border-8 border-white ring-1 ring-indigo-100 p-4 grid grid-cols-4 grid-rows-4 gap-3 aspect-square print:h-[19cm] print:w-[19cm] print:mx-auto shadow-2xl shadow-indigo-200/50 print:shadow-none rounded-[2.5rem]">
+
+                                            {chartData.map((c, i) => {
+                                                if (c.id === -1) {
+                                                    return (
+                                                        <div key={i} className="flex flex-col items-center justify-center p-4 bg-slate-50/30">
+                                                            {/* Center cells are now placeholders for the absolute overlay */}
+                                                        </div>
+                                                    );
+                                                }
+
+                                                const isFocused = focusedPalace === c.id;
+                                                const isOpposite = showSanFang && focusedPalace !== null && focusedPalace !== -1 && (focusedPalace + 6) % 12 === c.id;
+                                                const isTriangular = showSanFang && focusedPalace !== null && focusedPalace !== -1 && ((focusedPalace + 4) % 12 === c.id || (focusedPalace + 8) % 12 === c.id);
+                                                const isClamped = showSanFang && focusedPalace !== null && focusedPalace !== -1 && ((focusedPalace + 11) % 12 === c.id || (focusedPalace + 1) % 12 === c.id);
+
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        id={`palace-${c.id}`}
+                                                        onClick={() => setFocusedPalace(c.id)}
+                                                        className={`grid-palace border border-indigo-50 p-2 flex flex-col justify-between overflow-hidden relative transition-all duration-300 palace-hover rounded-2xl
+                                                 ${c.isLife ? 'bg-white shadow-md shadow-indigo-100 ring-2 ring-indigo-50' : 'bg-white/60 hover:bg-white'}
+                                                 ${isFocused ? 'palace-focused' : ''}
+                                                 ${!isFocused && isOpposite ? 'palace-resonant-opposite' : ''}
+                                                 ${!isFocused && isTriangular ? 'palace-resonant-triangular' : ''}
+                                                 ${!isFocused && isClamped ? 'palace-resonant-clamp' : ''}
+                                                 ${c.hasFlowDayJi ? 'warning-pulse' : ''}
+                                                 ${c.isJiClashed ? 'clash-pulse' : ''}
+                                        `}
+                                                    >
+                                                        {c.hasFlowDayJi && (
+                                                            <div className="warning-badge" title="流日化忌坐守">忌坐</div>
+                                                        )}
+                                                        {c.isJiClashed && (
+                                                            <div className="clash-badge" title="流日化忌沖照">忌沖</div>
+                                                        )}
+                                                        <div className="flex flex-col border-b border-slate-100 pb-1 relative z-30">
+                                                            <div className="flex justify-between items-start w-full">
+                                                                <div className="flex items-center">
+                                                                    <span className="text-[14px] font-black text-slate-400 mr-1"><span className="palace-stem">{c.gan}</span>{c.zhi}</span>
+                                                                </div>
+                                                                <div className="text-right flex flex-col items-end">
+                                                                    <span className={`px-1.5 py-0.5 rounded text-[11px] font-black leading-none ${(viewMode === 'natal' && c.palaceName === '命宮') ||
+                                                                        (viewMode === 'yearly' && c.yearlyName === '命宮') ||
+                                                                        (viewMode === 'monthly' && c.monthlyName === '命宮')
+                                                                        ? 'bg-indigo-600 text-white' : 'bg-slate-100'} `}>
+                                                                        {viewMode === 'natal' ? c.palaceName : viewMode === 'yearly' ? c.yearlyName : c.monthlyName}
+                                                                    </span>
+                                                                    {c.isBody && <span className="mt-1 bg-fuchsia-600 text-white px-1.5 py-0.5 rounded text-[10px] font-black leading-none shadow-md ring-1 ring-white/50">身宮</span>}
+                                                                </div>
                                                             </div>
-                                                            <div className="grid grid-cols-4 gap-0 text-[11px] font-black shrink-0 text-slate-700 dark:text-slate-300">
-                                                                <div className="flex flex-col"><span className="text-[8px] text-indigo-400">年</span>{destiny.pillars.year}</div>
-                                                                <div className="flex flex-col"><span className="text-[8px] text-indigo-400">月</span>{destiny.pillars.month}</div>
-                                                                <div className="flex flex-col"><span className="text-[8px] text-indigo-400">日</span>{destiny.pillars.day}</div>
-                                                                <div className="flex flex-col"><span className="text-[8px] text-indigo-400">時</span>{destiny.pillars.hour}</div>
+                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                {isFocused && <span className="bg-indigo-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm ring-1 ring-white/50 animate-pulse">坐宮</span>}
+                                                                {!isFocused && isOpposite && <span className="bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm animate-pulse">對沖</span>}
+                                                                {!isFocused && isTriangular && <span className="bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">三合</span>}
+                                                                {!isFocused && isClamped && <span className="bg-amber-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">夾宮</span>}
+                                                                {c.isLaiYin && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">來因</span>}
+                                                                {c.isYearlyMing && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流年</span>}
+                                                                {c.isMonthlyMing && <span className="bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流月</span>}
+                                                                {c.isDailyMing && <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流日</span>}
                                                             </div>
-                                                            <div className="shrink-0 flex justify-between px-2 bg-slate-100/80 dark:bg-slate-800/80 rounded-lg py-1 text-slate-800 dark:text-slate-200">
-                                                                <div className="flex flex-col items-center"><span className="text-[8px] text-slate-400">局數</span><span className="text-[11px] font-bold">{centerInfo.bureau}</span></div>
-                                                                <div className="flex flex-col items-center"><span className="text-[8px] text-slate-400">命主</span><span className="text-[11px] font-bold">{centerInfo.mingZhu}</span></div>
-                                                                <div className="flex flex-col items-center"><span className="text-[8px] text-slate-400">身主</span><span className="text-[11px] font-bold">{centerInfo.shenZhu}</span></div>
+                                                        </div>
+                                                        <div className="flex-1 flex flex-wrap content-start items-start gap-0.5 py-1 overflow-y-auto custom-scrollbar relative z-30">
+                                                            {c.stars.filter(s => s.type === "main").map((s, idx) => (<InteractiveStar key={'m' + idx} star={s} colorClass="star-main w-full text-center block mb-1" />))}
+                                                            {c.stars.filter(s => s.type === "lucky").map((s, idx) => (<InteractiveStar key={'l' + idx} star={s} colorClass="star-lucun" />))}
+                                                            {c.stars.filter(s => s.type === "auspicious").map((s, idx) => (<InteractiveStar key={'a' + idx} star={s} colorClass="star-auspicious" />))}
+                                                            {c.stars.filter(s => s.type === "malefic").map((s, idx) => (<InteractiveStar key={'b' + idx} star={s} colorClass="star-malefic" />))}
+                                                            {c.stars.filter(s => s.type === "sihua").map((s, idx) => (<InteractiveStar key={'s' + idx} star={s} colorClass="star-sihua" />))}
+                                                            {c.stars.filter(s => s.type === "self-sihua").map((s, idx) => (<InteractiveStar key={'ss' + idx} star={s} colorClass="star-self-sihua" />))}
+                                                            {c.stars.filter(s => s.type === "minor").map((s, idx) => (<InteractiveStar key={'mi' + idx} star={s} colorClass="star-minor" />))}
+                                                        </div>
+                                                        <div className="border-t border-slate-100 pt-1 mt-auto relative z-30">
+                                                            <div className="flex flex-wrap gap-x-1 gap-y-0 text-[9px] text-slate-400 leading-none justify-center">
+                                                                {c.stars.filter(s => s.type === "flow").map((s, idx) => (<span key={'f' + idx} className="star-mini">{s.name}</span>))}
                                                             </div>
-                                                            <div className="text-[9px] font-black text-left px-2 leading-relaxed shrink-0">
-                                                                <div className="flex justify-between border-b border-slate-200/50 pb-0.5"><span className="text-slate-400">祿</span><span className="text-amber-600 font-bold">{centerInfo.sihua.lu}</span><span className="text-slate-400 ml-1">權</span><span className="text-emerald-600 font-bold">{centerInfo.sihua.quan}</span></div>
-                                                                <div className="flex justify-between pt-0.5"><span className="text-slate-400">科</span><span className="text-blue-600 font-bold">{centerInfo.sihua.ke}</span><span className="text-slate-400 ml-1">忌</span><span className="text-red-600 font-bold">{centerInfo.sihua.ji}</span></div>
+                                                            <div className="flex justify-between items-end text-[10px] font-black text-slate-300 mt-1">
+                                                                <div className="flex gap-1 items-center">
+                                                                    <span className={`px-1 rounded text-[9px] ${c.isSmallLimit ? 'bg-red-100 text-red-600 font-black' : 'text-slate-400'} `}>小限{c.smallLimitAge}</span>
+                                                                </div>
+                                                                <div className="flex gap-1 items-end">
+                                                                    <span className="text-slate-500 text-[10px] font-bold">{c.bigLimit}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        </div>
+                                                );
+                                            })}
 
-                                        {/* 四化飛星共振室 */}
-                                        {focusedPalace !== null && focusedPalace !== -1 && (
-                                            <FlyingStarResonanceChamber
-                                                focusedId={focusedPalace}
-                                                chartData={chartData}
-                                                onConsult={(q) => {
-                                                    handleChatSend(q);
-                                                }}
-                                            />
-                                        )}
+                                            {/* Absolute Center Info Overlay */}
+                                            {destiny && centerInfo && (
+                                                <div className="absolute top-[25%] left-[25%] w-[50%] h-[50%] pointer-events-none flex flex-col items-center justify-center z-30 p-2">
+                                                    <div className="text-center w-full h-full space-y-1 pointer-events-auto bg-white/95 backdrop-blur-md rounded-[2rem] shadow-xl shadow-indigo-100/50 border border-white ring-1 ring-indigo-50 p-4 flex flex-col justify-around overflow-hidden relative">
+
+                                                        {/* 時辰氣場儀視覺效果 */}
+                                                        <div className="absolute inset-0 flex items-center justify-center -z-10 pointer-events-none opacity-40" style={{ color: 'var(--destiny-primary)' }}>
+                                                            <div className="energy-ring">
+                                                                <div className="energy-vibration"></div>
+                                                                <div className="energy-vibration" style={{ animationDelay: '-1.3s' }}></div>
+                                                                <div className="energy-vibration" style={{ animationDelay: '-2.6s' }}></div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="border-b-2 border-indigo-50 pb-2 mb-1 shrink-0">
+                                                            <h2 className="text-xl font-black text-indigo-900 tracking-[0.3em] uppercase truncate">命譜中宮</h2>
+                                                            <p className="text-[11px] font-black text-indigo-400 mt-1 tracking-widest">{destiny.lunar}</p>
+                                                            <p className="text-[9px] font-black text-slate-400 mt-0.5 tracking-wider">陽曆：{destiny.solarDate} (虛{centerInfo.virtualAge} {centerInfo.zodiac})</p>
+                                                        </div>
+                                                        <div className="grid grid-cols-4 gap-0 text-[12px] font-black shrink-0">
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">年</span>{destiny.pillars.year}</div>
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">月</span>{destiny.pillars.month}</div>
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">日</span>{destiny.pillars.day}</div>
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">時</span>{destiny.pillars.hour}</div>
+                                                        </div>
+                                                        <div className="shrink-0 flex justify-between px-2 bg-slate-50 rounded-lg py-1 border border-slate-200 my-1 overflow-y-auto max-h-[60px]">
+                                                            <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">五行局</span><span className="text-[12px] text-slate-800">{centerInfo.bureau}</span></div>
+                                                            <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">命主</span><span className="text-[12px] text-slate-800">{centerInfo.mingZhu}</span></div>
+                                                            <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">身主</span><span className="text-[12px] text-slate-800">{centerInfo.shenZhu}</span></div>
+                                                        </div>
+                                                        <div className="text-[10px] font-black text-left px-2 leading-relaxed shrink-0">
+                                                            <div className="flex justify-between border-b border-slate-200 pb-1 mb-1"><span className="text-slate-400">祿</span><span className="text-amber-600">{centerInfo.sihua.lu}</span><span className="text-slate-400 ml-1">權</span><span className="text-emerald-600">{centerInfo.sihua.quan}</span></div>
+                                                            <div className="flex justify-between"><span className="text-slate-400">科</span><span className="text-blue-600">{centerInfo.sihua.ke}</span><span className="text-slate-400 ml-1">忌</span><span className="text-red-600">{centerInfo.sihua.ji}</span></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                    {/* 四化飛星因果儀互動面板 */}
+                                    {focusedPalace !== null && focusedPalace !== -1 && (
+                                        <FlyingStarResonanceChamber
+                                            focusedId={focusedPalace}
+                                            chartData={chartData}
+                                            onConsult={(q) => {
+                                                handleChatSend(q);
+                                            }}
+                                        />
+                                    )}
+
                                     </div>
                                 )}
 
-                                {/* 模式 2：純子平八字工作室 (bazi) */}
+                                {/* 模式 2：純子平八字 (bazi) */}
                                 {mainChartTab === 'bazi' && destiny && (
                                     <div className="space-y-6">
                                         <BaZiChart
@@ -6644,6 +6896,12 @@ ${newsStats}
                                             birthHour={birthHour}
                                             gender={gender}
                                             solarDateStr={destiny.solarDate}
+                                            callAiApi={callAiApi}
+                                            playTTS={playTTS}
+                                            isTTSActive={isTTSActive}
+                                            stopGlobalAudio={stopGlobalAudio}
+                                            getFullChartContext={getFullChartContext}
+                                            onConsult={handleChatSend}
                                         />
                                     </div>
                                 )}
@@ -6695,27 +6953,228 @@ ${newsStats}
                                             </div>
                                         </div>
 
-                                        {/* 紫微 12 宮格 */}
-                                        <div id="ziwei-chart-container-hybrid" className="bg-slate-900/60 p-2 sm:p-4 rounded-[2.5rem] border border-white/10 shadow-2xl relative">
-                                            <div className="relative aspect-square w-full">
-                                                {/* 12 宮格 */}
-                                                <div className="grid grid-cols-4 grid-rows-4 w-full h-full gap-1 sm:gap-2">
-                                                    {chartData.map((c, i) => (
-                                                        <PalaceCell
-                                                            key={c.id}
-                                                            cell={c}
-                                                            gridPos={GRID_LAYOUT_4X4[c.id]}
-                                                            isSelected={focusedPalace === c.id}
-                                                            onClick={() => setFocusedPalace(c.id)}
-                                                            viewMode={viewMode}
-                                                        />
-                                                    ))}
-                                                </div>
+                                        {/* 紫微 12 宮格星盤 */}
+                                        <div className="space-y-6">
+                                {/* Scrollable Container specifically for mobile chart view */}
+                                <div className="overflow-x-auto pb-6 custom-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+
+                                    <div className="flex justify-center flex-wrap gap-3 mb-4 text-[10px] font-bold tracking-widest bg-white/50 py-2 border border-slate-100 rounded-full w-fit mx-auto px-6 shadow-sm print:hidden">
+
+                                        {/* 流年流月流日 Controls-Compact */}
+                                        <div className="flex items-center gap-2 border-r border-slate-200 pr-3 mr-1">
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                                <select value={targetYear} onChange={e => setTargetYear(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
+                                                    {Array.from({ length: 100 }, (_, i) => 2024 - 50 + i).map(y => <option key={y} value={y}>{y}年</option>)}
+                                                </select>
                                             </div>
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                <select value={targetMonth} onChange={e => setTargetMonth(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
+                                                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}月</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                <select value={targetDay} onChange={e => setTargetDay(parseInt(e.target.value))} className="bg-transparent text-slate-700 font-bold outline-none cursor-pointer hover:text-indigo-600">
+                                                    {Array.from({ length: 30 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}日</option>)}
+                                                </select>
+                                            </div>
+                                            <button onClick={() => { const n = new Date(); setTargetYear(n.getFullYear()); setTargetMonth(n.getMonth() + 1); setTargetDay(n.getDate()); }} className="text-[9px] text-slate-400 hover:text-indigo-500 bg-slate-100 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors" title="回到今日">歸位</button>
+                                        </div>
+
+                                        {/* Chart View Modes */}
+                                        <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                                            {[
+                                                { id: 'natal', label: '本命', color: 'indigo' },
+                                                { id: 'yearly', label: '流年', color: 'red' },
+                                                { id: 'monthly', label: '流月', color: 'emerald' }
+                                            ].map(mode => (
+                                                <button
+                                                    key={mode.id}
+                                                    onClick={() => setViewMode(mode.id)}
+                                                    className={`px-3 py-0.5 rounded-md text-[9px] font-black transition-all ${viewMode === mode.id
+                                                        ? `bg-white text-${mode.color}-600 shadow-sm ring-1 ring-black/5`
+                                                        : 'text-slate-400 hover:text-slate-600'
+                                                        }`}
+                                                >
+                                                    {mode.label}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Toggle Buttons */}
+                                        <button
+                                            onClick={() => setShowSanFang(!showSanFang)}
+                                            className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest border transition-all ${showSanFang ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'} `}
+                                        >
+                                            {showSanFang ? '三方四正' : '隱藏三方'}
+                                        </button>
+                                        <button
+                                            onClick={() => { const next = !showFlying; setShowFlying(next); if (next && (focusedPalace === null || focusedPalace === -1)) { const lp = chartData.find(c => c.isLife) || chartData[0]; if (lp) setFocusedPalace(lp.id); } }}
+                                            className={`px-2 py-0.5 rounded text-[9px] font-black tracking-widest border transition-all ${showFlying ? 'bg-fuchsia-600 text-white border-fuchsia-600 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200'} `}
+                                        >
+                                            {showFlying ? '四化飛星' : '隱藏飛星'}
+                                        </button>
+                                        <button
+                                            onClick={() => setShowAcademy(true)}
+                                            className="px-2.5 py-0.5 rounded text-[9px] font-black tracking-widest bg-gradient-to-r from-purple-600 to-indigo-600 text-white border border-purple-400/40 shadow-sm hover:scale-105 transition-all flex items-center gap-1"
+                                            title="開啟紫微斗數排盤與四化飛星講堂"
+                                        >
+                                            <span>📖</span> 排盤與飛星講堂
+                                        </button>
+                                    </div>
+
+                                    <div className="relative min-w-[700px]">
+                                        <div className="absolute inset-0 z-20 pointer-events-none">
+                                            {showSanFang && <SanFangSiZhengLines focusedId={focusedPalace} />}
+                                            {showFlying && <FlyingStarOverlay focusedId={focusedPalace} chartData={chartData} />}
+                                        </div>
+
+                                        <div id="chart-grid-container" className="relative z-10 bg-indigo-50/30 border-8 border-white ring-1 ring-indigo-100 p-4 grid grid-cols-4 grid-rows-4 gap-3 aspect-square print:h-[19cm] print:w-[19cm] print:mx-auto shadow-2xl shadow-indigo-200/50 print:shadow-none rounded-[2.5rem]">
+
+                                            {chartData.map((c, i) => {
+                                                if (c.id === -1) {
+                                                    return (
+                                                        <div key={i} className="flex flex-col items-center justify-center p-4 bg-slate-50/30">
+                                                            {/* Center cells are now placeholders for the absolute overlay */}
+                                                        </div>
+                                                    );
+                                                }
+
+                                                const isFocused = focusedPalace === c.id;
+                                                const isOpposite = showSanFang && focusedPalace !== null && focusedPalace !== -1 && (focusedPalace + 6) % 12 === c.id;
+                                                const isTriangular = showSanFang && focusedPalace !== null && focusedPalace !== -1 && ((focusedPalace + 4) % 12 === c.id || (focusedPalace + 8) % 12 === c.id);
+                                                const isClamped = showSanFang && focusedPalace !== null && focusedPalace !== -1 && ((focusedPalace + 11) % 12 === c.id || (focusedPalace + 1) % 12 === c.id);
+
+                                                return (
+                                                    <div
+                                                        key={i}
+                                                        id={`palace-${c.id}`}
+                                                        onClick={() => setFocusedPalace(c.id)}
+                                                        className={`grid-palace border border-indigo-50 p-2 flex flex-col justify-between overflow-hidden relative transition-all duration-300 palace-hover rounded-2xl
+                                                 ${c.isLife ? 'bg-white shadow-md shadow-indigo-100 ring-2 ring-indigo-50' : 'bg-white/60 hover:bg-white'}
+                                                 ${isFocused ? 'palace-focused' : ''}
+                                                 ${!isFocused && isOpposite ? 'palace-resonant-opposite' : ''}
+                                                 ${!isFocused && isTriangular ? 'palace-resonant-triangular' : ''}
+                                                 ${!isFocused && isClamped ? 'palace-resonant-clamp' : ''}
+                                                 ${c.hasFlowDayJi ? 'warning-pulse' : ''}
+                                                 ${c.isJiClashed ? 'clash-pulse' : ''}
+                                        `}
+                                                    >
+                                                        {c.hasFlowDayJi && (
+                                                            <div className="warning-badge" title="流日化忌坐守">忌坐</div>
+                                                        )}
+                                                        {c.isJiClashed && (
+                                                            <div className="clash-badge" title="流日化忌沖照">忌沖</div>
+                                                        )}
+                                                        <div className="flex flex-col border-b border-slate-100 pb-1 relative z-30">
+                                                            <div className="flex justify-between items-start w-full">
+                                                                <div className="flex items-center">
+                                                                    <span className="text-[14px] font-black text-slate-400 mr-1"><span className="palace-stem">{c.gan}</span>{c.zhi}</span>
+                                                                </div>
+                                                                <div className="text-right flex flex-col items-end">
+                                                                    <span className={`px-1.5 py-0.5 rounded text-[11px] font-black leading-none ${(viewMode === 'natal' && c.palaceName === '命宮') ||
+                                                                        (viewMode === 'yearly' && c.yearlyName === '命宮') ||
+                                                                        (viewMode === 'monthly' && c.monthlyName === '命宮')
+                                                                        ? 'bg-indigo-600 text-white' : 'bg-slate-100'} `}>
+                                                                        {viewMode === 'natal' ? c.palaceName : viewMode === 'yearly' ? c.yearlyName : c.monthlyName}
+                                                                    </span>
+                                                                    {c.isBody && <span className="mt-1 bg-fuchsia-600 text-white px-1.5 py-0.5 rounded text-[10px] font-black leading-none shadow-md ring-1 ring-white/50">身宮</span>}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                {isFocused && <span className="bg-indigo-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm ring-1 ring-white/50 animate-pulse">坐宮</span>}
+                                                                {!isFocused && isOpposite && <span className="bg-rose-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm animate-pulse">對沖</span>}
+                                                                {!isFocused && isTriangular && <span className="bg-blue-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">三合</span>}
+                                                                {!isFocused && isClamped && <span className="bg-amber-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">夾宮</span>}
+                                                                {c.isLaiYin && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">來因</span>}
+                                                                {c.isYearlyMing && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流年</span>}
+                                                                {c.isMonthlyMing && <span className="bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流月</span>}
+                                                                {c.isDailyMing && <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm">流日</span>}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex-1 flex flex-wrap content-start items-start gap-0.5 py-1 overflow-y-auto custom-scrollbar relative z-30">
+                                                            {c.stars.filter(s => s.type === "main").map((s, idx) => (<InteractiveStar key={'m' + idx} star={s} colorClass="star-main w-full text-center block mb-1" />))}
+                                                            {c.stars.filter(s => s.type === "lucky").map((s, idx) => (<InteractiveStar key={'l' + idx} star={s} colorClass="star-lucun" />))}
+                                                            {c.stars.filter(s => s.type === "auspicious").map((s, idx) => (<InteractiveStar key={'a' + idx} star={s} colorClass="star-auspicious" />))}
+                                                            {c.stars.filter(s => s.type === "malefic").map((s, idx) => (<InteractiveStar key={'b' + idx} star={s} colorClass="star-malefic" />))}
+                                                            {c.stars.filter(s => s.type === "sihua").map((s, idx) => (<InteractiveStar key={'s' + idx} star={s} colorClass="star-sihua" />))}
+                                                            {c.stars.filter(s => s.type === "self-sihua").map((s, idx) => (<InteractiveStar key={'ss' + idx} star={s} colorClass="star-self-sihua" />))}
+                                                            {c.stars.filter(s => s.type === "minor").map((s, idx) => (<InteractiveStar key={'mi' + idx} star={s} colorClass="star-minor" />))}
+                                                        </div>
+                                                        <div className="border-t border-slate-100 pt-1 mt-auto relative z-30">
+                                                            <div className="flex flex-wrap gap-x-1 gap-y-0 text-[9px] text-slate-400 leading-none justify-center">
+                                                                {c.stars.filter(s => s.type === "flow").map((s, idx) => (<span key={'f' + idx} className="star-mini">{s.name}</span>))}
+                                                            </div>
+                                                            <div className="flex justify-between items-end text-[10px] font-black text-slate-300 mt-1">
+                                                                <div className="flex gap-1 items-center">
+                                                                    <span className={`px-1 rounded text-[9px] ${c.isSmallLimit ? 'bg-red-100 text-red-600 font-black' : 'text-slate-400'} `}>小限{c.smallLimitAge}</span>
+                                                                </div>
+                                                                <div className="flex gap-1 items-end">
+                                                                    <span className="text-slate-500 text-[10px] font-bold">{c.bigLimit}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+
+                                            {/* Absolute Center Info Overlay */}
+                                            {destiny && centerInfo && (
+                                                <div className="absolute top-[25%] left-[25%] w-[50%] h-[50%] pointer-events-none flex flex-col items-center justify-center z-30 p-2">
+                                                    <div className="text-center w-full h-full space-y-1 pointer-events-auto bg-white/95 backdrop-blur-md rounded-[2rem] shadow-xl shadow-indigo-100/50 border border-white ring-1 ring-indigo-50 p-4 flex flex-col justify-around overflow-hidden relative">
+
+                                                        {/* 時辰氣場儀視覺效果 */}
+                                                        <div className="absolute inset-0 flex items-center justify-center -z-10 pointer-events-none opacity-40" style={{ color: 'var(--destiny-primary)' }}>
+                                                            <div className="energy-ring">
+                                                                <div className="energy-vibration"></div>
+                                                                <div className="energy-vibration" style={{ animationDelay: '-1.3s' }}></div>
+                                                                <div className="energy-vibration" style={{ animationDelay: '-2.6s' }}></div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="border-b-2 border-indigo-50 pb-2 mb-1 shrink-0">
+                                                            <h2 className="text-xl font-black text-indigo-900 tracking-[0.3em] uppercase truncate">命譜中宮</h2>
+                                                            <p className="text-[11px] font-black text-indigo-400 mt-1 tracking-widest">{destiny.lunar}</p>
+                                                            <p className="text-[9px] font-black text-slate-400 mt-0.5 tracking-wider">陽曆：{destiny.solarDate} (虛{centerInfo.virtualAge} {centerInfo.zodiac})</p>
+                                                        </div>
+                                                        <div className="grid grid-cols-4 gap-0 text-[12px] font-black shrink-0">
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">年</span>{destiny.pillars.year}</div>
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">月</span>{destiny.pillars.month}</div>
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">日</span>{destiny.pillars.day}</div>
+                                                            <div className="flex flex-col"><span className="text-[9px] text-indigo-400">時</span>{destiny.pillars.hour}</div>
+                                                        </div>
+                                                        <div className="shrink-0 flex justify-between px-2 bg-slate-50 rounded-lg py-1 border border-slate-200 my-1 overflow-y-auto max-h-[60px]">
+                                                            <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">五行局</span><span className="text-[12px] text-slate-800">{centerInfo.bureau}</span></div>
+                                                            <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">命主</span><span className="text-[12px] text-slate-800">{centerInfo.mingZhu}</span></div>
+                                                            <div className="flex flex-col items-center"><span className="text-[9px] text-slate-400">身主</span><span className="text-[12px] text-slate-800">{centerInfo.shenZhu}</span></div>
+                                                        </div>
+                                                        <div className="text-[10px] font-black text-left px-2 leading-relaxed shrink-0">
+                                                            <div className="flex justify-between border-b border-slate-200 pb-1 mb-1"><span className="text-slate-400">祿</span><span className="text-amber-600">{centerInfo.sihua.lu}</span><span className="text-slate-400 ml-1">權</span><span className="text-emerald-600">{centerInfo.sihua.quan}</span></div>
+                                                            <div className="flex justify-between"><span className="text-slate-400">科</span><span className="text-blue-600">{centerInfo.sihua.ke}</span><span className="text-slate-400 ml-1">忌</span><span className="text-red-600">{centerInfo.sihua.ji}</span></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                    {/* 四化飛星因果儀互動面板 */}
+                                    {focusedPalace !== null && focusedPalace !== -1 && (
+                                        <FlyingStarResonanceChamber
+                                            focusedId={focusedPalace}
+                                            chartData={chartData}
+                                            onConsult={(q) => {
+                                                handleChatSend(q);
+                                            }}
+                                        />
+                                    )}
+
                                         </div>
 
                                         {/* 八字命盤獨立嵌入雙盤合參底部 */}
-                                        <div className="print:break-before-page" style={{ pageBreakBefore: 'always' }}>
+                                        <div className="print:break-before-page pt-4" style={{ pageBreakBefore: 'always' }}>
                                             <BaZiChart
                                                 lunarDate={{
                                                     year: destiny.lYear,
@@ -6725,11 +7184,17 @@ ${newsStats}
                                                 birthHour={birthHour}
                                                 gender={gender}
                                                 solarDateStr={destiny.solarDate}
+                                                callAiApi={callAiApi}
+                                                playTTS={playTTS}
+                                                isTTSActive={isTTSActive}
+                                                stopGlobalAudio={stopGlobalAudio}
+                                                getFullChartContext={getFullChartContext}
+                                                onConsult={handleChatSend}
                                             />
                                         </div>
                                     </div>
                                 )}
-
+                            </div>
 
                             <div className="xl:col-span-4 space-y-12 print:w-full print:mt-16">
                                 <MasterPresence isSpeaking={isLoading || isChatLoading} />
@@ -7078,7 +7543,7 @@ ${newsStats}
 
 
 
-                                <Card ref={chatCardRef} className="print:hidden h-[600px] flex flex-col border-0 shadow-2xl rounded-[2.5rem] ring-4 ring-indigo-50/50 bg-white/90 backdrop-blur-sm overflow-hidden mb-12 relative">
+                                <Card ref={chatCardRef} id="master-chat-card" className="print:hidden h-[600px] flex flex-col border-0 shadow-2xl rounded-[2.5rem] ring-4 ring-indigo-50/50 bg-white/90 backdrop-blur-sm overflow-hidden mb-12 relative">
                                     <SmokeAtmosphere />
                                     <div className="relative p-6 shrink-0 overflow-hidden">
                                         {/* Background with Image and Gradient Overlay */}
