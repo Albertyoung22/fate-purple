@@ -1,0 +1,2251 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紫微斗數 · 排盤與四化飛星大講堂 (白話生活版) | 天機命譜</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        destiny: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                            950: '#2e1065',
+                        },
+                        gold: {
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif TC"', 'serif'],
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas-Confetti for quiz celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+TC:wght@300;400;500;700;900&family=Noto+Serif+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(147, 51, 234, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(168, 85, 247, 0.7);
+        }
+
+        /* Ambient Cosmic Background */
+        .cosmic-bg {
+            background: radial-gradient(circle at 15% 15%, rgba(88, 28, 135, 0.4) 0%, transparent 45%),
+                        radial-gradient(circle at 85% 85%, rgba(30, 58, 138, 0.35) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.98) 0%, #030712 100%);
+        }
+        .light .cosmic-bg {
+            background: radial-gradient(circle at 20% 20%, rgba(224, 231, 255, 0.8) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(243, 232, 255, 0.8) 0%, transparent 50%),
+                        #f8fafc;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .light .glass-panel {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.68);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .light .glass-card {
+            background: rgba(248, 250, 252, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        /* Glowing text and borders */
+        .glow-gold {
+            text-shadow: 0 0 16px rgba(250, 204, 21, 0.5);
+        }
+        .glow-purple {
+            text-shadow: 0 0 16px rgba(168, 85, 247, 0.6);
+        }
+        .glow-box-gold {
+            box-shadow: 0 0 25px -4px rgba(250, 204, 21, 0.25), inset 0 0 15px rgba(250, 204, 21, 0.1);
+        }
+
+        /* Keyframes */
+        @keyframes rotateOrbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin-orbit {
+            animation: rotateOrbit 20s linear infinite;
+        }
+
+        @keyframes beamFlow {
+            0% { stroke-dashoffset: 100; }
+            100% { stroke-dashoffset: 0; }
+        }
+        .beam-flowing {
+            stroke-dasharray: 10, 5;
+            animation: beamFlow 1.2s linear infinite;
+        }
+
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.35s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+        }
+        
+        .talisman-stamp {
+            border: 3px double #dc2626;
+            color: #dc2626;
+            font-family: 'Noto Serif TC', serif;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+
+<body class="cosmic-bg text-slate-100 min-h-screen font-sans selection:bg-purple-600 selection:text-white transition-colors duration-300 antialiased overflow-x-hidden">
+
+    <!-- Top Master Navigation Bar -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-purple-500/20 px-4 lg:px-8 py-3.5 flex items-center justify-between shadow-2xl transition-all">
+        <div class="flex items-center gap-3.5">
+            <div class="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-700 via-indigo-600 to-amber-400 p-[2px] shadow-lg shadow-purple-500/30 flex items-center justify-center group cursor-pointer" onclick="switchChapter(0)">
+                <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center transition-transform group-hover:scale-95">
+                    <span class="text-2xl animate-pulse">🎓</span>
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-serif font-black text-lg md:text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-purple-200 to-indigo-300 flex items-center gap-1.5">
+                        紫微斗數 · 排盤與四化飛星大講堂
+                    </h1>
+                    <span class="inline-flex px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+                        白話生活版
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400 font-medium hidden md:block">
+                    零基礎也能秒懂！用「拍電影、開公司、寄快遞」帶你看懂人生星盤
+                </p>
+            </div>
+        </div>
+
+        <!-- Right Quick Actions (Fullscreen, Pop-out, Audio, Theme) -->
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Learning Progress Indicator -->
+            <div class="hidden lg:flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-purple-950/40 border border-purple-500/20 text-xs">
+                <span class="text-slate-400">研習進度:</span>
+                <div class="w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="learning-progress-bar" class="h-full bg-gradient-to-r from-purple-500 to-amber-400 transition-all duration-500" style="width: 12%;"></div>
+                </div>
+                <span id="learning-progress-text" class="font-mono font-bold text-amber-300">12%</span>
+            </div>
+
+            <!-- Master TTS Reader Button -->
+            <button id="btn-tts" onclick="toggleChapterAudio()" class="px-3 py-2 rounded-xl glass-card hover:bg-purple-600/30 text-xs font-bold text-slate-300 flex items-center gap-1.5 border border-purple-500/20 transition-all shadow-sm" title="天機語音導讀">
+                <i data-lucide="volume-2" class="w-4 h-4 text-amber-400"></i>
+                <span id="tts-btn-text" class="hidden sm:inline">天機伴讀</span>
+            </button>
+
+            <!-- Jump to Sandbox Simulator Button -->
+            <button onclick="switchChapter(6)" class="px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-xs font-bold text-white flex items-center gap-1.5 shadow-lg shadow-indigo-500/30 transition-all border border-indigo-400/30">
+                <i data-lucide="zap" class="w-4 h-4 text-amber-300 animate-bounce"></i>
+                <span class="hidden sm:inline">飛星沙盒</span>
+            </button>
+
+            <!-- Pop-out Window Button -->
+            <button onclick="popoutWindow()" class="p-2 rounded-xl glass-card hover:bg-slate-700/50 text-slate-300 transition-all border border-slate-700/50" title="在獨立新視窗中開啟">
+                <i data-lucide="external-link" class="w-4 h-4 text-indigo-300"></i>
+            </button>
+
+            <!-- Fullscreen Toggle Button -->
+            <button id="btn-fullscreen" onclick="toggleFullscreen()" class="p-2 rounded-xl glass-card hover:bg-amber-500/20 text-amber-300 transition-all border border-amber-500/30" title="切換全螢幕 (F11)">
+                <i id="fullscreen-icon" data-lucide="maximize" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Dark / Light Theme Toggle -->
+            <button onclick="toggleTheme()" class="p-2 rounded-xl glass-card hover:bg-slate-700/50 text-slate-300 transition-all border border-slate-700/50" title="切換日夜主題">
+                <i id="theme-icon" data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 30-Second Quick Start Banner (白話速成懶人包) -->
+    <div class="max-w-[1680px] mx-auto px-3 sm:px-5 lg:px-7 pt-4">
+        <div class="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-950/80 via-purple-950/90 to-indigo-950/80 border border-amber-400/40 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+                <span class="text-4xl animate-bounce">💡</span>
+                <div>
+                    <h3 class="font-black text-sm sm:text-base text-amber-300 flex items-center gap-2">
+                        <span>【30 秒極速秒懂】紫微斗數到底是什麼？</span>
+                        <span class="text-xs text-emerald-300 font-bold bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-500/40">完全不需要背古文</span>
+                    </h3>
+                    <p class="text-xs text-slate-200 mt-1 leading-relaxed">
+                        想像你的一生是一部<strong>自編自導自演的電影</strong>：
+                        <span class="text-amber-300 font-bold">12個宮位</span> = 12個生活房間 ｜ 
+                        <span class="text-purple-300 font-bold">14顆主星</span> = 14位性格演員 ｜ 
+                        <span class="text-emerald-300 font-bold">四化飛星</span> = 老天爺寄給你的劇本紅包與牽掛包裹！
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="switchChapter(6)" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs hover:scale-105 transition-all shadow-lg shadow-amber-500/30 flex items-center gap-1.5">
+                    <span>⚡ 一鍵玩飛星沙盒</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="max-w-[1680px] mx-auto p-3 sm:p-5 lg:p-7 flex flex-col lg:flex-row gap-6">
+
+        <!-- Left Sidebar: Progressive Curriculum Chapters -->
+        <aside class="w-full lg:w-80 shrink-0 space-y-4">
+            <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-purple-500/20 shadow-xl sticky top-24">
+                <div class="flex items-center justify-between pb-3.5 border-b border-purple-500/20 mb-3">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="book-marked" class="w-5 h-5 text-amber-400"></i>
+                        <span class="font-serif font-black text-sm text-slate-200">由淺入深 8 講目錄</span>
+                    </div>
+                    <span class="text-[11px] font-mono text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-500/30">白話解說</span>
+                </div>
+
+                <!-- Nav Menu Items -->
+                <nav class="space-y-1.5" id="curriculum-nav">
+                    <button onclick="switchChapter(0)" class="chapter-nav-btn w-full text-left p-3 rounded-2xl flex items-center justify-between text-xs font-bold transition-all bg-gradient-to-r from-purple-900/60 to-indigo-900/40 border border-purple-400/40 text-amber-300 shadow-md">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-lg bg-purple-600/50 text-amber-300 flex items-center justify-center font-mono text-[11px]">0</span>
+                            <div>
+                                <div class="font-black text-slate-100">初窺天機 · 拍電影模型</div>
+                                <div class="text-[10px] text-slate-400 font-normal">場景、演員與劇情三要素</div>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-amber-400 opacity-80"></i>
+                    </button>
+
+                    <button onclick="switchChapter(1)" class="chapter-nav-btn w-full text-left p-3 rounded-2xl flex items-center justify-between text-xs font-bold transition-all hover:bg-slate-800/50 border border-transparent text-slate-300">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center font-mono text-[11px]">1</span>
+                            <div>
+                                <div class="font-black text-slate-200">生活房間 · 十二宮位大白話</div>
+                                <div class="text-[10px] text-slate-400 font-normal">錢包、辦公室與開公司鐵三角</div>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 opacity-60"></i>
+                    </button>
+
+                    <button onclick="switchChapter(2)" class="chapter-nav-btn w-full text-left p-3 rounded-2xl flex items-center justify-between text-xs font-bold transition-all hover:bg-slate-800/50 border border-transparent text-slate-300">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center font-mono text-[11px]">2</span>
+                            <div>
+                                <div class="font-black text-slate-200">排盤推演 · 掌訣排盤動畫</div>
+                                <div class="text-[10px] text-slate-400 font-normal">五步排好星盤與14位性格演員</div>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 opacity-60"></i>
+                    </button>
+
+                    <button onclick="switchChapter(3)" class="chapter-nav-btn w-full text-left p-3 rounded-2xl flex items-center justify-between text-xs font-bold transition-all hover:bg-slate-800/50 border border-transparent text-slate-300">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center font-mono text-[11px]">3</span>
+                            <div>
+                                <div class="font-black text-slate-200">四張超能力卡 · 祿權科忌</div>
+                                <div class="text-[10px] text-slate-400 font-normal">大紅包、方向盤、金牌與牽掛</div>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 opacity-60"></i>
+                    </button>
+
+                    <button onclick="switchChapter(4)" class="chapter-nav-btn w-full text-left p-3 rounded-2xl flex items-center justify-between text-xs font-bold transition-all hover:bg-slate-800/50 border border-transparent text-slate-300">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center font-mono text-[11px]">4</span>
+                            <div>
+                                <div class="font-black text-slate-200">絕學真傳 · 飛星寄包裹</div>
+                                <div class="text-[10px] text-slate-400 font-normal">誰給誰好處？誰欠誰人情？</div>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 opacity-60"></i>
+                    </button>
+
+                    <button onclick="switchChapter(5)" class="chapter-nav-btn w-full text-left p-3 rounded-2xl flex items-center justify-between text-xs font-bold transition-all hover:bg-slate-800/50 border border-transparent text-slate-300">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center font-mono text-[11px]">5</span>
+                            <div>
+                                <div class="font-black text-slate-200">時空重疊 · 大限流年看運氣</div>
+                                <div class="text-[10px] text-slate-400 font-normal">十年天氣預報與今年焦點事件</div>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 opacity-60"></i>
+                    </button>
+
+                    <button onclick="switchChapter(6)" class="chapter-nav-btn w-full text-left p-3 rounded-2xl flex items-center justify-between text-xs font-bold transition-all hover:bg-slate-800/50 border border-transparent text-slate-300">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-lg bg-indigo-900/60 text-indigo-300 flex items-center justify-center font-mono text-[11px] ring-1 ring-indigo-500/40">⚡</span>
+                            <div>
+                                <div class="font-black text-indigo-300">實戰沙盒 · 動態射線實驗室</div>
+                                <div class="text-[10px] text-slate-400 font-normal">一鍵發射祿權科忌看大白話</div>
+                            </div>
+                        </div>
+                        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400 opacity-80"></i>
+                    </button>
+
+                    <button onclick="switchChapter(7)" class="chapter-nav-btn w-full text-left p-3 rounded-2xl flex items-center justify-between text-xs font-bold transition-all hover:bg-slate-800/50 border border-transparent text-slate-300">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-lg bg-amber-900/50 text-amber-300 flex items-center justify-center font-mono text-[11px] ring-1 ring-amber-500/40">📜</span>
+                            <div>
+                                <div class="font-black text-amber-300">趣味測驗 · 結業研習證書</div>
+                                <div class="text-[10px] text-slate-400 font-normal">白話小問答與專屬榮譽證書</div>
+                            </div>
+                        </div>
+                        <i data-lucide="award" class="w-4 h-4 text-amber-400 opacity-80"></i>
+                    </button>
+                </nav>
+
+                <!-- Plain Language Quick Scenarios -->
+                <div class="mt-4 p-3.5 rounded-2xl bg-gradient-to-br from-purple-950/40 to-slate-900/60 border border-purple-500/20 text-[11px] text-slate-300 space-y-2">
+                    <div class="flex items-center gap-1.5 font-bold text-amber-300">
+                        <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                        你想了解哪件事？（點選直達）
+                    </div>
+                    <div class="flex flex-col gap-1.5 pt-1">
+                        <button onclick="switchChapter(1)" class="text-left px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-purple-600/30 text-slate-300 hover:text-amber-300 transition-colors flex items-center justify-between">
+                            <span>💰 我這輩子財運在哪裡？</span>
+                            <span class="text-[10px] text-amber-400">第1講</span>
+                        </button>
+                        <button onclick="switchChapter(3)" class="text-left px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-purple-600/30 text-slate-300 hover:text-amber-300 transition-colors flex items-center justify-between">
+                            <span>🎁 我的出生年份有什麼天賦？</span>
+                            <span class="text-[10px] text-emerald-400">第3講</span>
+                        </button>
+                        <button onclick="switchChapter(4)" class="text-left px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-purple-600/30 text-slate-300 hover:text-amber-300 transition-colors flex items-center justify-between">
+                            <span>❤️ 我跟另一半到底誰欠誰？</span>
+                            <span class="text-[10px] text-rose-400">第4講</span>
+                        </button>
+                        <button onclick="switchChapter(6)" class="text-left px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-purple-600/30 text-slate-300 hover:text-amber-300 transition-colors flex items-center justify-between">
+                            <span>🎯 親自發射一條射線試試看</span>
+                            <span class="text-[10px] text-indigo-400">第6講</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Lecture Area -->
+        <main class="flex-1 space-y-6 min-w-0">
+
+            <!-- ================= CHAPTER 0: 初窺天機 · 拍電影模型 ================= -->
+            <section id="chapter-0" class="tab-content active space-y-6">
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-purple-500/20 pb-5">
+                        <div>
+                            <span class="px-3 py-1 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-400/30">第 0 講 · 白話入門</span>
+                            <h2 class="text-2xl sm:text-3xl font-serif font-black text-white mt-2 glow-purple">
+                                初窺天機 · 像拍電影一樣理解紫微斗數
+                            </h2>
+                        </div>
+                        <button onclick="speakText('chapter-0-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                        </button>
+                    </div>
+
+                    <div id="chapter-0-text" class="space-y-6 pt-6 text-sm leading-relaxed text-slate-200">
+                        <!-- Super Plain 3 Core Metaphors -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="p-5 rounded-3xl glass-card border border-amber-400/30 space-y-2.5 hover:border-amber-400/60 transition-all bg-gradient-to-b from-amber-950/30 to-slate-900/80">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-3xl">🎬</span>
+                                    <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">要素一</span>
+                                </div>
+                                <h3 class="font-serif font-black text-base text-amber-300">1. 宮位 = 「拍攝場景」</h3>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    就像一棟有 12 間房間的大房子：辦公室（事業宮）、保險箱（財帛宮）、臥室（夫妻宮）、客廳（交友宮）。<strong>告訴你「事情在哪裡發生」！</strong>
+                                </p>
+                            </div>
+                            <div class="p-5 rounded-3xl glass-card border border-indigo-400/30 space-y-2.5 hover:border-indigo-400/60 transition-all bg-gradient-to-b from-indigo-950/30 to-slate-900/80">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-3xl">🎭</span>
+                                    <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">要素二</span>
+                                </div>
+                                <h3 class="font-serif font-black text-base text-indigo-300">2. 星曜 = 「性格演員」</h3>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    住在房間裡的男女主角：紫微是霸道總裁、天機是聰明軍師、武曲是精算會計、天同是吃貨甜心。<strong>告訴你「是誰在做事、性格脾氣如何」！</strong>
+                                </p>
+                            </div>
+                            <div class="p-5 rounded-3xl glass-card border border-emerald-400/30 space-y-2.5 hover:border-emerald-400/60 transition-all bg-gradient-to-b from-emerald-950/30 to-slate-900/80">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-3xl">📦</span>
+                                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">要素三</span>
+                                </div>
+                                <h3 class="font-serif font-black text-base text-emerald-300">3. 四化 = 「快遞包裹」</h3>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    老天爺給的劇情大紅包或考驗：發財大紅包（化祿）、權力遙控器（化權）、榮譽金牌（化科）、心頭最放不下的責任（化忌）。<strong>告訴你「劇情的喜怒哀樂！」</strong>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- 3-Second Rule Example Box -->
+                        <div class="p-6 rounded-3xl bg-gradient-to-r from-purple-950/70 via-slate-900 to-indigo-950/70 border border-purple-500/30 space-y-4">
+                            <h4 class="font-serif font-black text-base sm:text-lg text-amber-200 flex items-center gap-2">
+                                <span>☕</span> 3 秒看懂生活實例：連小學生都能聽懂！
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs leading-relaxed">
+                                <div class="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                                    <span class="text-emerald-300 font-bold">範例 A：【武曲星（會計）】在【財帛宮（錢包）】＋【化祿（大紅包）】</span>
+                                    <p class="text-slate-300">
+                                        👉 <strong>白話人話：</strong>「你天生特別有商業腦袋，錢包裡經常收到大筆款項，財運超級好！」
+                                    </p>
+                                </div>
+                                <div class="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                                    <span class="text-rose-300 font-bold">範例 B：【巨門星（名嘴）】在【官祿宮（工作）】＋【化權（方向盤）】</span>
+                                    <p class="text-slate-300">
+                                        👉 <strong>白話人話：</strong>「你在職場上靠說話、演講或業務談判就能掌大權，說話超有權威與說服力！」
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Next Step Button -->
+                        <div class="pt-4 flex justify-end">
+                            <button onclick="switchChapter(1)" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold text-white shadow-lg shadow-purple-500/30 flex items-center gap-2 transition-all group">
+                                <span>進入第 1 講：人生十二生活房間與開公司鐵三角</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= CHAPTER 1: 十二生活宮位與三方四正 ================= -->
+            <section id="chapter-1" class="tab-content space-y-6">
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-purple-500/20 pb-5">
+                        <div>
+                            <span class="px-3 py-1 rounded-full text-xs font-black bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">第 1 講 · 宮位生活化</span>
+                            <h2 class="text-2xl sm:text-3xl font-serif font-black text-white mt-2 glow-purple">
+                                人生十二生活房間 · 點選看懂每個宮位的「大白話」
+                            </h2>
+                        </div>
+                        <button onclick="speakText('chapter-1-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                        </button>
+                    </div>
+
+                    <div id="chapter-1-text" class="space-y-6 pt-6 text-sm text-slate-200">
+                        <!-- Plain 12 Palaces Interactive Cards -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-serif font-black text-base text-amber-300 flex items-center gap-2">
+                                    <span>🏠</span> 十二宮位 = 你的 12 間生活專屬房間（點擊卡片看生活情境）
+                                </h4>
+                                <span class="text-xs text-slate-400 hidden sm:inline">點選任一房間查看白話解析</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-xs" id="palaces-interactive-grid">
+                                <div onclick="showPalaceDetail(0)" class="p-3.5 rounded-2xl glass-card border border-amber-500/40 hover:border-amber-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-amber-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-amber-400 font-black text-sm">1. 命宮</span>
+                                        <span class="text-xs">🧬</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【我本人的 DNA】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">脾氣長相、核心性格、處世大原則</p>
+                                </div>
+                                <div onclick="showPalaceDetail(1)" class="p-3.5 rounded-2xl glass-card border border-indigo-500/40 hover:border-indigo-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-indigo-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-indigo-400 font-black text-sm">2. 兄弟宮</span>
+                                        <span class="text-xs">💵</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【活期小金庫】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">手足死黨、手頭現金流、銀行存款</p>
+                                </div>
+                                <div onclick="showPalaceDetail(2)" class="p-3.5 rounded-2xl glass-card border border-rose-500/40 hover:border-rose-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-rose-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-rose-400 font-black text-sm">3. 夫妻宮</span>
+                                        <span class="text-xs">💍</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【另一半的模樣】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">理想型、婚姻相處模式、感情甜苦</p>
+                                </div>
+                                <div onclick="showPalaceDetail(3)" class="p-3.5 rounded-2xl glass-card border border-emerald-500/40 hover:border-emerald-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-emerald-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-emerald-400 font-black text-sm">4. 子女宮</span>
+                                        <span class="text-xs">👶</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【晚輩與合夥】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">小孩緣分、帶領年輕員工、外在桃花</p>
+                                </div>
+                                <div onclick="showPalaceDetail(4)" class="p-3.5 rounded-2xl glass-card border border-yellow-500/40 hover:border-yellow-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-yellow-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-yellow-400 font-black text-sm">5. 財帛宮</span>
+                                        <span class="text-xs">💰</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【賺錢與錢包】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">靠什麼賺錢、花錢大不大方、理財手段</p>
+                                </div>
+                                <div onclick="showPalaceDetail(5)" class="p-3.5 rounded-2xl glass-card border border-purple-500/40 hover:border-purple-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-purple-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-purple-400 font-black text-sm">6. 疾厄宮</span>
+                                        <span class="text-xs">🏥</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【身體與潛意識】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">健康體質、容易累嗎、隱藏的心事</p>
+                                </div>
+                                <div onclick="showPalaceDetail(6)" class="p-3.5 rounded-2xl glass-card border border-cyan-500/40 hover:border-cyan-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-cyan-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-cyan-400 font-black text-sm">7. 遷移宮</span>
+                                        <span class="text-xs">✈️</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【出外社交貴人】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">在外形象、出差旅行順遂度、遠方機遇</p>
+                                </div>
+                                <div onclick="showPalaceDetail(7)" class="p-3.5 rounded-2xl glass-card border border-blue-500/40 hover:border-blue-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-blue-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-blue-400 font-black text-sm">8. 交友宮</span>
+                                        <span class="text-xs">👥</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【同事與人氣】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">職場一般同事、朋友人氣、公眾人緣</p>
+                                </div>
+                                <div onclick="showPalaceDetail(8)" class="p-3.5 rounded-2xl glass-card border border-red-500/40 hover:border-red-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-red-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-red-400 font-black text-sm">9. 官祿宮</span>
+                                        <span class="text-xs">🏢</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【事業與工作】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">工作能力、升遷運、適合當老闆或職員</p>
+                                </div>
+                                <div onclick="showPalaceDetail(9)" class="p-3.5 rounded-2xl glass-card border border-amber-500/40 hover:border-amber-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-amber-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-amber-400 font-black text-sm">10. 田宅宮</span>
+                                        <span class="text-xs">🏡</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【房子與總財庫】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">能否置產買房、家庭溫暖度、最終存多少</p>
+                                </div>
+                                <div onclick="showPalaceDetail(10)" class="p-3.5 rounded-2xl glass-card border border-fuchsia-500/40 hover:border-fuchsia-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-fuchsia-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-fuchsia-400 font-black text-sm">11. 福德宮</span>
+                                        <span class="text-xs">🧘</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【精神與享受】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">心情快不快樂、抗壓性、靈魂休閒嗜好</p>
+                                </div>
+                                <div onclick="showPalaceDetail(11)" class="p-3.5 rounded-2xl glass-card border border-indigo-500/40 hover:border-indigo-400 hover:scale-105 cursor-pointer transition-all bg-gradient-to-br from-indigo-950/40 to-slate-900">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-indigo-400 font-black text-sm">12. 父母宮</span>
+                                        <span class="text-xs">👔</span>
+                                    </div>
+                                    <div class="text-white font-bold mt-1">【長官與文書】</div>
+                                    <p class="text-slate-300 text-[11px] mt-1">父母感情、職場大主管賞識度、證照合同</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Palace Detail Box -->
+                        <div id="palace-detail-card" class="p-5 rounded-3xl bg-slate-950/90 border border-purple-500/30 space-y-3">
+                            <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+                                <span class="font-serif font-black text-amber-300 text-base" id="palace-detail-title">🧬 【命宮】生活大白話詳細解讀</span>
+                                <span class="text-xs text-slate-400">房間編號：01</span>
+                            </div>
+                            <p class="text-slate-200 text-xs sm:text-sm leading-relaxed" id="palace-detail-desc">
+                                命宮就是「你本人的出廠原始設定」。就像遊戲裡主角一開始的人物面板：你的基本屬性、做事風格、第一眼給人的氣場都在這裡！
+                            </p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                                <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                                    <strong class="text-emerald-300">💡 當這裡有好星曜/化祿時：</strong>
+                                    <p class="text-slate-300 mt-0.5" id="palace-detail-good">自信樂觀、貴人多、做事總是笑臉迎人，運氣一路順遂！</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                                    <strong class="text-rose-300">⚠️ 當這裡遇到化忌或煞星時：</strong>
+                                    <p class="text-slate-300 mt-0.5" id="palace-detail-bad">自我要求過高、容易焦慮給自己太大壓力，需要學會放鬆放過自己。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3-Fang 4-Zheng Metaphor -->
+                        <div class="p-6 rounded-3xl bg-slate-950/90 border border-indigo-500/30 space-y-4">
+                            <h4 class="font-serif font-black text-base text-amber-300 flex items-center gap-2">
+                                <i data-lucide="layers" class="w-5 h-5 text-indigo-400"></i>
+                                什麼是「三方四正」？（合夥開公司鐵三角比喻）
+                            </h4>
+                            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                                為什麼看一個宮位不能只看自己？想像你要合夥開一家賺錢的公司：
+                            </p>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                <div class="p-4 rounded-2xl bg-indigo-950/60 border border-indigo-500/30">
+                                    <strong class="text-indigo-300 text-sm">🏛️ 本宮 = 董事長自己</strong>
+                                    <p class="text-slate-300 mt-1">你自己的能力與方向。</p>
+                                </div>
+                                <div class="p-4 rounded-2xl bg-blue-950/60 border border-blue-500/30">
+                                    <strong class="text-blue-300 text-sm">🤝 三合宮 (120°) = 核心合夥人</strong>
+                                    <p class="text-slate-300 mt-1">【命宮 + 財帛宮 + 官祿宮】組成鐵三角，有錢出錢、有力出力！</p>
+                                </div>
+                                <div class="p-4 rounded-2xl bg-red-950/60 border border-red-500/30">
+                                    <strong class="text-red-300 text-sm">🪞 對宮 (180°) = 照妖鏡/大客戶</strong>
+                                    <p class="text-slate-300 mt-1">正前方的遷移宮，檢驗你到外面市場能不能被大家接受！</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prev & Next -->
+                        <div class="pt-4 flex justify-between">
+                            <button onclick="switchChapter(0)" class="px-5 py-2.5 rounded-2xl glass-card hover:bg-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i> 上一講：拍電影模型
+                            </button>
+                            <button onclick="switchChapter(2)" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold text-white shadow-lg shadow-purple-500/30 flex items-center gap-2 transition-all">
+                                <span>進入第 2 講：排盤推演 · 五步排好星盤</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= CHAPTER 2: 排盤推演動畫與十四主角 ================= -->
+            <section id="chapter-2" class="tab-content space-y-6">
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-purple-500/20 pb-5">
+                        <div>
+                            <span class="px-3 py-1 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-400/30">第 2 講 · 排盤超簡單</span>
+                            <h2 class="text-2xl sm:text-3xl font-serif font-black text-white mt-2 glow-purple">
+                                揭秘天盤 · 五步掌訣排盤與 14 位性格演員人設
+                            </h2>
+                        </div>
+                        <button onclick="speakText('chapter-2-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                        </button>
+                    </div>
+
+                    <div id="chapter-2-text" class="space-y-6 pt-6 text-sm text-slate-200">
+                        <!-- Step by step Simulator Module -->
+                        <div class="p-5 sm:p-7 rounded-3xl bg-slate-950/95 border border-amber-500/30 space-y-5 shadow-2xl">
+                            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                                <div>
+                                    <h4 class="font-serif font-black text-base sm:text-lg text-amber-300 flex items-center gap-2">
+                                        <i data-lucide="play-circle" class="w-5 h-5 text-amber-400"></i>
+                                        掌訣排盤推演動畫模擬器 (點擊看它一步步排好)
+                                    </h4>
+                                    <p class="text-xs text-slate-400">
+                                        古代大師只要掐指一算，現代電腦直接把 5 步演繹給你看！
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button id="btn-play-casting" onclick="toggleCastingAnimation()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/30 flex items-center gap-1.5 transition-all hover:scale-105">
+                                        <i data-lucide="play" class="w-4 h-4"></i>
+                                        <span id="casting-btn-label">開始排盤演繹</span>
+                                    </button>
+                                    <button onclick="resetCastingAnimation()" class="p-2 rounded-xl glass-card text-slate-300 text-xs font-bold hover:bg-slate-800 transition-all border border-slate-700" title="重置演繹">
+                                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 5 Step Stepper Header -->
+                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2" id="casting-stepper">
+                                <button onclick="setCastingStep(1)" class="casting-step-item p-2.5 rounded-xl border text-center transition-all bg-amber-500/20 border-amber-400 text-amber-300 font-bold text-xs">
+                                    <span class="block text-[10px] opacity-70">第一步</span>
+                                    <span>找命宮本尊</span>
+                                </button>
+                                <button onclick="setCastingStep(2)" class="casting-step-item p-2.5 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-slate-400 text-xs">
+                                    <span class="block text-[10px] opacity-70">第二步</span>
+                                    <span>算五行局數</span>
+                                </button>
+                                <button onclick="setCastingStep(3)" class="casting-step-item p-2.5 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-slate-400 text-xs">
+                                    <span class="block text-[10px] opacity-70">第三步</span>
+                                    <span>請紫微帝星</span>
+                                </button>
+                                <button onclick="setCastingStep(4)" class="casting-step-item p-2.5 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-slate-400 text-xs">
+                                    <span class="block text-[10px] opacity-70">第四步</span>
+                                    <span>入駐14位主角</span>
+                                </button>
+                                <button onclick="setCastingStep(5)" class="casting-step-item p-2.5 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-slate-400 text-xs">
+                                    <span class="block text-[10px] opacity-70">第五步</span>
+                                    <span>貼上四化魔法</span>
+                                </button>
+                            </div>
+
+                            <!-- Live Step Animation Canvas & Commentary -->
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-center">
+                                <!-- Step Explanation Text Card -->
+                                <div class="lg:col-span-1 p-5 rounded-2xl glass-card border border-amber-400/20 space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span id="casting-step-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                                            步驟 1 / 5
+                                        </span>
+                                        <span class="text-xs text-slate-400 font-mono">白話演算法</span>
+                                    </div>
+                                    <h5 id="casting-step-title" class="font-serif font-black text-lg text-white">
+                                        順數生月，倒數生時 ➔ 命宮落定！
+                                    </h5>
+                                    <p id="casting-step-desc" class="text-xs text-slate-300 leading-relaxed">
+                                        伸出左手，從「寅宮」開始當作 1 月，順時針數到你的農曆出生月份；再從那裡倒著數到出生時辰，手指停下來的地方，就是你一生的<strong>【命宮】</strong>！
+                                    </p>
+                                    <div id="casting-step-tip" class="p-3 rounded-xl bg-purple-950/40 border border-purple-500/30 text-[11px] text-amber-200">
+                                        💡 大白話：就像在地圖上按你的出生時間定位「你的家在哪裡」！
+                                    </div>
+                                </div>
+
+                                <!-- Mini Dynamic Board Display for Plotting -->
+                                <div class="lg:col-span-2 relative p-4 rounded-2xl bg-slate-900 border border-purple-500/30">
+                                    <div class="grid grid-cols-4 gap-2 text-center text-xs font-bold" id="casting-board-cells">
+                                        <!-- Will be dynamically updated by JS engine -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 14 Main Stars Metaphor Table with Real-life Character Analogies -->
+                        <div class="space-y-4">
+                            <h4 class="font-serif font-black text-base text-purple-300 flex items-center gap-2">
+                                <span>⭐</span> 十四正曜主角的「現代人設與現實原型速查表」
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-amber-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-amber-300 font-black text-sm">👑 紫微星</strong><span class="text-[10px] text-amber-200 bg-amber-950 px-2 py-0.5 rounded">賈伯斯/董事長</span></div>
+                                    <p class="text-slate-300 text-[11px]">天生自帶貴氣、愛面子、有王者擔當，喜歡發號施令。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-cyan-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-cyan-300 font-black text-sm">🧠 天機星</strong><span class="text-[10px] text-cyan-200 bg-cyan-950 px-2 py-0.5 rounded">諸葛亮/金牌軍師</span></div>
+                                    <p class="text-slate-300 text-[11px]">鬼才腦袋轉超快、擅長企劃策略與數位工具，心思細密。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-rose-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-rose-300 font-black text-sm">☀️ 太陽星</strong><span class="text-[10px] text-rose-200 bg-rose-950 px-2 py-0.5 rounded">熱血暖男/里長伯</span></div>
+                                    <p class="text-slate-300 text-[11px]">熱情大方不計較、燃燒自己照亮身邊所有人，出外極受歡迎。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-yellow-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-yellow-300 font-black text-sm">💰 武曲星</strong><span class="text-[10px] text-yellow-200 bg-yellow-950 px-2 py-0.5 rounded">巴菲特/精算財務長</span></div>
+                                    <p class="text-slate-300 text-[11px]">講求信用、執行力超強、對金錢數字極為敏銳的實幹家。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-emerald-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-emerald-300 font-black text-sm">🍰 天同星</strong><span class="text-[10px] text-emerald-200 bg-emerald-950 px-2 py-0.5 rounded">吃貨甜心/享樂天使</span></div>
+                                    <p class="text-slate-300 text-[11px]">天生福氣好、樂天知命、愛好美食享受、隨和好相處。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-red-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-red-300 font-black text-sm">🔥 廉貞星</strong><span class="text-[10px] text-red-200 bg-red-950 px-2 py-0.5 rounded">王牌公關/酷炫經紀人</span></div>
+                                    <p class="text-slate-300 text-[11px]">敢愛敢恨、公關交際強、極度有原則與審美品味。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-amber-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-amber-300 font-black text-sm">🏦 天府星</strong><span class="text-[10px] text-amber-200 bg-amber-950 px-2 py-0.5 rounded">銀行行長/大掌櫃</span></div>
+                                    <p class="text-slate-300 text-[11px]">守財超級厲害、做事穩健沉著有氣派，是天生的大金庫。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-cyan-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-cyan-300 font-black text-sm">🌙 太陰星</strong><span class="text-[10px] text-cyan-200 bg-cyan-950 px-2 py-0.5 rounded">溫柔媽媽/房產女王</span></div>
+                                    <p class="text-slate-300 text-[11px]">細心體貼有耐心、注重生活美感、最擅長置產存下不動產。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-rose-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-rose-300 font-black text-sm">💃 貪狼星</strong><span class="text-[10px] text-rose-200 bg-rose-950 px-2 py-0.5 rounded">萬人迷/才藝網紅</span></div>
+                                    <p class="text-slate-300 text-[11px]">多才多藝、幽默社交王、慾望強烈、永遠對新事物充滿好奇。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-slate-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-slate-300 font-black text-sm">🗣️ 巨門星</strong><span class="text-[10px] text-slate-200 bg-slate-800 px-2 py-0.5 rounded">犀利名嘴/大律師</span></div>
+                                    <p class="text-slate-300 text-[11px]">觀察入微、靠口才辯論吃飯、講話一針見血直指核心。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-blue-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-blue-300 font-black text-sm">👔 天相星</strong><span class="text-[10px] text-blue-200 bg-blue-950 px-2 py-0.5 rounded">金牌特助/外交官</span></div>
+                                    <p class="text-slate-300 text-[11px]">注重品味穿搭、講義氣有信用，最完美的幕僚特助。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-emerald-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-emerald-300 font-black text-sm">👴 天梁星</strong><span class="text-[10px] text-emerald-200 bg-emerald-950 px-2 py-0.5 rounded">慈祥老前輩/老中醫</span></div>
+                                    <p class="text-slate-300 text-[11px]">逢凶化吉、自帶貴人保佑、喜歡提攜晚輩並給予人生指導。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-red-500/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-red-400 font-black text-sm">⚔️ 七殺星</strong><span class="text-[10px] text-red-200 bg-red-950 px-2 py-0.5 rounded">特戰隊長/衝鋒將軍</span></div>
+                                    <p class="text-slate-300 text-[11px]">勇猛果敢、獨立自主不依賴任何人、敢隻身一人闖天下。</p>
+                                </div>
+                                <div class="p-3.5 rounded-2xl bg-white/5 border border-purple-400/30 space-y-1">
+                                    <div class="flex items-center justify-between"><strong class="text-purple-300 font-black text-sm">🚀 破軍星</strong><span class="text-[10px] text-purple-200 bg-purple-950 px-2 py-0.5 rounded">革命創新家/馬斯克</span></div>
+                                    <p class="text-slate-300 text-[11px]">敢於打破一切舊傳統舊體制，勇於冒險重新開拓新藍海。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prev & Next -->
+                        <div class="pt-4 flex justify-between">
+                            <button onclick="switchChapter(1)" class="px-5 py-2.5 rounded-2xl glass-card hover:bg-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i> 上一講：十二生活宮位
+                            </button>
+                            <button onclick="switchChapter(3)" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold text-white shadow-lg shadow-purple-500/30 flex items-center gap-2 transition-all">
+                                <span>進入第 3 講：四張超能力魔法卡 · 祿權科忌</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= CHAPTER 3: 四張超能力卡 · 祿權科忌 ================= -->
+            <section id="chapter-3" class="tab-content space-y-6">
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-purple-500/20 pb-5">
+                        <div>
+                            <span class="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">第 3 講 · 能量大白話</span>
+                            <h2 class="text-2xl sm:text-3xl font-serif font-black text-white mt-2 glow-purple">
+                                動能核心 · 四張超能力魔法卡（祿、權、科、忌）
+                            </h2>
+                        </div>
+                        <button onclick="speakText('chapter-3-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                        </button>
+                    </div>
+
+                    <div id="chapter-3-text" class="space-y-6 pt-6 text-sm text-slate-200">
+                        <!-- Four Transformations 4 Elements -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="p-5 rounded-3xl bg-gradient-to-b from-emerald-950/60 to-slate-900/90 border border-emerald-500/40 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-3xl">🎁</span>
+                                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black">春天的禮物</span>
+                                </div>
+                                <h3 class="font-serif font-black text-lg text-emerald-300">🌸 化祿 = 【送大紅包】</h3>
+                                <div class="text-xs text-amber-300 font-bold">緣分來了 · 心情好 · 機會多</div>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    化祿落在哪個宮位，就代表你在那個領域特別有福氣、容易賺到錢、心情特別放鬆！
+                                </p>
+                            </div>
+
+                            <div class="p-5 rounded-3xl bg-gradient-to-b from-red-950/60 to-slate-900/90 border border-red-500/40 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-3xl">🎤</span>
+                                    <span class="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 text-xs font-black">夏天的掌控</span>
+                                </div>
+                                <h3 class="font-serif font-black text-lg text-red-300">⚡ 化權 = 【握方向盤】</h3>
+                                <div class="text-xs text-amber-300 font-bold">實力強 · 說了算 · 敢打拼</div>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    化權落在哪個宮位，就代表你在那個領域說話有分量、有專業實力、能把事情強勢推進！
+                                </p>
+                            </div>
+
+                            <div class="p-5 rounded-3xl bg-gradient-to-b from-purple-950/60 to-slate-900/90 border border-purple-500/40 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-3xl">🛡️</span>
+                                    <span class="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-xs font-black">秋天的名牌</span>
+                                </div>
+                                <h3 class="font-serif font-black text-lg text-purple-300">📜 化科 = 【貴人金牌】</h3>
+                                <div class="text-xs text-amber-300 font-bold">名氣好 · 斯文客客氣氣 · 有人幫</div>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    化科落在哪個宮位，就代表你在那個領域名聲清白，遇到困難總會有貴人伸出援手逢凶化吉！
+                                </p>
+                            </div>
+
+                            <div class="p-5 rounded-3xl bg-gradient-to-b from-blue-950/60 to-slate-900/90 border border-blue-500/40 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-3xl">❤️</span>
+                                    <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-black">冬天的牽掛</span>
+                                </div>
+                                <h3 class="font-serif font-black text-lg text-blue-300">🌀 化忌 = 【心裡的執念】</h3>
+                                <div class="text-xs text-amber-300 font-bold">最在乎 · 最操心 · 責任債</div>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    化忌不是世界末日！它代表你這輩子「最放不下心、付出最多精力與牽掛」的地方！
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Ten Stems Dial with ROC / Western Years Selector -->
+                        <div class="p-6 sm:p-7 rounded-3xl bg-slate-950/90 border border-purple-500/30 space-y-5">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <h4 class="font-serif font-black text-lg text-amber-300 flex items-center gap-2">
+                                        <i data-lucide="disc" class="w-5 h-5 text-amber-400 animate-spin-slow"></i>
+                                        十天干四化速查轉盤（點你的出生年份，一秒看天賦）
+                                    </h4>
+                                    <p class="text-xs text-slate-400">
+                                        支援民國年次與西元年快速切換：
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2 justify-center py-2" id="stem-buttons-container">
+                                <!-- Dynamic Buttons -->
+                            </div>
+
+                            <div id="stem-detail-card" class="p-6 rounded-2xl bg-gradient-to-br from-purple-950/60 via-slate-900 to-indigo-950/60 border border-amber-400/30 space-y-4">
+                                <!-- Populated dynamically by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Prev & Next -->
+                        <div class="pt-4 flex justify-between">
+                            <button onclick="switchChapter(2)" class="px-5 py-2.5 rounded-2xl glass-card hover:bg-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i> 上一講：排盤演算法
+                            </button>
+                            <button onclick="switchChapter(4)" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold text-white shadow-lg shadow-purple-500/30 flex items-center gap-2 transition-all">
+                                <span>進入第 4 講：絕學真傳 · 飛星寄包裹穿透法</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= CHAPTER 4: 絕學真傳 · 飛星寄包裹 ================= -->
+            <section id="chapter-4" class="tab-content space-y-6">
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-purple-500/20 pb-5">
+                        <div>
+                            <span class="px-3 py-1 rounded-full text-xs font-black bg-rose-500/20 text-rose-300 border border-rose-400/30">第 4 講 · 飛星秘訣</span>
+                            <h2 class="text-2xl sm:text-3xl font-serif font-black text-white mt-2 glow-purple">
+                                絕學真傳 · 宮位發射「飛星寄包裹」因果穿透力學
+                            </h2>
+                        </div>
+                        <button onclick="speakText('chapter-4-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                        </button>
+                    </div>
+
+                    <div id="chapter-4-text" class="space-y-6 pt-6 text-sm text-slate-200">
+                        <div class="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-purple-950/70 via-indigo-950/70 to-slate-900 border border-purple-500/30 space-y-3">
+                            <h4 class="font-serif font-black text-lg text-amber-300 flex items-center gap-2">
+                                <span>📬</span> 什麼是「飛星」？（超簡單的寄快遞包裹模型）
+                            </h4>
+                            <p class="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                                命盤上的 12 個宮位，每一個宮位都可以當作<strong>「寄件人」</strong>。
+                                寄件人透過發射射線，把好處或操心寄給<strong>「收件宮位」</strong>：
+                            </p>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                                <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                                    <span class="text-amber-300 font-bold">寄件人 = 發射宮 (起因)</span>
+                                    <p class="text-slate-400 mt-1">誰在起心動念？誰在主動付出心力？</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                                    <span class="text-purple-300 font-bold">快遞載體 = 星曜 (傳遞媒介)</span>
+                                    <p class="text-slate-400 mt-1">透過什麼具體的才華、財物或事件傳遞？</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                                    <span class="text-emerald-300 font-bold">收件人 = 落入宮 (結果)</span>
+                                    <p class="text-slate-400 mt-1">最後是誰享受到好處、或誰承擔了生活壓力？</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Real-life Flying Star 6 Examples -->
+                        <div class="space-y-4">
+                            <h4 class="font-serif font-black text-base text-amber-200 flex items-center gap-2">
+                                <i data-lucide="sparkles" class="w-5 h-5 text-rose-400"></i>
+                                六大最常見生活飛星實例（一看就懂日常人話）
+                            </h4>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                                <div class="p-4 rounded-2xl glass-card border border-emerald-500/40 bg-gradient-to-br from-emerald-950/30 to-slate-900">
+                                    <div class="flex items-center justify-between"><span class="text-emerald-300 font-bold text-sm">🌸 命宮 化祿 ➔ 財帛宮</span><span class="text-xs">💰</span></div>
+                                    <p class="text-slate-300 mt-2 leading-relaxed">
+                                        <strong>大白話：</strong>「我自己超級愛賺錢，對求財充滿熱情，財神爺也經常對我微笑，賺錢很順手！」
+                                    </p>
+                                </div>
+                                <div class="p-4 rounded-2xl glass-card border border-red-500/40 bg-gradient-to-br from-red-950/30 to-slate-900">
+                                    <div class="flex items-center justify-between"><span class="text-red-300 font-bold text-sm">🌀 夫妻宮 化忌 ➔ 命宮</span><span class="text-xs">💍</span></div>
+                                    <p class="text-slate-300 mt-2 leading-relaxed">
+                                        <strong>大白話：</strong>「另一半心裡非常在乎我、很黏我，但管得太寬、囉嗦碎碎念，常讓我覺得喘不過氣！」
+                                    </p>
+                                </div>
+                                <div class="p-4 rounded-2xl glass-card border border-amber-500/40 bg-gradient-to-br from-amber-950/30 to-slate-900">
+                                    <div class="flex items-center justify-between"><span class="text-amber-300 font-bold text-sm">🏡 命宮 化祿 ➔ 田宅宮</span><span class="text-xs">🔑</span></div>
+                                    <p class="text-slate-300 mt-2 leading-relaxed">
+                                        <strong>大白話：</strong>「我很顧家、喜歡裝潢佈置家裡，也特別容易存錢買下自己的房子與不動產！」
+                                    </p>
+                                </div>
+                                <div class="p-4 rounded-2xl glass-card border border-purple-500/40 bg-gradient-to-br from-purple-950/30 to-slate-900">
+                                    <div class="flex items-center justify-between"><span class="text-purple-300 font-bold text-sm">⚡ 官祿宮 化權 ➔ 命宮</span><span class="text-xs">🏆</span></div>
+                                    <p class="text-slate-300 mt-2 leading-relaxed">
+                                        <strong>大白話：</strong>「工作事業主動賦予我大權，我在職場上說話算數、手握實權，能帶領團隊打勝仗！」
+                                    </p>
+                                </div>
+                                <div class="p-4 rounded-2xl glass-card border border-blue-500/40 bg-gradient-to-br from-blue-950/30 to-slate-900">
+                                    <div class="flex items-center justify-between"><span class="text-blue-300 font-bold text-sm">💫 命宮 自化祿（自己給自己）</span><span class="text-xs">🧘</span></div>
+                                    <p class="text-slate-300 mt-2 leading-relaxed">
+                                        <strong>大白話：</strong>「個性佛系隨和、不記仇，遇到開心事就笑笑，遇到倒楣事自我安慰一下就過去了。」
+                                    </p>
+                                </div>
+                                <div class="p-4 rounded-2xl glass-card border border-rose-500/40 bg-gradient-to-br from-rose-950/30 to-slate-900">
+                                    <div class="flex items-center justify-between"><span class="text-rose-300 font-bold text-sm">⚠️ 官祿 化忌 ➔ 夫妻（沖官祿）</span><span class="text-xs">💥</span></div>
+                                    <p class="text-slate-300 mt-2 leading-relaxed">
+                                        <strong>大白話：</strong>「工作過度操勞、把工作情緒帶回家，導致家庭生活緊張，最後工作與婚姻兩頭受累！」
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prev & Next -->
+                        <div class="pt-4 flex justify-between">
+                            <button onclick="switchChapter(3)" class="px-5 py-2.5 rounded-2xl glass-card hover:bg-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i> 上一講：四張超能力卡
+                            </button>
+                            <button onclick="switchChapter(5)" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold text-white shadow-lg shadow-purple-500/30 flex items-center gap-2 transition-all">
+                                <span>進入第 5 講：動態時空 · 大限流年運氣走勢</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= CHAPTER 5: 大限流年多重時空重疊 ================= -->
+            <section id="chapter-5" class="tab-content space-y-6">
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-purple-500/20 shadow-2xl relative overflow-hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-purple-500/20 pb-5">
+                        <div>
+                            <span class="px-3 py-1 rounded-full text-xs font-black bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">第 5 講 · 運勢流轉</span>
+                            <h2 class="text-2xl sm:text-3xl font-serif font-black text-white mt-2 glow-purple">
+                                動態時空 · 十年大運與今年流年運勢重疊
+                            </h2>
+                        </div>
+                        <button onclick="speakText('chapter-5-text')" class="p-2 rounded-xl glass-card hover:bg-purple-600/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 border border-purple-500/30">
+                            <i data-lucide="volume-2" class="w-4 h-4"></i> 語音伴讀
+                        </button>
+                    </div>
+
+                    <div id="chapter-5-text" class="space-y-6 pt-6 text-sm text-slate-200">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="p-5 rounded-3xl glass-card border border-purple-500/30 space-y-2">
+                                <span class="text-xs font-mono text-purple-400">1. 本命盤</span>
+                                <h4 class="font-serif font-black text-base text-white">先天出廠設定 (DNA)</h4>
+                                <p class="text-xs text-slate-400 leading-relaxed">
+                                    你天生的性格底色、基本潛力與天賦優勢。
+                                </p>
+                            </div>
+                            <div class="p-5 rounded-3xl glass-card border border-indigo-500/30 space-y-2">
+                                <span class="text-xs font-mono text-indigo-400">2. 大限盤</span>
+                                <h4 class="font-serif font-black text-base text-white">十年大運季節 (Weather)</h4>
+                                <p class="text-xs text-slate-400 leading-relaxed">
+                                    每十年走一個宮位，代表這十年的整體氣候（是春天播種還是冬天守成）。
+                                </p>
+                            </div>
+                            <div class="p-5 rounded-3xl glass-card border border-emerald-500/30 space-y-2">
+                                <span class="text-xs font-mono text-emerald-400">3. 流年盤</span>
+                                <h4 class="font-serif font-black text-base text-white">當年的具體事蹟 (This Year)</h4>
+                                <p class="text-xs text-slate-400 leading-relaxed">
+                                    今年生肖輪到哪裡，生活重心就落在那個宮位！
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Prev & Next -->
+                        <div class="pt-4 flex justify-between">
+                            <button onclick="switchChapter(4)" class="px-5 py-2.5 rounded-2xl glass-card hover:bg-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i> 上一講：飛星寄包裹
+                            </button>
+                            <button onclick="switchChapter(6)" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 font-bold text-white shadow-lg shadow-indigo-500/30 flex items-center gap-2 transition-all">
+                                <span>進入第 6 講：實戰演練 · 四化飛星實驗室沙盒</span>
+                                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= CHAPTER 6: 互動式四化飛星實驗室沙盒 ================= -->
+            <section id="chapter-6" class="tab-content space-y-6">
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-indigo-500/30 shadow-2xl relative overflow-hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-indigo-500/20 pb-5">
+                        <div>
+                            <span class="px-3 py-1 rounded-full text-xs font-black bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">第 6 講 · 命理沙盒實驗室</span>
+                            <h2 class="text-2xl sm:text-3xl font-serif font-black text-white mt-2 glow-purple">
+                                實戰演練 · 四化飛星動態互動沙盒 (點哪裡飛哪裡)
+                            </h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="fireAllSihua()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs shadow-md hover:scale-105 transition-all flex items-center gap-1.5">
+                                <i data-lucide="sparkles" class="w-4 h-4"></i> 一鍵全發射 (祿權科忌)
+                            </button>
+                            <button onclick="clearSandboxRays()" class="p-2 rounded-xl glass-card text-slate-300 text-xs hover:bg-slate-800 transition-all border border-slate-700" title="清空射線">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6 pt-4 text-sm text-slate-200">
+                        <!-- Quick Scenario Launcher Presets -->
+                        <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-950/60 via-slate-900 to-indigo-950/60 border border-amber-400/30 space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                                    <i data-lucide="bookmark" class="w-4 h-4 text-amber-400"></i>
+                                    一鍵載入常見生活情境（點擊看星線如何發射）：
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap gap-2 pt-1 text-xs">
+                                <button onclick="loadScenarioPreset('wealth')" class="px-3 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-800 text-emerald-200 border border-emerald-500/40 font-bold transition-all flex items-center gap-1">
+                                    💰 1. 賺錢發財大吉 (命宮化祿入財帛)
+                                </button>
+                                <button onclick="loadScenarioPreset('love_debt')" class="px-3 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-800 text-rose-200 border border-rose-500/40 font-bold transition-all flex items-center gap-1">
+                                    💍 2. 愛得深管得寬 (夫妻化忌入命宮)
+                                </button>
+                                <button onclick="loadScenarioPreset('career_power')" class="px-3 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 font-bold transition-all flex items-center gap-1">
+                                    🏆 3. 升官掌大權 (官祿化權入命宮)
+                                </button>
+                                <button onclick="loadScenarioPreset('house_asset')" class="px-3 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-800 text-amber-200 border border-amber-500/40 font-bold transition-all flex items-center gap-1">
+                                    🏡 4. 置產買房存庫 (命宮化祿入田宅)
+                                </button>
+                                <button onclick="loadScenarioPreset('self_peace')" class="px-3 py-1.5 rounded-xl bg-blue-950/80 hover:bg-blue-800 text-blue-200 border border-blue-500/40 font-bold transition-all flex items-center gap-1">
+                                    🧘 5. 佛系自我消化 (命宮自化祿)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Control Toolbar -->
+                        <div class="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-indigo-500/30 flex flex-wrap items-center justify-between gap-4">
+                            <!-- Palace & Stem Selectors -->
+                            <div class="flex flex-wrap items-center gap-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-300">選擇發射宮位:</span>
+                                    <select id="sandbox-source-palace" onchange="updateSandboxSelection()" class="bg-slate-900 border border-purple-500/40 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <!-- Populated in JS -->
+                                    </select>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-300">宮干天干:</span>
+                                    <select id="sandbox-source-stem" onchange="updateSandboxSelection()" class="bg-slate-900 border border-purple-500/40 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <option value="甲">甲 (廉破武陽)</option>
+                                        <option value="乙">乙 (機梁紫陰)</option>
+                                        <option value="丙" selected>丙 (同機昌廉)</option>
+                                        <option value="丁">丁 (陰同機巨)</option>
+                                        <option value="戊">戊 (貪陰右機)</option>
+                                        <option value="己">己 (武貪梁曲)</option>
+                                        <option value="庚">庚 (陽武陰同)</option>
+                                        <option value="辛">辛 (巨陽曲昌)</option>
+                                        <option value="壬">壬 (梁紫府武)</option>
+                                        <option value="癸">癸 (破巨陰貪)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Single Ray Launch Buttons -->
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button onclick="launchSingleRay('祿')" class="px-3 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 text-xs font-black transition-all flex items-center gap-1">
+                                    🌸 射化祿 (送好處)
+                                </button>
+                                <button onclick="launchSingleRay('權')" class="px-3 py-1.5 rounded-xl bg-red-600/30 hover:bg-red-600/50 text-red-300 border border-red-500/40 text-xs font-black transition-all flex items-center gap-1">
+                                    ⚡ 射化權 (握大權)
+                                </button>
+                                <button onclick="launchSingleRay('科')" class="px-3 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 border border-purple-500/40 text-xs font-black transition-all flex items-center gap-1">
+                                    📜 射化科 (得貴人)
+                                </button>
+                                <button onclick="launchSingleRay('忌')" class="px-3 py-1.5 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 text-xs font-black transition-all flex items-center gap-1">
+                                    🌀 射化忌 (最操心)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 12-Palace Sandbox Chart Display with Dynamic Canvas Overlay -->
+                        <div class="relative w-full max-w-4xl mx-auto p-3 sm:p-5 rounded-3xl bg-slate-950 border border-purple-500/30 select-none shadow-2xl overflow-hidden" id="sandbox-container">
+                            <!-- Dynamic SVG Ray Canvas -->
+                            <svg id="sandbox-ray-svg" class="absolute inset-0 w-full h-full pointer-events-none z-30"></svg>
+
+                            <div class="grid grid-cols-4 grid-rows-4 gap-2.5 aspect-square sm:aspect-[4/3.2] font-sans" id="sandbox-cells-grid">
+                                <!-- 12 Palace Cells Generated Dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Real-time Master Flying Star Interpretation Report -->
+                        <div id="sandbox-report-box" class="p-6 rounded-3xl bg-gradient-to-br from-indigo-950/70 via-slate-900 to-purple-950/70 border border-amber-400/30 space-y-3 shadow-xl">
+                            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                                <h4 class="font-serif font-black text-base text-amber-300 flex items-center gap-2">
+                                    <i data-lucide="sparkles" class="w-5 h-5 text-amber-400"></i>
+                                    宗師大白話生活翻譯機 (即時白話解析)
+                                </h4>
+                                <span id="sandbox-active-stem-label" class="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-mono font-bold border border-amber-400/30">
+                                    【丙干】飛星演繹
+                                </span>
+                            </div>
+                            <div id="sandbox-report-content" class="text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2">
+                                <!-- Dynamically generated explanation -->
+                            </div>
+                        </div>
+
+                        <!-- Prev & Next -->
+                        <div class="pt-4 flex justify-between">
+                            <button onclick="switchChapter(5)" class="px-5 py-2.5 rounded-2xl glass-card hover:bg-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i> 上一講：時空重疊
+                            </button>
+                            <button onclick="switchChapter(7)" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 font-black text-slate-950 shadow-lg shadow-amber-500/30 flex items-center gap-2 transition-all">
+                                <span>進入第 7 講：趣味測驗與頒發結業證書</span>
+                                <i data-lucide="award" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= CHAPTER 7: 研習測驗與天機結業證書 ================= -->
+            <section id="chapter-7" class="tab-content space-y-6">
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-amber-500/30 shadow-2xl relative overflow-hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-amber-500/20 pb-5">
+                        <div>
+                            <span class="px-3 py-1 rounded-full text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-400/30">第 7 講 · 結業認證</span>
+                            <h2 class="text-2xl sm:text-3xl font-serif font-black text-white mt-2 glow-gold">
+                                趣味檢測 · 天機大會考與頒發研習精通證書
+                            </h2>
+                        </div>
+                        <div class="text-xs text-amber-300 font-bold flex items-center gap-1.5">
+                            <i data-lucide="award" class="w-4 h-4"></i> 題目超白話 · 通關即獲榮譽證書
+                        </div>
+                    </div>
+
+                    <div class="space-y-6 pt-4 text-sm text-slate-200">
+                        <!-- Quiz Container -->
+                        <div id="quiz-container" class="space-y-6">
+                            <!-- Question Cards generated dynamically in JS -->
+                        </div>
+
+                        <!-- Submit Quiz Button -->
+                        <div id="quiz-submit-area" class="pt-4 flex justify-center">
+                            <button onclick="evaluateQuiz()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/40 hover:scale-105 transition-all flex items-center gap-2">
+                                <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                                <span>提交測驗並核算成績</span>
+                            </button>
+                        </div>
+
+                        <!-- Certificate Area -->
+                        <div id="certificate-wrapper" class="hidden space-y-6 animate-in fade-in duration-500">
+                            <div class="p-8 sm:p-12 rounded-[2.5rem] bg-gradient-to-b from-[#1a1329] via-[#100c1e] to-[#0a0714] border-4 border-amber-400/60 shadow-2xl relative overflow-hidden text-center space-y-6 max-w-3xl mx-auto glow-box-gold">
+                                <div class="absolute -top-12 -right-12 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                                <div class="absolute -bottom-12 -left-12 w-48 h-48 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                                <div class="flex justify-center items-center gap-3">
+                                    <span class="text-3xl">🌌</span>
+                                    <span class="font-serif font-black text-xs sm:text-sm tracking-[0.3em] text-amber-300 uppercase">
+                                        ZiWei Astrological Master Academy
+                                    </span>
+                                    <span class="text-3xl">🌌</span>
+                                </div>
+
+                                <h3 class="font-serif font-black text-3xl sm:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200 glow-gold tracking-widest">
+                                    紫微斗數 · 排盤與四化飛星精通證書
+                                </h3>
+
+                                <p class="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
+                                    茲證明研習學員 <input type="text" id="cert-user-name" value="天機緣主" class="bg-transparent border-b-2 border-amber-400 text-center font-black text-amber-300 text-base sm:text-lg focus:outline-none px-2 py-0.5 w-36"> 先生/女士，已圓滿研習本講堂「十二生活房間幾何學、五步掌訣排盤演算法、生年四化密碼、宮干十干飛星穿透力學及大限流年時空重疊」，成績優異，特頒此證！
+                                </p>
+
+                                <div class="grid grid-cols-3 gap-4 border-y border-amber-400/20 py-4 max-w-lg mx-auto text-xs">
+                                    <div>
+                                        <div class="text-slate-400 text-[10px]">考驗得分</div>
+                                        <div id="cert-score-display" class="font-mono font-black text-amber-300 text-lg sm:text-xl">100 分</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-slate-400 text-[10px]">認證級別</div>
+                                        <div class="font-serif font-black text-purple-300 text-sm sm:text-base">宗師飛星級</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-slate-400 text-[10px]">頒發日期</div>
+                                        <div id="cert-date-display" class="font-mono font-bold text-slate-200 text-xs sm:text-sm">2026.09.06</div>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between items-center max-w-md mx-auto pt-2">
+                                    <div class="text-left space-y-1">
+                                        <div class="text-[10px] text-slate-400">講堂主理宗師</div>
+                                        <div class="font-serif font-black text-amber-200 text-sm">天機命譜玄學堂</div>
+                                    </div>
+                                    <div class="talisman-stamp p-2.5 rounded-xl transform -rotate-6 shadow-lg bg-red-950/30 text-xs font-black">
+                                        天機<br>印信
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-center gap-3 pt-2">
+                                <button onclick="window.print()" class="px-6 py-2.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 font-bold text-xs flex items-center gap-1.5 transition-all">
+                                    <i data-lucide="printer" class="w-4 h-4"></i> 列印 / 儲存為 PDF 證書
+                                </button>
+                                <button onclick="switchChapter(6)" class="px-6 py-2.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 font-bold text-xs flex items-center gap-1.5 transition-all">
+                                    <i data-lucide="zap" class="w-4 h-4"></i> 前往沙盒自由推演
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Prev Button -->
+                        <div class="pt-4 flex justify-start">
+                            <button onclick="switchChapter(6)" class="px-5 py-2.5 rounded-2xl glass-card hover:bg-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i> 上一講：四化飛星沙盒
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Master Audio Floating Control Bar (Shows when audio playing) -->
+    <div id="audio-floating-bar" class="fixed bottom-5 right-5 z-50 glass-panel border border-purple-500/40 rounded-2xl px-4 py-2.5 flex items-center gap-3 shadow-2xl transition-all translate-y-24 opacity-0 pointer-events-none">
+        <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
+        <div class="text-xs">
+            <div class="font-bold text-amber-300">天機語音伴讀中</div>
+            <div id="audio-track-name" class="text-[10px] text-slate-400">正在朗讀章節內容...</div>
+        </div>
+        <button onclick="stopAudio()" class="p-1.5 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/40 text-xs">
+            <i data-lucide="square" class="w-3.5 h-3.5"></i>
+        </button>
+    </div>
+
+    <!-- JavaScript Data & Interactive Mechanics Engine -->
+    <script>
+        let currentChapter = 0;
+        let isPlayingAudio = false;
+        let synth = window.speechSynthesis;
+        let currentUtterance = null;
+        let castingStep = 1;
+        let castingTimer = null;
+        let isCastingRunning = false;
+
+        const PALACE_NAMES = [
+            "官祿宮 (工作)", "交友宮 (同事)", "遷移宮 (出外)", "疾厄宮 (身體)", 
+            "財帛宮 (錢包)", "子女宮 (晚輩)", "夫妻宮 (伴侶)", "兄弟宮 (小金庫)", 
+            "命宮 (本尊)", "父母宮 (長官)", "福德宮 (心靈)", "田宅宮 (房子)"
+        ];
+        const BRANCH_NAMES = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+
+        const PALACE_DETAILS_DATA = [
+            {
+                title: "🧬 【命宮】我本人的出廠 DNA",
+                desc: "命宮就是你一生的核心總指揮部。包含你的性格底色、基本氣質、做事主軸與對人生的核心態度。",
+                good: "性格開朗樂觀、有領導力與自信心，貴人多，做什麼事情都容易吸引大家支持！",
+                bad: "容易鑽牛角尖或自我要求太嚴格、給自己過大壓力，學會放鬆與轉念能帶來好運。"
+            },
+            {
+                title: "💵 【兄弟宮】現金活期小金庫與親密死黨",
+                desc: "兄弟宮代表身邊手足、推心置腹的好哥們閨蜜，同時也是看你手頭活期現金流是否充裕的關鍵金庫！",
+                good: "朋友都是神隊友，手頭隨時有靈活週轉的現金，出外有人挺！",
+                bad: "借錢給朋友容易要不回來，或現金週轉較緊，宜做好財務規劃。"
+            },
+            {
+                title: "💍 【夫妻宮】另一半的模樣與相處模式",
+                desc: "夫妻宮代表你喜歡的對象類型、婚後另一半的脾氣長相，以及兩個人在柴米油鹽中的相處默契。",
+                good: "伴侶體貼溫柔、能互相扶持成長，感情生活甜蜜幸福！",
+                bad: "容易為小事爭執或對方管得較寬，多溝通多理解是幸福關鍵。"
+            },
+            {
+                title: "👶 【子女宮】晚輩緣分與合夥事業",
+                desc: "子女宮代表與小孩的緣分、職場帶領的年輕員工晚輩，同時也象徵對外的桃花與合夥運勢。",
+                good: "晚輩聽話有才華、合夥做生意默契好、外出社交充滿個人魅力！",
+                bad: "教育晚輩需要多點耐心，合夥做生意帳目要算清楚避免誤會。"
+            },
+            {
+                title: "💰 【財帛宮】錢包賺錢模式與理財手段",
+                desc: "財帛宮代表你靠什麼技能把錢賺進口袋、花錢習慣大不大方，以及金錢在生活中的流動狀態。",
+                good: "正財偏財皆旺、賺錢點子多，無論靠口才或專業技術都能財源滾滾！",
+                bad: "花錢手筆較大容易衝動消費，做好預算分配就能穩穩存錢。"
+            },
+            {
+                title: "🏥 【疾厄宮】身體健康與心底潛意識",
+                desc: "疾厄宮代表你的體質強弱、最容易疲勞的器官部位，也是隱藏在內心深處的小秘密與潛意識。",
+                good: "抵抗力強、精力充沛、身心調和，遇到小毛病很快就能痊癒！",
+                bad: "容易熬夜傷身或心事藏太深，多運動流汗與找朋友傾訴即可化解。"
+            },
+            {
+                title: "✈️ 【遷移宮】出外社交形象與遠方貴人",
+                desc: "遷移宮代表你在外面社會大眾眼裡的形象、出差旅行或出國發展的機遇，也是命宮的正面鏡子！",
+                good: "出門在外處處遇貴人、社交受人喜愛，到外地發展容易大放異彩！",
+                bad: "出門在外多注意交通安全與飲食，不要急躁就能平安順心。"
+            },
+            {
+                title: "👥 【交友宮】職場同事與大眾粉絲緣",
+                desc: "交友宮代表一般職場同事、合作夥伴、網路粉絲與廣大社會群眾對你的支持程度。",
+                good: "群眾人緣極佳、粉絲多、同事願意配合，團隊合作事半功倍！",
+                bad: "身邊容易有搭便車的人或小人八卦，帶眼識人保持適當距離即可。"
+            },
+            {
+                title: "🏢 【官祿宮】工作事業與職場升遷",
+                desc: "官祿宮代表你在工作上的專業技能、升職掌權的機會，以及適合當老闆創業還是當高階主管。",
+                good: "職場升遷速度快、具備領導大將之風、事業蒸蒸日上！",
+                bad: "工作壓力過大容易把工作當生活全部，學會勞逸結合能走得更遠。"
+            },
+            {
+                title: "🏡 【田宅宮】不動產與一生總財庫",
+                desc: "田宅宮代表家庭氛圍、能否買房置產、居住環境品質，是一個人最終能守下多少財富的總保險庫！",
+                good: "容易買房置產、家宅溫馨和樂、能守下豐厚資產造福下一代！",
+                bad: "買房裝潢合約需仔細核對，家裡多保持整潔明亮能聚集財氣。"
+            },
+            {
+                title: "🧘 【福德宮】心靈精神享受與靈魂平安",
+                desc: "福德宮代表你的抗壓性、內心快不快樂、精神追求與休閒興趣，也是晚年生活品質的指標！",
+                good: "心態豁達知足、懂得享受生活美學、內心充滿平靜與幸福感！",
+                bad: "容易胡思亂想或焦慮失眠，培養一兩樣放鬆的興趣愛好即可舒緩。"
+            },
+            {
+                title: "👔 【父母宮】長官老闆賞識與文書考運",
+                desc: "父母宮代表與長輩父母的緣分、在職場能否得到頂頭上司的提拔照拂，以及各類考試文書合同運勢。",
+                good: "長官老闆特別器重提拔、考運與證照順利通過、長輩緣極好！",
+                bad: "簽訂各類合約文書要多看細節條款，跟長官溝通委婉客氣即可順遂。"
+            }
+        ];
+
+        // 10 Stems Sihua Rule Reference with Ultra-Plain Language & ROC Birth Years
+        const SI_HUA_DATA = {
+            "甲": { 
+                lu: "廉貞", quan: "破軍", ke: "武曲", ji: "太陽", 
+                formula: "甲廉破武陽",
+                years: "西元尾數 4（民國 63, 73, 83, 93, 103 年次等）",
+                desc: "廉貞化祿：社交桃花人緣特別好，容易結交有權有勢的貴人；破軍化權：敢衝敢拼大刀闊斧開創新事業；武曲化科：專業技術或財務精算獲得大家讚揚；太陽化忌：出門在外操心多、容易為男性長輩或工作累得喘不過氣。" 
+            },
+            "乙": { 
+                lu: "天機", quan: "天梁", ke: "紫微", ji: "太陰", 
+                formula: "乙機梁紫陰",
+                years: "西元尾數 5（民國 64, 74, 84, 94, 104 年次等）",
+                desc: "天機化祿：頭腦聰明靈活，靈機一動就能想到賺錢妙計；天梁化權：長者風範，大家都願意聽你指揮；紫微化科：名聲地位高，受到高層重用；太陰化忌：心思細膩容易胡思亂想，需多體貼女性親友。" 
+            },
+            "丙": { 
+                lu: "天同", quan: "天機", ke: "文昌", ji: "廉貞", 
+                formula: "丙同機昌廉",
+                years: "西元尾數 6（民國 65, 75, 85, 95, 105 年次等）",
+                desc: "天同化祿：天生有福氣、愛好美食享受、隨和好相處；天機化權：策劃掌控力強、懂得運用科技工具；文昌化科：考運文憑考第一、才華洋溢；廉貞化忌：感情上容易執著鑽牛角尖、需防合約條款糾紛。" 
+            },
+            "丁": { 
+                lu: "太陰", quan: "天同", ke: "天機", ji: "巨門", 
+                formula: "丁陰同機巨",
+                years: "西元尾數 7（民國 66, 76, 86, 96, 106 年次等）",
+                desc: "太陰化祿：容易買房置產、手頭資產豐厚；天同化權：知足中帶著奮起拼搏的動力；天機化科：智慧過人成為優秀顧問；巨門化忌：講話太直容易引起小人口舌是非，說話前多想想。" 
+            },
+            "戊": { 
+                lu: "貪狼", quan: "太陰", ke: "右弼", ji: "天機", 
+                formula: "戊貪陰右機",
+                years: "西元尾數 8（民國 57, 67, 77, 87, 97, 107 年次等）",
+                desc: "貪狼化祿：才藝滿滿、偏財運與人際公關一把罩；太陰化權：掌握家中或公司財務大權；右弼化科：暗中有神隊友相助；天機化忌：想太多導致失眠焦慮，宜放寬心胸。" 
+            },
+            "己": { 
+                lu: "武曲", quan: "貪狼", ke: "天梁", ji: "文曲", 
+                formula: "己武貪梁曲",
+                years: "西元尾數 9（民國 58, 68, 78, 88, 98, 108 年次等）",
+                desc: "武曲化祿：正財大進帳、做生意或工作收入水漲船高；貪狼化權：野心勃勃開拓新市場；天梁化科：遇到危險總能逢凶化吉；文曲化忌：簽訂合約借據要看清楚，避免金錢糊塗帳。" 
+            },
+            "庚": { 
+                lu: "太陽", quan: "武曲", ke: "太陰", ji: "天同", 
+                formula: "庚陽武陰同",
+                years: "西元尾數 0（民國 59, 69, 79, 89, 99, 109 年次等）",
+                desc: "太陽化祿：光芒四射、跨界或出差出外大受歡迎；武曲化權：財務一把抓、做事果斷不拖泥帶水；太陰化科：清秀斯文、理財條理分明；天同化忌：生活太安逸容易缺乏鬥志、感情需多用心經營。" 
+            },
+            "辛": { 
+                lu: "巨門", quan: "太陽", ke: "文曲", ji: "文昌", 
+                formula: "辛巨陽曲昌",
+                years: "西元尾數 1（民國 60, 70, 80, 90, 100 年次等）",
+                desc: "巨門化祿：靠口才演講、直播帶貨或業務口才賺大錢；太陽化權：名聲響亮具備大將領導之風；文曲化科：文藝創作有口皆碑；文昌化忌：支票考卷文書細節需仔細核對。" 
+            },
+            "壬": { 
+                lu: "天梁", quan: "紫微", ke: "天府", ji: "武曲", 
+                formula: "壬梁紫府武",
+                years: "西元尾數 2（民國 61, 71, 81, 91, 101 年次等）",
+                desc: "天梁化祿：長輩祖蔭庇佑、買保險容易獲益；紫微化權：帝王霸氣十足掌控全盤；天府化科：信譽卓著金庫穩如泰山；武曲化忌：現金流較吃緊、投資切忌冒險借貸。" 
+            },
+            "癸": { 
+                lu: "破軍", quan: "巨門", ke: "太陰", ji: "貪狼", 
+                formula: "癸破巨陰貪",
+                years: "西元尾數 3（民國 62, 72, 82, 92, 102 年次等）",
+                desc: "破軍化祿：破舊立新、勇於轉型收穫意外財富；巨門化權：說話權威有說服力；太陰化科：優質房產貴人相伴；貪狼化忌：慾望太多容易分心，感情切忌拖泥帶水。" 
+            }
+        };
+
+        const SANDBOX_CHART = [
+            { id: 0, branch: "子", palace: "官祿宮 (工作)", stem: "丙", stars: ["天同", "太陰"] },
+            { id: 1, branch: "丑", palace: "交友宮 (同事)", stem: "丁", stars: ["武曲", "貪狼"] },
+            { id: 2, branch: "寅", palace: "遷移宮 (出外)", stem: "戊", stars: ["太陽", "巨門"] },
+            { id: 3, branch: "卯", palace: "疾厄宮 (身體)", stem: "己", stars: ["天相"] },
+            { id: 4, branch: "辰", palace: "財帛宮 (錢包)", stem: "庚", stars: ["天機", "天梁"] },
+            { id: 5, branch: "巳", palace: "子女宮 (晚輩)", stem: "辛", stars: ["紫微", "七殺"] },
+            { id: 6, branch: "午", palace: "夫妻宮 (伴侶)", stem: "壬", stars: ["廉貞"] },
+            { id: 7, branch: "未", palace: "兄弟宮 (小金庫)", stem: "癸", stars: ["破軍"] },
+            { id: 8, branch: "申", palace: "命宮 (本尊)", stem: "甲", stars: ["文昌", "文曲"] },
+            { id: 9, branch: "酉", palace: "父母宮 (長官)", stem: "乙", stars: ["左輔", "右弼"] },
+            { id: 10, branch: "戌", palace: "福德宮 (心靈)", stem: "丙", stars: ["天府"] },
+            { id: 11, branch: "亥", palace: "田宅宮 (房子)", stem: "丁", stars: ["擎羊", "陀羅"] }
+        ];
+
+        // 8 Plain Language Quiz Questions
+        const QUIZ_QUESTIONS = [
+            {
+                q: "1. 如果把紫微斗數比喻成一部大電影，那麼「十二宮位」相當於什麼？",
+                options: [
+                    "A. 電影的拍攝場景與生活房間（家裡、辦公室、保險箱等）",
+                    "B. 電影的劇組攝影師",
+                    "C. 電影院的爆米花",
+                    "D. 電影的字幕語言"
+                ],
+                answer: 0,
+                explain: "十二宮位就等於人生中 12 個不同的生活房間與拍攝場景（如財帛宮=錢包保險箱、官祿宮=辦公室職場）。"
+            },
+            {
+                q: "2. 在四大超能力魔法卡中，哪一張代表「送好處、天上掉下來大紅包、緣分好」？",
+                options: [
+                    "A. 化忌（牽掛操心）",
+                    "B. 化權（掌權掌控）",
+                    "C. 化科（名譽金牌）",
+                    "D. 化祿（大紅包福氣）"
+                ],
+                answer: 3,
+                explain: "化祿就像春天萬物發芽，代表天上掉下來的禮物、賺錢好運與隨和圓融。"
+            },
+            {
+                q: "3. 「三方四正」在現代生活中的最貼切比喻是？",
+                options: [
+                    "A. 自己一個人在荒島上生存",
+                    "B. 董事長、合夥人鐵三角與正面大客戶市場（公司團隊）",
+                    "C. 買四張刮刮樂彩券",
+                    "D. 四面八方的敵人圍攻"
+                ],
+                answer: 1,
+                explain: "三方四正就像一個開公司的團隊：命宮（董事長本尊）+ 財帛與官祿（合夥人鐵三角）+ 遷移宮（正前方的客戶與市場）。"
+            },
+            {
+                q: "4. 如果你的「命宮」化祿飛入「財帛宮」，大白話意思是什麼？",
+                options: [
+                    "A. 我完全不想賺錢，只想睡覺",
+                    "B. 我超級愛賺錢，對求財充滿熱情，財神爺也很眷顧我！",
+                    "C. 我一定會被別人騙錢",
+                    "D. 我會跟另一半天天吵架"
+                ],
+                answer: 1,
+                explain: "命宮化祿入財帛宮代表自己願意為求財付出熱忱，也容易把財富吸引過來！"
+            },
+            {
+                q: "5. 什麼是「自化」（比如自化祿、自化忌）？",
+                options: [
+                    "A. 自己把包裹寄給自己，佛系隨緣、不計較、自我消化",
+                    "B. 電腦自動關機",
+                    "C. 星曜突然消失不見",
+                    "D. 必須換一個新名字"
+                ],
+                answer: 0,
+                explain: "自化就是宮位天干化出的星曜就在該宮自己內部，如同自己寄包裹給自己，隨性消散、不記仇、自我消化情緒。"
+            },
+            {
+                q: "6. 當「官祿宮 (工作)」化忌飛入「夫妻宮 (伴侶)」時，受衝擊最大的對宮是誰？",
+                options: [
+                    "A. 田宅宮",
+                    "B. 官祿宮自己（因為夫妻為官祿之對宮，工作過度反而衝擊工作與婚姻）",
+                    "C. 疾厄宮",
+                    "D. 兄弟宮"
+                ],
+                answer: 1,
+                explain: "化忌落入夫妻宮（心裡牽掛家庭伴侶），但正對面的官祿宮反而被正面衝擊，白話就是工作操勞過度反倒讓婚姻與事業兩頭受損！"
+            },
+            {
+                q: "7. 在掌訣排盤時，找「命宮」的基本口訣是？",
+                options: [
+                    "A. 順數生日月份，倒數出生時辰",
+                    "B. 閉著眼睛隨便指一個地方",
+                    "C. 倒數月份，順數年份",
+                    "D. 所有人命宮都在午宮"
+                ],
+                answer: 0,
+                explain: "正月起寅順數生月，月上起子逆數生時，落點就是你的命宮本尊！"
+            },
+            {
+                q: "8. 化忌在紫微斗數中真正的大白話含義是？",
+                options: [
+                    "A. 必然會發生大災難",
+                    "B. 這輩子最在乎、最操心、花最多心思放不下的牽掛與責任",
+                    "C. 代表完全不能出門",
+                    "D. 代表一定沒有錢"
+                ],
+                answer: 1,
+                explain: "化忌並非絕症，它代表你此生最深層的牽掛、責任與執著所在，只要用心化解便能轉化為大智慧！"
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initTenStemsDial();
+            initSandbox();
+            initQuiz();
+            initCastingBoard();
+            updateProgress();
+            
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
+            const certDateEl = document.getElementById('cert-date-display');
+            if (certDateEl) certDateEl.innerText = dateStr;
+
+            document.addEventListener('fullscreenchange', () => {
+                const fsIcon = document.getElementById('fullscreen-icon');
+                if (document.fullscreenElement) {
+                    fsIcon.setAttribute('data-lucide', 'minimize');
+                } else {
+                    fsIcon.setAttribute('data-lucide', 'maximize');
+                }
+                lucide.createIcons();
+            });
+        });
+
+        function switchChapter(chapterIdx) {
+            currentChapter = chapterIdx;
+            
+            document.querySelectorAll('.tab-content').forEach((el, idx) => {
+                if (idx === chapterIdx) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+
+            const navBtns = document.querySelectorAll('.chapter-nav-btn');
+            navBtns.forEach((btn, idx) => {
+                if (idx === chapterIdx) {
+                    btn.className = "chapter-nav-btn w-full text-left p-3 rounded-2xl flex items-center justify-between text-xs font-bold transition-all bg-gradient-to-r from-purple-900/60 to-indigo-900/40 border border-purple-400/40 text-amber-300 shadow-md";
+                } else {
+                    btn.className = "chapter-nav-btn w-full text-left p-3 rounded-2xl flex items-center justify-between text-xs font-bold transition-all hover:bg-slate-800/50 border border-transparent text-slate-300";
+                }
+            });
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            updateProgress();
+            lucide.createIcons();
+        }
+
+        function updateProgress() {
+            const pct = Math.round(((currentChapter + 1) / 8) * 100);
+            const bar = document.getElementById('learning-progress-bar');
+            const txt = document.getElementById('learning-progress-text');
+            if (bar) bar.style.width = `${pct}%`;
+            if (txt) txt.innerText = `${pct}%`;
+        }
+
+        function showPalaceDetail(idx) {
+            const item = PALACE_DETAILS_DATA[idx];
+            if (!item) return;
+            const tEl = document.getElementById('palace-detail-title');
+            const dEl = document.getElementById('palace-detail-desc');
+            const gEl = document.getElementById('palace-detail-good');
+            const bEl = document.getElementById('palace-detail-bad');
+            if (tEl) tEl.innerText = item.title;
+            if (dEl) dEl.innerText = item.desc;
+            if (gEl) gEl.innerText = item.good;
+            if (bEl) bEl.innerText = item.bad;
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function popoutWindow() {
+            const url = window.location.href;
+            const w = 1440;
+            const h = 900;
+            const left = (screen.width - w) / 2;
+            const top = (screen.height - h) / 2;
+            window.open(url, 'ZiWeiAcademyWindow', `width=${w},height=${h},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes`);
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                icon.setAttribute('data-lucide', 'moon');
+            } else {
+                html.classList.remove('light');
+                html.classList.add('dark');
+                icon.setAttribute('data-lucide', 'sun');
+            }
+            lucide.createIcons();
+        }
+
+        function initCastingBoard() {
+            const container = document.getElementById('casting-board-cells');
+            if (!container) return;
+            container.innerHTML = '';
+            for (let i = 0; i < 12; i++) {
+                const cell = document.createElement('div');
+                cell.id = `cast-cell-${i}`;
+                cell.className = 'p-3 rounded-xl glass-card border border-white/10 flex flex-col justify-between min-h-[75px] transition-all';
+                cell.innerHTML = `
+                    <div class="text-[10px] text-amber-300/80 font-mono">${BRANCH_NAMES[i]}位</div>
+                    <div class="font-serif font-black text-xs text-slate-200" id="cast-palace-name-${i}">--</div>
+                    <div class="text-[9px] text-slate-400" id="cast-stars-${i}"></div>
+                `;
+                container.appendChild(cell);
+            }
+            renderCastingStepContent(1);
+        }
+
+        function setCastingStep(step) {
+            castingStep = step;
+            const buttons = document.querySelectorAll('.casting-step-item');
+            buttons.forEach((btn, idx) => {
+                if (idx + 1 === step) {
+                    btn.className = 'casting-step-item p-2.5 rounded-xl border text-center transition-all bg-amber-500/20 border-amber-400 text-amber-300 font-bold text-xs shadow-md';
+                } else {
+                    btn.className = 'casting-step-item p-2.5 rounded-xl border text-center transition-all bg-white/5 border-white/10 text-slate-400 text-xs';
+                }
+            });
+            renderCastingStepContent(step);
+        }
+
+        function renderCastingStepContent(step) {
+            const badge = document.getElementById('casting-step-badge');
+            const title = document.getElementById('casting-step-title');
+            const desc = document.getElementById('casting-step-desc');
+            const tip = document.getElementById('casting-step-tip');
+
+            for (let i = 0; i < 12; i++) {
+                const pEl = document.getElementById(`cast-palace-name-${i}`);
+                const sEl = document.getElementById(`cast-stars-${i}`);
+                const cell = document.getElementById(`cast-cell-${i}`);
+                if (cell) cell.classList.remove('ring-2', 'ring-amber-400', 'bg-amber-950/60');
+
+                if (step >= 1 && pEl) pEl.innerText = PALACE_NAMES[i];
+                else if (pEl) pEl.innerText = '--';
+
+                if (step >= 4 && sEl) sEl.innerHTML = `<span class="text-purple-300 font-bold">${SANDBOX_CHART[i].stars.join(' ')}</span>`;
+                else if (step >= 3 && sEl) {
+                    if (i === 8) sEl.innerHTML = `<span class="text-amber-300 font-bold">紫微 (總裁)</span>`;
+                    else if (i === 10) sEl.innerHTML = `<span class="text-indigo-300 font-bold">天府 (管家)</span>`;
+                    else sEl.innerText = '';
+                } else if (sEl) sEl.innerText = '';
+            }
+
+            if (step === 1) {
+                if (badge) badge.innerText = '步驟 1 / 5';
+                if (title) title.innerText = '順數生月，倒數生時 ➔ 找到命宮本尊！';
+                if (desc) desc.innerText = '以「寅宮」為起點，順時針數到農曆生日月份；再從那裡倒數你的出生時辰，手指落點就是你的【命宮本尊】！';
+                if (tip) tip.innerText = '💡 大白話：就像在地圖上按你的出生時間定位「你的家在哪裡」！';
+                const mingCell = document.getElementById('cast-cell-8');
+                if (mingCell) mingCell.classList.add('ring-2', 'ring-amber-400', 'bg-amber-950/60');
+            } else if (step === 2) {
+                if (badge) badge.innerText = '步驟 2 / 5';
+                if (title) title.innerText = '計算五行局數（你的起運年齡）';
+                if (desc) desc.innerText = '算出你是水二局、木三局、金四局、土五局還是火六局。數字代表你從幾歲開始走人生的第一個十年大運！';
+                if (tip) tip.innerText = '💡 大白話：水二局代表2歲起運、木三局代表3歲起運，就像人生的起跑線！';
+            } else if (step === 3) {
+                if (badge) badge.innerText = '步驟 3 / 5';
+                if (title) title.innerText = '生日除以局數 ➔ 請紫微帝星上位！';
+                if (desc) desc.innerText = '用你的生日日數除以五行局數，得到商數與餘數，把「紫微帝星」請到專屬的帝王寶座上！';
+                if (tip) tip.innerText = '💡 大白話：霸道總裁到位了，整部大電影的主角就有了主心骨！';
+            } else if (step === 4) {
+                if (badge) badge.innerText = '步驟 4 / 5';
+                if (title) title.innerText = '14 位男女主角演員依序入場就位！';
+                if (desc) desc.innerText = '紫微星系 6 顆星與天府星系 8 顆星，像排隊一樣順序分佈到各個生活宮位。';
+                if (tip) tip.innerText = '💡 大白話：智囊軍師、熱血暖男、金牌會計全部就位，各就各位！';
+            } else if (step === 5) {
+                if (badge) badge.innerText = '步驟 5 / 5';
+                if (title) title.innerText = '貼上四化魔法貼紙（祿權科忌）！';
+                if (desc) desc.innerText = '依出生年份，在星曜旁標註化祿、化權、化科、化忌，整張星盤頓時充滿活生生的劇情因果！';
+                if (tip) tip.innerText = '💡 大白話：大紅包、權力麥克風、貴人金牌與責任牽掛全部發放完畢！';
+            }
+        }
+
+        function toggleCastingAnimation() {
+            if (isCastingRunning) {
+                clearInterval(castingTimer);
+                isCastingRunning = false;
+                document.getElementById('casting-btn-label').innerText = '繼續排盤演繹';
+            } else {
+                isCastingRunning = true;
+                document.getElementById('casting-btn-label').innerText = '暫停演繹';
+                castingTimer = setInterval(() => {
+                    let nextStep = castingStep + 1;
+                    if (nextStep > 5) {
+                        nextStep = 1;
+                    }
+                    setCastingStep(nextStep);
+                }, 2500);
+            }
+        }
+
+        function resetCastingAnimation() {
+            clearInterval(castingTimer);
+            isCastingRunning = false;
+            document.getElementById('casting-btn-label').innerText = '開始排盤演繹';
+            setCastingStep(1);
+        }
+
+        function initTenStemsDial() {
+            const container = document.getElementById('stem-buttons-container');
+            if (!container) return;
+            container.innerHTML = '';
+            const stems = Object.keys(SI_HUA_DATA);
+            stems.forEach(s => {
+                const btn = document.createElement('button');
+                btn.className = `w-10 h-10 sm:w-11 sm:h-11 rounded-2xl font-black text-sm transition-all border ${
+                    s === '丙' ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 border-amber-300 shadow-lg shadow-amber-500/30 scale-110 ring-2 ring-white' : 'glass-card border-white/10 text-slate-300 hover:bg-slate-800'
+                }`;
+                btn.innerText = s;
+                btn.id = `stem-btn-${s}`;
+                btn.onclick = () => selectStem(s);
+                container.appendChild(btn);
+            });
+            renderStemDetail('丙');
+        }
+
+        function selectStem(stem) {
+            document.querySelectorAll('#stem-buttons-container button').forEach(b => {
+                b.className = 'w-10 h-10 sm:w-11 sm:h-11 rounded-2xl font-black text-sm transition-all border glass-card border-white/10 text-slate-300 hover:bg-slate-800';
+            });
+            const activeBtn = document.getElementById(`stem-btn-${stem}`);
+            if (activeBtn) {
+                activeBtn.className = 'w-10 h-10 sm:w-11 sm:h-11 rounded-2xl font-black text-sm transition-all border bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 border-amber-300 shadow-lg shadow-amber-500/30 scale-110 ring-2 ring-white';
+            }
+            renderStemDetail(stem);
+        }
+
+        function renderStemDetail(stem) {
+            const data = SI_HUA_DATA[stem];
+            const card = document.getElementById('stem-detail-card');
+            if (!card || !data) return;
+            card.innerHTML = `
+                <div class="flex flex-wrap justify-between items-center gap-3 border-b border-white/10 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="font-serif font-black text-2xl text-amber-300">【${stem}干出生】生年四化密碼</span>
+                        <span class="px-3 py-1 bg-amber-500/20 text-amber-200 border border-amber-400/40 rounded-full text-xs font-mono font-bold">
+                            口訣：${data.formula}
+                        </span>
+                    </div>
+                    <div class="text-[11px] text-slate-300 font-mono">
+                        適用：${data.years}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 py-2">
+                    <div class="p-3.5 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 text-center">
+                        <span class="text-xs font-bold text-emerald-300">🌸 化祿 (送大紅包)</span>
+                        <div class="text-lg font-black text-white mt-1">${data.lu}</div>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-red-950/60 border border-red-500/40 text-center">
+                        <span class="text-xs font-bold text-red-300">⚡ 化權 (握方向盤)</span>
+                        <div class="text-lg font-black text-white mt-1">${data.quan}</div>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-purple-950/60 border border-purple-500/40 text-center">
+                        <span class="text-xs font-bold text-purple-300">📜 化科 (得貴人金牌)</span>
+                        <div class="text-lg font-black text-white mt-1">${data.ke}</div>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-blue-950/60 border border-blue-500/40 text-center">
+                        <span class="text-xs font-bold text-blue-300">🌀 化忌 (心裡最操心)</span>
+                        <div class="text-lg font-black text-white mt-1">${data.ji}</div>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-200 leading-relaxed bg-white/5 p-4 rounded-2xl border border-white/10">
+                    <strong>【大白話生活翻譯】：</strong>${data.desc}
+                </p>
+            `;
+        }
+
+        function initSandbox() {
+            const selectPalace = document.getElementById('sandbox-source-palace');
+            if (selectPalace) {
+                selectPalace.innerHTML = '';
+                SANDBOX_CHART.forEach((c) => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.innerText = `${c.palace} (${c.branch}位 · ${c.stem}干)`;
+                    selectPalace.appendChild(opt);
+                });
+            }
+
+            const grid = document.getElementById('sandbox-cells-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const layoutOrder = [5, 6, 7, 8, 4, -1, -1, 9, 3, -1, -1, 10, 2, 1, 0, 11];
+
+            layoutOrder.forEach((palaceId, idx) => {
+                if (palaceId === -1) {
+                    if (idx === 5) {
+                        const center = document.createElement('div');
+                        center.className = 'col-span-2 row-span-2 rounded-2xl bg-slate-900/90 border border-purple-500/30 p-4 flex flex-col items-center justify-center text-center space-y-2 relative overflow-hidden';
+                        center.innerHTML = `
+                            <div class="absolute inset-0 bg-gradient-to-tr from-purple-900/20 via-transparent to-amber-500/10"></div>
+                            <div class="text-3xl animate-spin-slow opacity-60">🌌</div>
+                            <div class="font-serif font-black text-sm text-amber-300">飛星寄包裹中樞</div>
+                            <div class="text-[10px] text-slate-300">點選四周任一宮位作為發射基地</div>
+                        `;
+                        grid.appendChild(center);
+                    }
+                    return;
+                }
+
+                const data = SANDBOX_CHART.find(c => c.id === palaceId);
+                const cell = document.createElement('div');
+                cell.id = `sandbox-cell-${palaceId}`;
+                cell.onclick = () => selectSandboxPalaceDirectly(palaceId);
+                cell.className = 'p-2 sm:p-3 rounded-2xl glass-card border border-white/10 flex flex-col justify-between cursor-pointer hover:border-amber-400/80 hover:scale-[1.02] transition-all relative group';
+                cell.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-mono font-bold text-amber-300">${data.stem}干 · ${data.branch}</span>
+                        <span class="w-2 h-2 rounded-full bg-slate-600 group-hover:bg-amber-400 transition-colors"></span>
+                    </div>
+                    <div class="text-center my-1">
+                        <div class="font-serif font-black text-xs sm:text-sm text-white">${data.palace}</div>
+                        <div class="text-[10px] text-purple-300 font-bold mt-0.5">${data.stars.join(' ')}</div>
+                    </div>
+                    <div class="text-[9px] text-slate-400 text-center opacity-70">
+                        點我發射/接收
+                    </div>
+                `;
+                grid.appendChild(cell);
+            });
+
+            updateSandboxSelection();
+        }
+
+        function selectSandboxPalaceDirectly(palaceId) {
+            const select = document.getElementById('sandbox-source-palace');
+            if (select) {
+                select.value = palaceId;
+                updateSandboxSelection();
+                fireAllSihua();
+            }
+        }
+
+        function loadScenarioPreset(type) {
+            const palaceSelect = document.getElementById('sandbox-source-palace');
+            const stemSelect = document.getElementById('sandbox-source-stem');
+            if (!palaceSelect || !stemSelect) return;
+
+            if (type === 'wealth') {
+                // 命宮 (申位) 發射庚干 (太陽化祿入遷移/出外大發財，或發射庚干使天同化祿)
+                palaceSelect.value = "8"; // 命宮
+                stemSelect.value = "庚"; // 太陽化祿 (遷移宮)
+                updateSandboxSelection();
+                launchSingleRay('祿');
+            } else if (type === 'love_debt') {
+                // 夫妻宮 (午位) 發射丙干 (廉貞化忌入命宮)
+                palaceSelect.value = "6"; // 夫妻宮
+                stemSelect.value = "丙"; // 廉貞化忌入夫妻/命宮
+                updateSandboxSelection();
+                launchSingleRay('忌');
+            } else if (type === 'career_power') {
+                // 官祿宮 (子位) 發射戊干 (太陰化權入官祿)
+                palaceSelect.value = "0"; // 官祿宮
+                stemSelect.value = "戊";
+                updateSandboxSelection();
+                launchSingleRay('權');
+            } else if (type === 'house_asset') {
+                // 命宮發射丁干 (太陰化祿入官祿/田宅)
+                palaceSelect.value = "8"; // 命宮
+                stemSelect.value = "丁";
+                updateSandboxSelection();
+                launchSingleRay('祿');
+            } else if (type === 'self_peace') {
+                // 官祿宮 (天同星) 發射丙干 (丙同機昌廉，天同自化祿)
+                palaceSelect.value = "0"; // 官祿宮 (內有天同)
+                stemSelect.value = "丙";
+                updateSandboxSelection();
+                launchSingleRay('祿');
+            }
+        }
+
+        function updateSandboxSelection() {
+            const palaceId = parseInt(document.getElementById('sandbox-source-palace')?.value || '0');
+            const stem = document.getElementById('sandbox-source-stem')?.value || '丙';
+            
+            document.querySelectorAll('#sandbox-cells-grid > div').forEach(c => {
+                c.classList.remove('ring-2', 'ring-amber-400', 'bg-purple-950/70');
+            });
+            const activeCell = document.getElementById(`sandbox-cell-${palaceId}`);
+            if (activeCell) {
+                activeCell.classList.add('ring-2', 'ring-amber-400', 'bg-purple-950/70');
+            }
+
+            const pData = SANDBOX_CHART.find(c => c.id === palaceId);
+            const sihua = SI_HUA_DATA[stem];
+
+            const label = document.getElementById('sandbox-active-stem-label');
+            if (label) label.innerText = `【${pData.palace} · ${stem}干發射】大白話解讀`;
+
+            const reportEl = document.getElementById('sandbox-report-content');
+            if (reportEl) {
+                reportEl.innerHTML = `
+                    <p class="text-slate-300 text-xs sm:text-sm">
+                        當<strong>【${pData.palace}】</strong>作為發射基地，發出<strong>【${stem}干】</strong>信號時：
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 text-xs">
+                        <div class="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30">
+                            <span class="text-emerald-400 font-bold text-xs">🌸 化祿包裹 ➔ 寄給【${sihua.lu}】所在宮位</span>
+                            <p class="text-slate-300 text-[11px] mt-1"><strong>白話：</strong>${pData.palace}最願意把好處、善意與好心情分享給擁有${sihua.lu}的宮位！</p>
+                        </div>
+                        <div class="p-3.5 rounded-2xl bg-red-950/40 border border-red-500/30">
+                            <span class="text-red-400 font-bold text-xs">⚡ 化權包裹 ➔ 寄給【${sihua.quan}】所在宮位</span>
+                            <p class="text-slate-300 text-[11px] mt-1"><strong>白話：</strong>${pData.palace}想掌控擁有${sihua.quan}的領域，展現強大影響力！</p>
+                        </div>
+                        <div class="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30">
+                            <span class="text-purple-400 font-bold text-xs">📜 化科包裹 ➔ 寄給【${sihua.ke}】所在宮位</span>
+                            <p class="text-slate-300 text-[11px] mt-1"><strong>白話：</strong>${pData.palace}對擁有${sihua.ke}的領域講情面、有禮貌、能得貴人相助！</p>
+                        </div>
+                        <div class="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-500/30">
+                            <span class="text-blue-400 font-bold text-xs">🌀 化忌包裹 ➔ 寄給【${sihua.ji}】所在宮位</span>
+                            <p class="text-slate-300 text-[11px] mt-1"><strong>白話：</strong>${pData.palace}對擁有${sihua.ji}的宮位最為牽掛操心，也容易給其對面宮位帶來考驗！</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function findPalaceWithStar(starName) {
+            return SANDBOX_CHART.find(c => c.stars.includes(starName)) || SANDBOX_CHART[0];
+        }
+
+        function getCellCenter(cellId) {
+            const container = document.getElementById('sandbox-container');
+            const cell = document.getElementById(cellId);
+            if (!container || !cell) return { x: 0, y: 0 };
+            const cRect = container.getBoundingClientRect();
+            const elRect = cell.getBoundingClientRect();
+            return {
+                x: elRect.left + elRect.width / 2 - cRect.left,
+                y: elRect.top + elRect.height / 2 - cRect.top
+            };
+        }
+
+        function clearSandboxRays() {
+            const svg = document.getElementById('sandbox-ray-svg');
+            if (svg) svg.innerHTML = '';
+        }
+
+        function launchSingleRay(type) {
+            const palaceId = parseInt(document.getElementById('sandbox-source-palace')?.value || '0');
+            const stem = document.getElementById('sandbox-source-stem')?.value || '丙';
+            const sihua = SI_HUA_DATA[stem];
+
+            let starName = '';
+            let color = '#10b981';
+            if (type === '祿') { starName = sihua.lu; color = '#10b981'; }
+            else if (type === '權') { starName = sihua.quan; color = '#ef4444'; }
+            else if (type === '科') { starName = sihua.ke; color = '#a855f7'; }
+            else if (type === '忌') { starName = sihua.ji; color = '#3b82f6'; }
+
+            const targetPalace = findPalaceWithStar(starName);
+            renderRayOnSvg(palaceId, targetPalace.id, type, starName, color);
+        }
+
+        function fireAllSihua() {
+            clearSandboxRays();
+            const types = ['祿', '權', '科', '忌'];
+            types.forEach((t, idx) => {
+                setTimeout(() => {
+                    launchSingleRay(t);
+                }, idx * 180);
+            });
+        }
+
+        function renderRayOnSvg(fromId, toId, type, starName, color) {
+            const svg = document.getElementById('sandbox-ray-svg');
+            if (!svg) return;
+
+            const start = getCellCenter(`sandbox-cell-${fromId}`);
+            const end = getCellCenter(`sandbox-cell-${toId}`);
+
+            if (fromId === toId) {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('transform', `translate(${start.x}, ${start.y})`);
+                g.innerHTML = `
+                    <circle cx="0" cy="0" r="28" fill="none" stroke="${color}" stroke-width="2.5" stroke-dasharray="6,4" class="spin-orbit"/>
+                    <circle cx="0" cy="0" r="8" fill="${color}" fill-opacity="0.5"/>
+                    <rect x="18" y="-12" width="60" height="24" rx="12" fill="${color}" />
+                    <text x="48" y="4" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="900">自化${type}</text>
+                `;
+                svg.appendChild(g);
+                return;
+            }
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', start.x);
+            line.setAttribute('y1', start.y);
+            line.setAttribute('x2', end.x);
+            line.setAttribute('y2', end.y);
+            line.setAttribute('stroke', color);
+            line.setAttribute('stroke-width', '3.5');
+            line.setAttribute('stroke-linecap', 'round');
+            line.setAttribute('class', 'beam-flowing');
+            line.setAttribute('style', `filter: drop-shadow(0 0 8px ${color});`);
+
+            const midX = (start.x + end.x) / 2;
+            const midY = (start.y + end.y) / 2;
+            const badgeG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            badgeG.setAttribute('transform', `translate(${midX}, ${midY})`);
+            badgeG.innerHTML = `
+                <circle cx="0" cy="0" r="15" fill="${color}" stroke="#ffffff" stroke-width="1.5" style="filter: drop-shadow(0 0 8px ${color});" />
+                <text x="0" y="4" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="900">化${type}</text>
+            `;
+
+            svg.appendChild(line);
+            svg.appendChild(badgeG);
+        }
+
+        function initQuiz() {
+            const container = document.getElementById('quiz-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            QUIZ_QUESTIONS.forEach((item, qIdx) => {
+                const card = document.createElement('div');
+                card.className = 'p-5 sm:p-6 rounded-3xl glass-card border border-white/10 space-y-4';
+                card.innerHTML = `
+                    <div class="font-serif font-black text-sm sm:text-base text-slate-100 flex items-start gap-2">
+                        <span class="text-amber-400 font-mono">Q${qIdx + 1}.</span>
+                        <span>${item.q.substring(3)}</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 text-xs">
+                        ${item.options.map((opt, optIdx) => `
+                            <label class="p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:border-amber-400/40 cursor-pointer flex items-center gap-2.5 transition-all">
+                                <input type="radio" name="quiz-q-${qIdx}" value="${optIdx}" class="accent-amber-400 w-4 h-4">
+                                <span class="text-slate-200">${opt}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                    <div id="quiz-explain-${qIdx}" class="hidden p-3.5 rounded-2xl text-xs space-y-1"></div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function evaluateQuiz() {
+            let correctCount = 0;
+            QUIZ_QUESTIONS.forEach((item, qIdx) => {
+                const selected = document.querySelector(`input[name="quiz-q-${qIdx}"]:checked`);
+                const explainEl = document.getElementById(`quiz-explain-${qIdx}`);
+                if (!explainEl) return;
+
+                explainEl.classList.remove('hidden');
+                if (selected && parseInt(selected.value) === item.answer) {
+                    correctCount++;
+                    explainEl.className = 'p-3.5 rounded-2xl text-xs space-y-1 bg-emerald-950/40 border border-emerald-500/40 text-emerald-200';
+                    explainEl.innerHTML = `<strong>✅ 正確！</strong> ${item.explain}`;
+                } else {
+                    explainEl.className = 'p-3.5 rounded-2xl text-xs space-y-1 bg-rose-950/40 border border-rose-500/40 text-rose-200';
+                    explainEl.innerHTML = `<strong>❌ 答錯囉！</strong> 正確答案為【${item.options[item.answer]}】。<br>${item.explain}`;
+                }
+            });
+
+            const score = Math.round((correctCount / QUIZ_QUESTIONS.length) * 100);
+            const scoreDisplay = document.getElementById('cert-score-display');
+            if (scoreDisplay) scoreDisplay.innerText = `${score} 分`;
+
+            if (score >= 75) {
+                document.getElementById('certificate-wrapper')?.classList.remove('hidden');
+                document.getElementById('quiz-submit-area')?.classList.add('hidden');
+                
+                if (window.confetti) {
+                    confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+                }
+            } else {
+                alert(`測驗得分為 ${score} 分。建議回顧前面章節的大白話解說，達 80 分即可領取專屬精通證書！`);
+            }
+        }
+
+        function toggleChapterAudio() {
+            if (isPlayingAudio) {
+                stopAudio();
+            } else {
+                const textEl = document.getElementById(`chapter-${currentChapter}-text`);
+                if (textEl) {
+                    speakRawText(textEl.innerText, `第 ${currentChapter} 講白話伴讀`);
+                }
+            }
+        }
+
+        function speakText(elementId) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                speakRawText(el.innerText, `章節白話伴讀`);
+            }
+        }
+
+        function speakRawText(text, trackTitle) {
+            if (!('speechSynthesis' in window)) {
+                alert('您的瀏覽器暫不支援語音朗讀。');
+                return;
+            }
+
+            stopAudio();
+
+            const cleanText = text.replace(/[*#☯🌌🏛️⭐⚡📜🌀🌸🎁🎤🛡️❤️]/g, '').trim().substring(0, 3000);
+            currentUtterance = new SpeechSynthesisUtterance(cleanText);
+            currentUtterance.lang = 'zh-TW';
+            currentUtterance.rate = 1.0;
+            currentUtterance.pitch = 1.0;
+
+            const voices = synth.getVoices();
+            const zhVoice = voices.find(v => v.lang.includes('zh-TW') || v.lang.includes('cmn-Hant-TW') || v.lang.includes('zh'));
+            if (zhVoice) currentUtterance.voice = zhVoice;
+
+            currentUtterance.onstart = () => {
+                isPlayingAudio = true;
+                const bar = document.getElementById('audio-floating-bar');
+                if (bar) {
+                    bar.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+                }
+                const nameEl = document.getElementById('audio-track-name');
+                if (nameEl) nameEl.innerText = trackTitle || '正在朗讀...';
+                document.getElementById('tts-btn-text').innerText = '停止伴讀';
+            };
+
+            currentUtterance.onend = () => {
+                stopAudio();
+            };
+
+            currentUtterance.onerror = () => {
+                stopAudio();
+            };
+
+            synth.speak(currentUtterance);
+        }
+
+        function stopAudio() {
+            if (synth.speaking || synth.pending) {
+                synth.cancel();
+            }
+            isPlayingAudio = false;
+            const bar = document.getElementById('audio-floating-bar');
+            if (bar) {
+                bar.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+            }
+            const ttsBtn = document.getElementById('tts-btn-text');
+            if (ttsBtn) ttsBtn.innerText = '天機伴讀';
+        }
+    </script>
+</body>
+
+</html>

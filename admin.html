@@ -146,6 +146,12 @@
                     <i class="fa-solid fa-arrows-rotate" :class="isFetching ? 'animate-spin text-indigo-400' : ''"></i>
                     <span>立即刷新</span>
                 </button>
+                <a href="/classroom" target="_blank"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-900/80 to-indigo-900/80 hover:from-purple-800 hover:to-indigo-800 text-amber-300 border border-purple-500/40 transition-all flex items-center gap-1.5 shadow-md hover:scale-105"
+                    title="以獨立全螢幕新視窗開啟紫微斗數排盤與四化飛星講堂">
+                    <i class="fa-solid fa-graduation-cap text-amber-400"></i>
+                    <span>紫微講堂 (全螢幕)</span>
+                </a>
                 <button @click="clearCache()" 
                     class="px-3 py-2 rounded-xl text-xs font-bold bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border border-amber-700/40 transition-all flex items-center gap-1.5 active:scale-95"
                     title="清空黃曆、時事新聞與語音快取">

@@ -2081,6 +2081,21 @@ def index():
 @app.route('/admin')
 def admin_page(): return send_file('admin.html')
 
+@app.route('/classroom')
+@app.route('/academy')
+def classroom_page():
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, 'ziwei_classroom.html')
+        res = make_response(send_file(file_path, mimetype='text/html'))
+        res.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        res.headers['Pragma'] = 'no-cache'
+        res.headers['Expires'] = '0'
+        return res
+    except Exception as e:
+        return f"【講堂故障】教學頁面載入失敗: {e}", 500
+
+
 @app.route('/favicon.ico')
 def favicon():
     base_dir = os.path.dirname(os.path.abspath(__file__))
