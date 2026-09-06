@@ -74,9 +74,10 @@
                         radial-gradient(circle at 85% 85%, rgba(30, 58, 138, 0.35) 0%, transparent 50%),
                         radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.98) 0%, #030712 100%);
         }
-        .light .cosmic-bg {
-            background: radial-gradient(circle at 20% 20%, rgba(224, 231, 255, 0.8) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 80%, rgba(243, 232, 255, 0.8) 0%, transparent 50%),
+        .light .cosmic-bg,
+        html.light .cosmic-bg {
+            background: radial-gradient(circle at 15% 15%, rgba(216, 180, 254, 0.35) 0%, transparent 50%),
+                        radial-gradient(circle at 85% 85%, rgba(199, 210, 254, 0.4) 0%, transparent 50%),
                         #f8fafc;
         }
 
@@ -86,10 +87,12 @@
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .light .glass-panel {
-            background: rgba(255, 255, 255, 0.92);
+        .light .glass-panel,
+        html.light .glass-panel {
+            background: rgba(255, 255, 255, 0.94) !important;
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(203, 213, 225, 0.85) !important;
+            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.07) !important;
         }
 
         .glass-card {
@@ -97,9 +100,174 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .light .glass-card {
-            background: rgba(248, 250, 252, 0.95);
-            border: 1px solid rgba(0, 0, 0, 0.08);
+        .light .glass-card,
+        html.light .glass-card {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border: 1px solid rgba(226, 232, 240, 0.95) !important;
+            box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.05) !important;
+        }
+
+        /* High-Contrast Light Mode Overrides (解決白天模式字體太淺、看不清問題) */
+        html.light {
+            color-scheme: light;
+        }
+        html.light body {
+            color: #0f172a !important; /* Slate 900 */
+        }
+        html.light .text-slate-100,
+        html.light .text-slate-200,
+        html.light .text-white {
+            color: #0f172a !important;
+        }
+        html.light .text-slate-300 {
+            color: #334155 !important; /* Slate 700 - 清晰易讀 */
+        }
+        html.light .text-slate-400 {
+            color: #475569 !important; /* Slate 600 */
+        }
+        html.light .text-slate-500 {
+            color: #64748b !important;
+        }
+        
+        /* 標題與強調色高對比調色盤 */
+        html.light .text-amber-100,
+        html.light .text-amber-200,
+        html.light .text-amber-300,
+        html.light .text-amber-400,
+        html.light .text-yellow-300,
+        html.light .text-yellow-400 {
+            color: #b45309 !important; /* Amber 700 飽滿深金色 */
+        }
+        html.light .text-purple-100,
+        html.light .text-purple-200,
+        html.light .text-purple-300,
+        html.light .text-purple-400 {
+            color: #6b21a8 !important; /* Purple 800 典雅深紫色 */
+        }
+        html.light .text-indigo-100,
+        html.light .text-indigo-200,
+        html.light .text-indigo-300,
+        html.light .text-indigo-400 {
+            color: #3730a3 !important; /* Indigo 800 */
+        }
+        html.light .text-emerald-100,
+        html.light .text-emerald-200,
+        html.light .text-emerald-300,
+        html.light .text-emerald-400 {
+            color: #065f46 !important; /* Emerald 800 */
+        }
+        html.light .text-rose-100,
+        html.light .text-rose-200,
+        html.light .text-rose-300,
+        html.light .text-rose-400,
+        html.light .text-red-300,
+        html.light .text-red-400 {
+            color: #9f1239 !important; /* Rose 800 */
+        }
+        html.light .text-blue-100,
+        html.light .text-blue-200,
+        html.light .text-blue-300,
+        html.light .text-blue-400 {
+            color: #1e40af !important; /* Blue 800 */
+        }
+
+        /* 標題漸層文字在白天模式加深對比 */
+        html.light h1.bg-clip-text,
+        html.light h2.bg-clip-text,
+        html.light h3.bg-clip-text {
+            background-image: linear-gradient(to right, #92400e, #6b21a8, #3730a3) !important;
+        }
+
+        /* 背景與卡片白天模式高對比適配 */
+        html.light .bg-slate-900,
+        html.light .bg-slate-950,
+        html.light .bg-slate-900\/90,
+        html.light .bg-slate-950\/80,
+        html.light .bg-slate-950\/90 {
+            background-color: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+        }
+        html.light .bg-slate-800,
+        html.light .bg-slate-800\/50,
+        html.light .bg-slate-800\/80 {
+            background-color: #e2e8f0 !important;
+        }
+        html.light .bg-white\/5,
+        html.light .bg-white\/10 {
+            background-color: rgba(241, 245, 249, 0.95) !important;
+            border-color: rgba(203, 213, 225, 0.8) !important;
+        }
+        html.light .border-white\/5,
+        html.light .border-white\/10,
+        html.light .border-white\/20 {
+            border-color: rgba(203, 213, 225, 0.75) !important;
+        }
+
+        /* 四化與宮位卡片在白天模式柔和底色+深色邊框 */
+        html.light .bg-purple-950\/40,
+        html.light .bg-purple-950\/60,
+        html.light .bg-purple-950\/70,
+        html.light .bg-purple-950\/80,
+        html.light .bg-purple-950\/90,
+        html.light .bg-purple-950 {
+            background-color: rgba(243, 232, 255, 0.88) !important;
+            border-color: rgba(192, 132, 252, 0.65) !important;
+        }
+        html.light .bg-emerald-950\/40,
+        html.light .bg-emerald-950\/60,
+        html.light .bg-emerald-950\/80,
+        html.light .bg-emerald-950 {
+            background-color: rgba(209, 250, 229, 0.9) !important;
+            border-color: rgba(52, 211, 153, 0.65) !important;
+        }
+        html.light .bg-amber-950\/40,
+        html.light .bg-amber-950\/60,
+        html.light .bg-amber-950\/80,
+        html.light .bg-amber-950 {
+            background-color: rgba(254, 243, 199, 0.9) !important;
+            border-color: rgba(245, 158, 11, 0.65) !important;
+        }
+        html.light .bg-red-950\/40,
+        html.light .bg-red-950\/60,
+        html.light .bg-red-950\/80,
+        html.light .bg-red-950,
+        html.light .bg-rose-950\/40,
+        html.light .bg-rose-950 {
+            background-color: rgba(255, 228, 230, 0.9) !important;
+            border-color: rgba(244, 63, 94, 0.65) !important;
+        }
+        html.light .bg-blue-950\/40,
+        html.light .bg-blue-950\/60,
+        html.light .bg-blue-950\/80,
+        html.light .bg-blue-950 {
+            background-color: rgba(224, 242, 254, 0.9) !important;
+            border-color: rgba(96, 165, 250, 0.65) !important;
+        }
+        html.light .bg-indigo-950\/40,
+        html.light .bg-indigo-950\/60,
+        html.light .bg-indigo-950\/80,
+        html.light .bg-indigo-950 {
+            background-color: rgba(238, 242, 255, 0.9) !important;
+            border-color: rgba(129, 140, 248, 0.65) !important;
+        }
+
+        /* 白天模式下輸入框與按鈕清晰化 */
+        html.light select,
+        html.light input[type="text"],
+        html.light input[type="number"] {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+        }
+        html.light select option {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+        }
+        html.light .chapter-nav-btn {
+            color: #334155;
+        }
+        html.light .chapter-nav-btn:hover {
+            background-color: #f1f5f9 !important;
         }
 
         /* Glowing text and borders */
@@ -236,8 +404,14 @@
             </div>
         </div>
 
-        <!-- Right Quick Actions (Fullscreen, Pop-out, Audio, Theme) -->
+        <!-- Right Quick Actions (Fullscreen, Pop-out, Audio, Theme, Home) -->
         <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Back to Main Chart -->
+            <a href="/" class="px-3 py-2 rounded-xl glass-card hover:bg-purple-600/30 text-xs font-bold text-slate-300 flex items-center gap-1.5 border border-purple-500/20 transition-all shadow-sm" title="返回天機命盤首頁">
+                <i data-lucide="compass" class="w-4 h-4 text-purple-400"></i>
+                <span class="hidden sm:inline">主命盤</span>
+            </a>
+
             <!-- Learning Progress Indicator -->
             <div class="hidden lg:flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-purple-950/40 border border-purple-500/20 text-xs">
                 <span class="text-slate-400">研習進度:</span>
@@ -657,8 +831,19 @@
                         <span id="avatar-total-time" class="text-[11px] font-mono text-slate-400">02:15</span>
                     </div>
 
-                    <!-- Right: Chapter Switcher & Playback Speed -->
-                    <div class="flex items-center gap-2">
+                    <!-- Right: Voice Selector, Chapter Switcher & Playback Speed -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- Voice Selector -->
+                        <div class="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-purple-500/30">
+                            <i data-lucide="mic" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <select id="avatar-voice-select" onchange="changeAvatarVoice(this.value)" class="bg-transparent text-[11px] font-bold text-slate-200 focus:outline-none cursor-pointer">
+                                <option value="zh-CN-YunyangNeural" selected>仙風宗師 (雲揚)</option>
+                                <option value="zh-TW-YunJheNeural">台灣親切男聲 (雲哲)</option>
+                                <option value="zh-TW-HsiaoChenNeural">台灣溫柔女聲 (曉臻)</option>
+                                <option value="zh-CN-XiaoxiaoNeural">靈性女聲 (曉曉)</option>
+                            </select>
+                        </div>
+
                         <!-- Chapter Direct Dropdown -->
                         <select id="avatar-chapter-select" onchange="changeAvatarChapter(parseInt(this.value))" class="px-2.5 py-1.5 rounded-xl bg-slate-900 border border-purple-500/30 text-[11px] font-bold text-amber-300 focus:outline-none focus:border-amber-400">
                             <option value="0">第 0 講 · 拍電影模型</option>
@@ -789,11 +974,18 @@
                     <div id="chapter-1-text" class="space-y-6 pt-6 text-sm text-slate-200">
                         <!-- Plain 12 Palaces Interactive Cards -->
                         <div class="space-y-3">
-                            <div class="flex items-center justify-between">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
                                 <h4 class="font-serif font-black text-base text-amber-300 flex items-center gap-2">
                                     <span>🏠</span> 十二宮位 = 你的 12 間生活專屬房間（點擊卡片看生活情境）
                                 </h4>
-                                <span class="text-xs text-slate-400 hidden sm:inline">點選任一房間查看白話解析</span>
+                                <!-- Scenario Filter Chips -->
+                                <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                                    <button onclick="filterPalaces('all')" class="palace-filter-btn px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-400/40 font-bold transition-all text-[11px]" data-filter="all">全部房間</button>
+                                    <button onclick="filterPalaces('wealth')" class="palace-filter-btn px-2.5 py-1 rounded-lg glass-card hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition-all text-[11px]" data-filter="wealth">💰 求財/金庫</button>
+                                    <button onclick="filterPalaces('love')" class="palace-filter-btn px-2.5 py-1 rounded-lg glass-card hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition-all text-[11px]" data-filter="love">💍 伴侶/家庭</button>
+                                    <button onclick="filterPalaces('career')" class="palace-filter-btn px-2.5 py-1 rounded-lg glass-card hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition-all text-[11px]" data-filter="career">🏢 事業/升遷</button>
+                                    <button onclick="filterPalaces('mind')" class="palace-filter-btn px-2.5 py-1 rounded-lg glass-card hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition-all text-[11px]" data-filter="mind">🧘 心情/健康</button>
+                                </div>
                             </div>
                             
                             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-xs" id="palaces-interactive-grid">
@@ -1056,63 +1248,74 @@
 
                         <!-- 14 Main Stars Metaphor Table with Real-life Character Analogies -->
                         <div class="space-y-4">
-                            <h4 class="font-serif font-black text-base text-purple-300 flex items-center gap-2">
-                                <span>⭐</span> 十四正曜主角的「現代人設與現實原型速查表」
-                            </h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-amber-400/30 space-y-1">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <h4 class="font-serif font-black text-base text-purple-300 flex items-center gap-2">
+                                    <span>⭐</span> 十四正曜主角的「現代人設與現實原型速查表」
+                                </h4>
+                                <!-- Star Type Filters -->
+                                <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                                    <button onclick="filterStars('all')" class="star-filter-btn px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-400/40 font-bold transition-all text-[11px]" data-filter="all">全部主角</button>
+                                    <button onclick="filterStars('leader')" class="star-filter-btn px-2.5 py-1 rounded-lg glass-card hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition-all text-[11px]" data-filter="leader">👑 帝王領導</button>
+                                    <button onclick="filterStars('strategy')" class="star-filter-btn px-2.5 py-1 rounded-lg glass-card hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition-all text-[11px]" data-filter="strategy">🧠 軍師謀略</button>
+                                    <button onclick="filterStars('wealth')" class="star-filter-btn px-2.5 py-1 rounded-lg glass-card hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition-all text-[11px]" data-filter="wealth">💰 財星實幹</button>
+                                    <button onclick="filterStars('social')" class="star-filter-btn px-2.5 py-1 rounded-lg glass-card hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition-all text-[11px]" data-filter="social">💃 桃花社交</button>
+                                    <button onclick="filterStars('pioneer')" class="star-filter-btn px-2.5 py-1 rounded-lg glass-card hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition-all text-[11px]" data-filter="pioneer">🚀 開創將星</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs" id="stars-cards-grid">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-amber-400/30 space-y-1 transition-all" data-category="leader">
                                     <div class="flex items-center justify-between"><strong class="text-amber-300 font-black text-sm">👑 紫微星</strong><span class="text-[10px] text-amber-200 bg-amber-950 px-2 py-0.5 rounded">賈伯斯/董事長</span></div>
                                     <p class="text-slate-300 text-[11px]">天生自帶貴氣、愛面子、有王者擔當，喜歡發號施令。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-cyan-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-cyan-400/30 space-y-1 transition-all" data-category="strategy">
                                     <div class="flex items-center justify-between"><strong class="text-cyan-300 font-black text-sm">🧠 天機星</strong><span class="text-[10px] text-cyan-200 bg-cyan-950 px-2 py-0.5 rounded">諸葛亮/金牌軍師</span></div>
                                     <p class="text-slate-300 text-[11px]">鬼才腦袋轉超快、擅長企劃策略與數位工具，心思細密。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-rose-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-rose-400/30 space-y-1 transition-all" data-category="social">
                                     <div class="flex items-center justify-between"><strong class="text-rose-300 font-black text-sm">☀️ 太陽星</strong><span class="text-[10px] text-rose-200 bg-rose-950 px-2 py-0.5 rounded">熱血暖男/里長伯</span></div>
                                     <p class="text-slate-300 text-[11px]">熱情大方不計較、燃燒自己照亮身邊所有人，出外極受歡迎。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-yellow-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-yellow-400/30 space-y-1 transition-all" data-category="wealth">
                                     <div class="flex items-center justify-between"><strong class="text-yellow-300 font-black text-sm">💰 武曲星</strong><span class="text-[10px] text-yellow-200 bg-yellow-950 px-2 py-0.5 rounded">巴菲特/精算財務長</span></div>
                                     <p class="text-slate-300 text-[11px]">講求信用、執行力超強、對金錢數字極為敏銳的實幹家。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-emerald-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-emerald-400/30 space-y-1 transition-all" data-category="social">
                                     <div class="flex items-center justify-between"><strong class="text-emerald-300 font-black text-sm">🍰 天同星</strong><span class="text-[10px] text-emerald-200 bg-emerald-950 px-2 py-0.5 rounded">吃貨甜心/享樂天使</span></div>
                                     <p class="text-slate-300 text-[11px]">天生福氣好、樂天知命、愛好美食享受、隨和好相處。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-red-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-red-400/30 space-y-1 transition-all" data-category="social">
                                     <div class="flex items-center justify-between"><strong class="text-red-300 font-black text-sm">🔥 廉貞星</strong><span class="text-[10px] text-red-200 bg-red-950 px-2 py-0.5 rounded">王牌公關/酷炫經紀人</span></div>
                                     <p class="text-slate-300 text-[11px]">敢愛敢恨、公關交際強、極度有原則與審美品味。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-amber-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-amber-400/30 space-y-1 transition-all" data-category="leader">
                                     <div class="flex items-center justify-between"><strong class="text-amber-300 font-black text-sm">🏦 天府星</strong><span class="text-[10px] text-amber-200 bg-amber-950 px-2 py-0.5 rounded">銀行行長/大掌櫃</span></div>
                                     <p class="text-slate-300 text-[11px]">守財超級厲害、做事穩健沉著有氣派，是天生的大金庫。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-cyan-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-cyan-400/30 space-y-1 transition-all" data-category="wealth">
                                     <div class="flex items-center justify-between"><strong class="text-cyan-300 font-black text-sm">🌙 太陰星</strong><span class="text-[10px] text-cyan-200 bg-cyan-950 px-2 py-0.5 rounded">溫柔媽媽/房產女王</span></div>
                                     <p class="text-slate-300 text-[11px]">細心體貼有耐心、注重生活美感、最擅長置產存下不動產。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-rose-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-rose-400/30 space-y-1 transition-all" data-category="social">
                                     <div class="flex items-center justify-between"><strong class="text-rose-300 font-black text-sm">💃 貪狼星</strong><span class="text-[10px] text-rose-200 bg-rose-950 px-2 py-0.5 rounded">萬人迷/才藝網紅</span></div>
                                     <p class="text-slate-300 text-[11px]">多才多藝、幽默社交王、慾望強烈、永遠對新事物充滿好奇。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-slate-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-slate-400/30 space-y-1 transition-all" data-category="strategy">
                                     <div class="flex items-center justify-between"><strong class="text-slate-300 font-black text-sm">🗣️ 巨門星</strong><span class="text-[10px] text-slate-200 bg-slate-800 px-2 py-0.5 rounded">犀利名嘴/大律師</span></div>
                                     <p class="text-slate-300 text-[11px]">觀察入微、靠口才辯論吃飯、講話一針見血直指核心。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-blue-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-blue-400/30 space-y-1 transition-all" data-category="strategy">
                                     <div class="flex items-center justify-between"><strong class="text-blue-300 font-black text-sm">👔 天相星</strong><span class="text-[10px] text-blue-200 bg-blue-950 px-2 py-0.5 rounded">金牌特助/外交官</span></div>
                                     <p class="text-slate-300 text-[11px]">注重品味穿搭、講義氣有信用，最完美的幕僚特助。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-emerald-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-emerald-400/30 space-y-1 transition-all" data-category="strategy">
                                     <div class="flex items-center justify-between"><strong class="text-emerald-300 font-black text-sm">👴 天梁星</strong><span class="text-[10px] text-emerald-200 bg-emerald-950 px-2 py-0.5 rounded">慈祥老前輩/老中醫</span></div>
                                     <p class="text-slate-300 text-[11px]">逢凶化吉、自帶貴人保佑、喜歡提攜晚輩並給予人生指導。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-red-500/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-red-500/30 space-y-1 transition-all" data-category="pioneer">
                                     <div class="flex items-center justify-between"><strong class="text-red-400 font-black text-sm">⚔️ 七殺星</strong><span class="text-[10px] text-red-200 bg-red-950 px-2 py-0.5 rounded">特戰隊長/衝鋒將軍</span></div>
                                     <p class="text-slate-300 text-[11px]">勇猛果敢、獨立自主不依賴任何人、敢隻身一人闖天下。</p>
                                 </div>
-                                <div class="p-3.5 rounded-2xl bg-white/5 border border-purple-400/30 space-y-1">
+                                <div class="star-card p-3.5 rounded-2xl bg-white/5 border border-purple-400/30 space-y-1 transition-all" data-category="pioneer">
                                     <div class="flex items-center justify-between"><strong class="text-purple-300 font-black text-sm">🚀 破軍星</strong><span class="text-[10px] text-purple-200 bg-purple-950 px-2 py-0.5 rounded">革命創新家/馬斯克</span></div>
                                     <p class="text-slate-300 text-[11px]">敢於打破一切舊傳統舊體制，勇於冒險重新開拓新藍海。</p>
                                 </div>
@@ -1216,6 +1419,14 @@
                                     <p class="text-xs text-slate-400">
                                         支援民國年次與西元年快速切換：
                                     </p>
+                                </div>
+                                <!-- Fast Birth Year Calculator Tool -->
+                                <div class="flex items-center gap-2 bg-purple-950/60 p-2 rounded-2xl border border-purple-500/30">
+                                    <span class="text-xs font-bold text-amber-300">快速查生年:</span>
+                                    <input type="number" id="quick-year-input" placeholder="例如 1989 或 78" class="w-28 px-2.5 py-1 bg-slate-900 rounded-xl border border-purple-500/40 text-xs text-amber-200 font-bold focus:outline-none focus:border-amber-400">
+                                    <button onclick="calculateStemFromYearInput()" class="px-3 py-1 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 rounded-xl text-xs font-black hover:scale-105 transition-all">
+                                        查詢
+                                    </button>
                                 </div>
                             </div>
 
@@ -1455,6 +1666,9 @@
                                 <button onclick="loadScenarioPreset('self_peace')" class="px-3 py-1.5 rounded-xl bg-blue-950/80 hover:bg-blue-800 text-blue-200 border border-blue-500/40 font-bold transition-all flex items-center gap-1">
                                     🧘 5. 佛系自我消化 (命宮自化祿)
                                 </button>
+                                <button onclick="runReverseRadar()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 text-white font-bold transition-all flex items-center gap-1 shadow-md hover:scale-105">
+                                    🔍 6. 一鍵逆向雷達 (誰化祿/化忌給我？)
+                                </button>
                             </div>
                         </div>
 
@@ -1624,12 +1838,18 @@
                                 </div>
                             </div>
 
-                            <div class="flex justify-center gap-3 pt-2">
-                                <button onclick="window.print()" class="px-6 py-2.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 font-bold text-xs flex items-center gap-1.5 transition-all">
-                                    <i data-lucide="printer" class="w-4 h-4"></i> 列印 / 儲存為 PDF 證書
+                            <div class="flex flex-wrap justify-center gap-3 pt-2">
+                                <button onclick="downloadCertificateAsImage()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/30 hover:scale-105 transition-all">
+                                    <i data-lucide="download" class="w-4 h-4"></i> 一鍵下載證書圖檔 (PNG)
                                 </button>
-                                <button onclick="switchChapter(6)" class="px-6 py-2.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 font-bold text-xs flex items-center gap-1.5 transition-all">
-                                    <i data-lucide="zap" class="w-4 h-4"></i> 前往沙盒自由推演
+                                <button onclick="window.print()" class="px-5 py-2.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 font-bold text-xs flex items-center gap-1.5 transition-all">
+                                    <i data-lucide="printer" class="w-4 h-4"></i> 列印 / PDF
+                                </button>
+                                <button onclick="retakeQuiz()" class="px-5 py-2.5 rounded-xl glass-card hover:bg-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1.5 border border-white/10 transition-all">
+                                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> 重新測驗
+                                </button>
+                                <button onclick="switchChapter(6)" class="px-5 py-2.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 font-bold text-xs flex items-center gap-1.5 transition-all">
+                                    <i data-lucide="zap" class="w-4 h-4"></i> 前往沙盒
                                 </button>
                             </div>
                         </div>
@@ -1968,6 +2188,9 @@
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
             updateProgress();
+            if (typeof loadAvatarChapterData === 'function') {
+                loadAvatarChapterData(chapterIdx);
+            }
             lucide.createIcons();
         }
 
@@ -1977,6 +2200,62 @@
             const txt = document.getElementById('learning-progress-text');
             if (bar) bar.style.width = `${pct}%`;
             if (txt) txt.innerText = `${pct}%`;
+        }
+
+        function filterPalaces(type) {
+            document.querySelectorAll('.palace-filter-btn').forEach(btn => {
+                if (btn.getAttribute('data-filter') === type) {
+                    btn.className = 'palace-filter-btn px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-400/40 font-bold transition-all text-[11px]';
+                } else {
+                    btn.className = 'palace-filter-btn px-2.5 py-1 rounded-lg glass-card hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition-all text-[11px]';
+                }
+            });
+
+            const palaceMap = {
+                'all': [0,1,2,3,4,5,6,7,8,9,10,11],
+                'wealth': [1,4,9], // 兄弟(小金庫), 財帛(錢包), 田宅(總財庫)
+                'love': [2,3,9],   // 夫妻, 子女, 田宅(家宅)
+                'career': [0,6,8,11], // 官祿, 遷移(出外), 父母(長官), 命宮
+                'mind': [0,5,7,10]    // 命宮, 疾厄, 交友, 福德
+            };
+
+            const activeIndices = palaceMap[type] || palaceMap['all'];
+            const cards = document.querySelectorAll('#palaces-interactive-grid > div');
+            cards.forEach((card, idx) => {
+                if (activeIndices.includes(idx)) {
+                    card.style.display = 'flex';
+                    card.classList.add('ring-1', 'ring-amber-400/50');
+                } else {
+                    card.style.display = 'none';
+                    card.classList.remove('ring-1', 'ring-amber-400/50');
+                }
+            });
+
+            if (activeIndices.length > 0) {
+                showPalaceDetail(activeIndices[0]);
+            }
+        }
+
+        function filterStars(category) {
+            document.querySelectorAll('.star-filter-btn').forEach(btn => {
+                if (btn.getAttribute('data-filter') === category) {
+                    btn.className = 'star-filter-btn px-2.5 py-1 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-400/40 font-bold transition-all text-[11px]';
+                } else {
+                    btn.className = 'star-filter-btn px-2.5 py-1 rounded-lg glass-card hover:bg-white/10 text-slate-300 border border-white/10 font-medium transition-all text-[11px]';
+                }
+            });
+
+            const cards = document.querySelectorAll('.star-card');
+            cards.forEach(card => {
+                const cat = card.getAttribute('data-category');
+                if (category === 'all' || cat === category) {
+                    card.style.display = 'block';
+                    card.classList.add('ring-1', 'ring-purple-400/40');
+                } else {
+                    card.style.display = 'none';
+                    card.classList.remove('ring-1', 'ring-purple-400/40');
+                }
+            });
         }
 
         function showPalaceDetail(idx) {
@@ -2019,13 +2298,30 @@
             if (html.classList.contains('dark')) {
                 html.classList.remove('dark');
                 html.classList.add('light');
-                icon.setAttribute('data-lucide', 'moon');
+                if (icon) icon.setAttribute('data-lucide', 'moon');
+                localStorage.setItem('fate_classroom_theme', 'light');
             } else {
                 html.classList.remove('light');
                 html.classList.add('dark');
-                icon.setAttribute('data-lucide', 'sun');
+                if (icon) icon.setAttribute('data-lucide', 'sun');
+                localStorage.setItem('fate_classroom_theme', 'dark');
             }
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function initThemeFromStorage() {
+            const saved = localStorage.getItem('fate_classroom_theme');
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (saved === 'light') {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                if (icon) icon.setAttribute('data-lucide', 'moon');
+            } else if (saved === 'dark') {
+                html.classList.remove('light');
+                html.classList.add('dark');
+                if (icon) icon.setAttribute('data-lucide', 'sun');
+            }
         }
 
         function initCastingBoard() {
@@ -2166,6 +2462,34 @@
             renderStemDetail(stem);
         }
 
+        function calculateStemFromYearInput() {
+            const input = document.getElementById('quick-year-input');
+            if (!input || !input.value) return;
+            let val = parseInt(input.value.trim());
+            if (isNaN(val)) return;
+
+            let yearAD = val;
+            if (val < 200) {
+                yearAD = val + 1911; // ROC Year to AD
+            }
+
+            const stemMap = {
+                4: "甲", 5: "乙", 6: "丙", 7: "丁", 8: "戊",
+                9: "己", 0: "庚", 1: "辛", 2: "壬", 3: "癸"
+            };
+            const lastDigit = Math.abs(yearAD) % 10;
+            const stem = stemMap[lastDigit] || "甲";
+
+            selectStem(stem);
+
+            const roc = yearAD - 1911;
+            const noteEl = document.getElementById('stem-calc-result-toast');
+            if (noteEl) {
+                noteEl.innerHTML = `✅ 已為您定位：西元 <strong>${yearAD}</strong> 年 (民國 <strong>${roc}</strong> 年) 出生天干為【<strong>${stem}</strong>】！`;
+                noteEl.classList.remove('hidden');
+            }
+        }
+
         function renderStemDetail(stem) {
             const data = SI_HUA_DATA[stem];
             const card = document.getElementById('stem-detail-card');
@@ -2182,6 +2506,8 @@
                         適用：${data.years}
                     </div>
                 </div>
+
+                <div id="stem-calc-result-toast" class="hidden p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs font-bold text-center"></div>
 
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 py-2">
                     <div class="p-3.5 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 text-center">
@@ -2205,7 +2531,25 @@
                 <p class="text-xs text-slate-200 leading-relaxed bg-white/5 p-4 rounded-2xl border border-white/10">
                     <strong>【大白話生活翻譯】：</strong>${data.desc}
                 </p>
+
+                <div class="flex justify-end pt-1">
+                    <button onclick="jumpToSandboxWithStem('${stem}')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs hover:scale-105 transition-all shadow-md flex items-center gap-1.5">
+                        <span>⚡ 將【${stem}干】帶入飛星沙盒模擬發射</span>
+                        <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
             `;
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function jumpToSandboxWithStem(stem) {
+            switchChapter(6);
+            const stemSelect = document.getElementById('sandbox-source-stem');
+            if (stemSelect) {
+                stemSelect.value = stem;
+                updateSandboxSelection();
+                fireAllSihua();
+            }
         }
 
         function initSandbox() {
@@ -2448,6 +2792,72 @@
 
             svg.appendChild(line);
             svg.appendChild(badgeG);
+
+            // Pulse target cell
+            const targetCell = document.getElementById(`sandbox-cell-${toId}`);
+            if (targetCell) {
+                targetCell.style.boxShadow = `0 0 25px ${color}`;
+                setTimeout(() => {
+                    if (targetCell) targetCell.style.boxShadow = '';
+                }, 1800);
+            }
+        }
+
+        function runReverseRadar() {
+            const palaceId = parseInt(document.getElementById('sandbox-source-palace')?.value || '0');
+            const targetData = SANDBOX_CHART.find(c => c.id === palaceId);
+            clearSandboxRays();
+
+            const incoming = [];
+            SANDBOX_CHART.forEach(sender => {
+                const sihua = SI_HUA_DATA[sender.stem];
+                if (!sihua) return;
+                ['lu', 'quan', 'ke', 'ji'].forEach(typeKey => {
+                    const star = sihua[typeKey];
+                    if (targetData.stars.includes(star)) {
+                        let typeName = typeKey === 'lu' ? '祿' : (typeKey === 'quan' ? '權' : (typeKey === 'ke' ? '科' : '忌'));
+                        let color = typeKey === 'lu' ? '#10b981' : (typeKey === 'quan' ? '#ef4444' : (typeKey === 'ke' ? '#a855f7' : '#3b82f6'));
+                        incoming.push({ from: sender, type: typeName, star: star, color: color });
+                        renderRayOnSvg(sender.id, targetData.id, typeName, star, color);
+                    }
+                });
+            });
+
+            const label = document.getElementById('sandbox-active-stem-label');
+            if (label) label.innerText = `【${targetData.palace}】逆向飛星雷達掃描`;
+
+            const reportEl = document.getElementById('sandbox-report-content');
+            if (reportEl) {
+                if (incoming.length === 0) {
+                    reportEl.innerHTML = `
+                        <div class="p-4 rounded-2xl bg-white/5 border border-white/10 text-xs">
+                            <span class="text-amber-300 font-bold">🔍 逆向雷達掃描結果：</span>
+                            <p class="text-slate-300 mt-1">目前十二宮位中，沒有宮位直接發射四化飛星進入【${targetData.palace}】。代表此房間較不受外部劇烈干擾，能保持自主獨立發揮！</p>
+                        </div>
+                    `;
+                } else {
+                    reportEl.innerHTML = `
+                        <div class="space-y-2">
+                            <p class="text-xs text-amber-300 font-bold">
+                                🔍 逆向雷達掃描：共有 <strong>${incoming.length}</strong> 道宮位飛星聚焦射入【${targetData.palace}】！
+                            </p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                ${incoming.map(item => `
+                                    <div class="p-3 rounded-xl bg-white/5 border border-white/10 flex items-start gap-2">
+                                        <span class="font-bold shrink-0" style="color: ${item.color}">[化${item.type} ➔ ${item.star}]</span>
+                                        <div>
+                                            <span class="text-white font-bold">${item.from.palace} (${item.from.stem}干)</span>
+                                            <p class="text-slate-300 text-[11px] mt-0.5">
+                                                ${item.type === '祿' ? '主動帶來福氣好處與資金支持！' : (item.type === '權' ? '帶來權利推動力或企圖心！' : (item.type === '科' ? '帶來長輩貴人聲譽名氣！' : '帶來深刻牽掛與責任考驗！'))}
+                                            </p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
         }
 
         function initQuiz() {
@@ -2515,6 +2925,129 @@
             }
         }
 
+        function retakeQuiz() {
+            document.querySelectorAll('#quiz-container input[type="radio"]').forEach(r => r.checked = false);
+            document.querySelectorAll('[id^="quiz-explain-"]').forEach(el => {
+                el.classList.add('hidden');
+                el.innerHTML = '';
+            });
+            document.getElementById('certificate-wrapper')?.classList.add('hidden');
+            document.getElementById('quiz-submit-area')?.classList.remove('hidden');
+            const scoreDisplay = document.getElementById('cert-score-display');
+            if (scoreDisplay) scoreDisplay.innerText = '-- 分';
+            const quizEl = document.getElementById('quiz-container');
+            if (quizEl) quizEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function downloadCertificateAsImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1200;
+            canvas.height = 800;
+            const ctx = canvas.getContext('2d');
+
+            // Background Gradient
+            const grad = ctx.createLinearGradient(0, 0, 0, 800);
+            grad.addColorStop(0, '#120b22');
+            grad.addColorStop(0.5, '#0a0614');
+            grad.addColorStop(1, '#05030a');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1200, 800);
+
+            // Golden Borders
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = 6;
+            ctx.strokeRect(30, 30, 1140, 740);
+
+            ctx.strokeStyle = 'rgba(250, 204, 21, 0.4)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(42, 42, 1116, 716);
+
+            // Top Title & Badges
+            ctx.fillStyle = '#fde047';
+            ctx.font = 'bold 20px serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('ZIWEI ASTROLOGICAL MASTER ACADEMY', 600, 110);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 42px serif';
+            ctx.fillText('紫微斗數 · 排盤與四化飛星精通證書', 600, 185);
+
+            // Divider
+            ctx.strokeStyle = 'rgba(250, 204, 21, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(350, 215);
+            ctx.lineTo(850, 215);
+            ctx.stroke();
+
+            // User Text
+            const userName = (document.getElementById('cert-user-name')?.value || '天機緣主').trim();
+            const scoreText = document.getElementById('cert-score-display')?.innerText || '100 分';
+            const dateText = document.getElementById('cert-date-display')?.innerText || '2026.09.07';
+
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = '22px sans-serif';
+            ctx.fillText('茲證明研習學員', 600, 275);
+
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = 'bold 36px serif';
+            ctx.fillText(`【 ${userName} 】 先生 / 女士`, 600, 335);
+
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = '20px sans-serif';
+            ctx.fillText('已圓滿研習「十二生活房間幾何學、五步掌訣排盤演算法、生年四化密碼、', 600, 395);
+            ctx.fillText('宮干十干飛星穿透力學及大限流年時空重疊」，表現卓越，特頒此證！', 600, 435);
+
+            // Score & Meta Table
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(250, 480, 700, 90);
+            ctx.strokeStyle = 'rgba(250, 204, 21, 0.3)';
+            ctx.strokeRect(250, 480, 700, 90);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '16px sans-serif';
+            ctx.fillText('考核得分', 360, 515);
+            ctx.fillText('認證級別', 600, 515);
+            ctx.fillText('頒發日期', 840, 515);
+
+            ctx.fillStyle = '#facc15';
+            ctx.font = 'bold 24px serif';
+            ctx.fillText(scoreText, 360, 550);
+            ctx.fillStyle = '#c084fc';
+            ctx.fillText('宗師飛星級', 600, 550);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(dateText, 840, 550);
+
+            // Seal & Footer
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = '18px serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('天機命譜 · 紫微玄學研習講堂', 250, 675);
+
+            // Red Stamp Seal
+            ctx.save();
+            ctx.translate(920, 660);
+            ctx.rotate(-0.08);
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 4;
+            ctx.fillStyle = 'rgba(220, 38, 38, 0.15)';
+            ctx.fillRect(-45, -45, 90, 90);
+            ctx.strokeRect(-45, -45, 90, 90);
+            ctx.fillStyle = '#dc2626';
+            ctx.font = 'bold 20px serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('天機', 0, -10);
+            ctx.fillText('印信', 0, 24);
+            ctx.restore();
+
+            // Trigger Download
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `天機命譜_紫微斗數精通證書_${userName}.png`;
+            link.href = dataUrl;
+            link.click();
+        }
+
         function toggleChapterAudio() {
             if (isPlayingAudio) {
                 stopAudio();
@@ -2534,15 +3067,28 @@
         let edgeTtsAbortCtrl = null;
         let avatarAudio = null;
         let avatarAudioUrl = null;
+        let selectedAvatarVoice = "zh-CN-YunyangNeural";
+
+        function changeAvatarVoice(voice) {
+            selectedAvatarVoice = voice;
+            const selectEl = document.getElementById('avatar-voice-select');
+            if (selectEl && selectEl.value !== voice) selectEl.value = voice;
+
+            if (avatarVideoState.isPlaying) {
+                pauseAvatarPlayback();
+                startAvatarPlayback();
+            }
+        }
 
         const BACKEND_URL = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
             ? (window.location.port ? `${window.location.protocol}//${window.location.hostname}:${window.location.port}` : "http://localhost:5000")
             : window.location.origin;
 
-        async function fetchEdgeTTSBlob(text, speed = 1.0, voice = "zh-CN-YunyangNeural") {
+        async function fetchEdgeTTSBlob(text, speed = 1.0, voice = null) {
             const cleanText = text.replace(/[*#☯🌌🏛️⭐⚡📜🌀🌸🎁🎤🛡️❤️✦]/g, '').trim().substring(0, 4000);
             if (!cleanText) return null;
 
+            const useVoice = voice || selectedAvatarVoice || "zh-CN-YunyangNeural";
             const rateStr = `${speed >= 1.0 ? '+' : ''}${Math.round((speed - 1.0) * 100)}%`;
 
             const res = await fetch(`${BACKEND_URL}/api/tts`, {
@@ -2550,7 +3096,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     text: cleanText,
-                    voice: voice,
+                    voice: useVoice,
                     rate: rateStr
                 })
             });
@@ -2916,7 +3462,7 @@
 
             try {
                 // Fetch Edge-TTS cloud audio stream
-                const audioUrl = await fetchEdgeTTSBlob(lecture.speechText, avatarVideoState.speed, "zh-CN-YunyangNeural");
+                const audioUrl = await fetchEdgeTTSBlob(lecture.speechText, avatarVideoState.speed, selectedAvatarVoice);
                 if (!audioUrl) throw new Error("Audio URL is empty");
 
                 if (!avatarVideoState.isPlaying) {
@@ -3184,9 +3730,35 @@
             }
         }
 
-        // Initialize avatar player on load
+        // Initialize avatar player on load and global listeners
         window.addEventListener('DOMContentLoaded', () => {
+            initThemeFromStorage();
             initAvatarVideoPlayer();
+
+            // Resize listener to adapt SVG rays
+            let resizeTimer = null;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (currentChapter === 6) {
+                        fireAllSihua();
+                    }
+                }, 200);
+            });
+
+            // Keyboard navigation (Arrow keys for chapters, Space for avatar play/pause)
+            window.addEventListener('keydown', (e) => {
+                if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
+                if (e.key === 'ArrowRight' && currentChapter < 7) {
+                    switchChapter(currentChapter + 1);
+                } else if (e.key === 'ArrowLeft' && currentChapter > 0) {
+                    switchChapter(currentChapter - 1);
+                } else if (e.key === ' ') {
+                    e.preventDefault();
+                    toggleAvatarPlayPause();
+                }
+            });
         });
     </script>
 </body>
