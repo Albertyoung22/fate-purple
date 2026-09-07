@@ -7702,33 +7702,43 @@ ${newsStats}
                                     </div>  {/* Correctly closing the inner container div */}
                                 </Card>
 
-                                <div className="rounded-[2.5rem] shadow-2xl bg-white overflow-hidden ring-4 ring-indigo-50/50 print:bg-white print:border-4 print:border-black print:shadow-none print:ring-0">
-                                    <div className="bg-gradient-to-r from-red-950 via-slate-900 to-red-950 p-6 relative print:bg-white print:border-b-2 print:border-black">
-                                        <div className="relative flex items-center gap-5 z-10">
-                                            <div className="p-3 bg-red-500/10 rounded-2xl border border-red-500/20 backdrop-blur-sm print:hidden">
-                                                <Icon name="flame" className="w-6 h-6 text-red-500" />
+                                <div className="rounded-2xl shadow-md bg-white overflow-hidden border border-slate-200/80 print:bg-white print:border-2 print:border-black print:shadow-none">
+                                    <div className="bg-gradient-to-r from-slate-900 via-red-950 to-slate-900 px-4 py-2.5 flex items-center justify-between print:bg-white print:border-b print:border-black">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="p-1.5 bg-red-500/15 rounded-lg border border-red-500/30 print:hidden">
+                                                <Icon name="flame" className="w-4 h-4 text-red-400" />
                                             </div>
-                                            <div>
-                                                <h4 className="text-lg font-black uppercase tracking-[0.3em] text-red-100 print:text-black">心法不傳之秘偵測</h4>
-                                                <p className="text-[10px] text-red-200/60 font-bold tracking-wider mt-1 print:hidden">秘傳心法偵測</p>
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="text-sm font-black uppercase tracking-wider text-red-100 print:text-black">心法不傳之秘偵測</h4>
+                                                <span className="text-[10px] text-red-300/60 font-bold px-1.5 py-0.5 rounded bg-red-950/60 border border-red-500/20 print:hidden">秘傳心法</span>
                                             </div>
                                         </div>
+                                        {xinFaDetects.length > 0 && (
+                                            <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 print:hidden">
+                                                {xinFaDetects.length} 項觸發
+                                            </span>
+                                        )}
                                     </div>
 
-                                    <div className="p-10 bg-slate-50 min-h-[200px] print:bg-white">
-                                        <div className="space-y-6">
-                                            {xinFaDetects.length > 0 ? xinFaDetects.map((p, idx) => (
-                                                <div key={idx} className="group relative pl-8 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-gradient-to-b before:from-red-500 before:to-transparent before:rounded-full">
-                                                    <span className="font-black text-xl block text-red-800 mb-2 group-hover:text-red-600 transition-colors print:text-black">※ {p.name}</span>
-                                                    <p className="text-[15px] font-medium text-slate-600 leading-loose text-justify print:text-black">{p.desc}</p>
-                                                </div>
-                                            )) : (
-                                                <div className="flex flex-col items-center justify-center py-10 opacity-50">
-                                                    <Icon name="shield-check" className="w-16 h-16 text-emerald-500 mb-4" />
-                                                    <p className="text-sm font-black text-slate-400 tracking-widest uppercase">盤面格局中和 · 偵測平安</p>
-                                                </div>
-                                            )}
-                                        </div>
+                                    <div className="p-3.5 bg-slate-50/80 print:bg-white">
+                                        {xinFaDetects.length > 0 ? (
+                                            <div className={`grid gap-2.5 ${xinFaDetects.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                                                {xinFaDetects.map((p, idx) => (
+                                                    <div key={idx} className="p-3 rounded-xl bg-white border border-red-100 shadow-sm hover:border-red-200 transition-all flex flex-col justify-start">
+                                                        <div className="flex items-center gap-1.5 mb-1 shrink-0">
+                                                            <span className="inline-block w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                                                            <span className="font-black text-xs text-red-900 print:text-black">{p.name}</span>
+                                                        </div>
+                                                        <p className="text-[12px] font-medium text-slate-600 leading-relaxed text-justify pl-3 print:text-black">{p.desc}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-center gap-2 py-2 px-3 bg-emerald-50/60 rounded-xl border border-emerald-100 text-emerald-700">
+                                                <Icon name="shield-check" className="w-4 h-4 text-emerald-500 shrink-0" />
+                                                <span className="text-xs font-black tracking-wider">盤面格局中和 · 偵測平安</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
