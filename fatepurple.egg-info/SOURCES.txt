@@ -1,0 +1,6 @@
+README.md
+pyproject.toml
+fatepurple.egg-info/PKG-INFO
+fatepurple.egg-info/SOURCES.txt
+fatepurple.egg-info/dependency_links.txt
+fatepurple.egg-info/top_level.txt

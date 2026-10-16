@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: fatepurple
+Version: 2.0.0
+Summary: 紫微天機命譜系統 - 伺服器後端 (無介面版)
+Requires-Python: >=3.9

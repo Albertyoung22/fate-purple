@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1b4b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#312e81;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <circle cx="200" cy="200" r="190" fill="url(#bg-grad)" stroke="#fbbf24" stroke-width="4"/>
+  
+  <!-- Aura -->
+  <circle cx="200" cy="180" r="120" fill="#6366f1" fill-opacity="0.1" filter="url(#glow)"/>
+  
+  <!-- Master Silhouette/Iconography -->
+  <!-- Head & Hair -->
+  <path d="M200,80 Q250,80 270,130 Q280,180 200,180 Q120,180 130,130 Q150,80 200,80" fill="#f8fafc" />
+  
+  <!-- Beard -->
+  <path d="M140,165 Q140,320 200,350 Q260,320 260,165 L200,185 Z" fill="#f8fafc" />
+  <path d="M160,180 Q160,280 200,310 Q240,280 240,180 L200,195 Z" fill="#cbd5e1" opacity="0.5" />
+  
+  <!-- Face (Simple) -->
+  <path d="M165,130 Q200,110 235,130 Q235,170 200,180 Q165,170 165,130" fill="#fee2e2" />
+  
+  <!-- Eyes (Serene) -->
+  <path d="M175,140 Q185,135 195,140" fill="none" stroke="#1e1b4b" stroke-width="2" stroke-linecap="round" />
+  <path d="M205,140 Q215,135 225,140" fill="none" stroke="#1e1b4b" stroke-width="2" stroke-linecap="round" />
+  
+  <!-- Robe -->
+  <path d="M100,300 Q100,220 200,220 Q300,220 300,300 L300,400 L100,400 Z" fill="#4338ca" />
+  <path d="M200,220 L150,400 M200,220 L250,400" stroke="#fbbf24" stroke-width="2" opacity="0.3" />
+
+  <!-- Yin Yang Symbol on Chest -->
+  <circle cx="200" cy="280" r="20" fill="white" />
+  <path d="M200,260 A10,10 0 0,0 200,280 A10,10 0 0,1 200,300 A20,20 0 0,0 200,260" fill="black" />
+  <circle cx="200" cy="270" r="3" fill="black" />
+  <circle cx="200" cy="290" r="3" fill="white" />
+</svg>

@@ -1,0 +1,21 @@
+{
+    "name": "紫微八字 · 天機命譜",
+    "short_name": "天機命譜",
+    "description": "宿世因果，天機立現。紫微斗數與八字命理深度解析系統。",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4f46e5",
+    "icons": [
+        {
+            "src": "/icon.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
